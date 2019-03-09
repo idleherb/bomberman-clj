@@ -11,4 +11,5 @@
       (is (vector? arena))
       (is (= width (count arena)))
       (is (every? #(= height (count %)) arena))
+      (is (every? #(every? nil? %) arena))
     )))
