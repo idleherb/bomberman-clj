@@ -4,18 +4,7 @@
 (defn init-arena
   "Initialize a new arena"
   []
-  [
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-    [nil nil nil nil nil nil nil nil nil nil]
-  ])
+  (into (vector) (take 10 (repeat (into (vector) (take 10 (repeat nil)))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
