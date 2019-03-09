@@ -6,17 +6,23 @@
   (testing "An empty (17 x 15) arena with 1 player should be initialized"
     (let [width 17
           height 15
-          arena (init-arena width height)]
+          players [{:symbol \P} {:symbol \Q}]
+          arena (init-arena width height players)]
       (is (not (nil? arena)))
       (is (map? arena))
       (is (contains? arena :grid))
-      (let [grid (:grid arena)]
-        (is (= (* width height) (count grid)))
-        (is (every? nil? grid)))
+      (let [grid (:grid arena)
+            v (:v grid)]
+        (is (= (* width height) (count v)))
+        (is (= 2 (count (filter (complement nil?) v)))))
       (is (contains? arena :players))
       (let [players (:players arena)]
-        (is (vector? players))
-        (is (= 2 (count players))))))
+        (is (seq? players))
+        (is (= 2 (count players)))
+        (let [player-1 (nth players 0)]
+          (is (map? player-1))
+          (is (contains? player-1 :coords))
+          ))))
 
   (testing "2 players should spawn on the top left and the bottom right cell of a given grid"
     (let [width 17

@@ -10,11 +10,11 @@
     (assoc grid :v (assoc v (+ (* x height) y) symbol))))
 
 (defn init-arena
-  "Initialize a new (width x height) arena"
-  [width height]
-  (let [grid (into (vector) (take (* width height) (repeat nil)))]
-    {:grid grid
-     :players [0 0]}))
+  "Initialize a new (width x height) arena with given players placed"
+  [width height players]
+  (let [grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}
+        players (map #(assoc % :coords [(rand-int width) (rand-int height)]) players)]
+    {:grid (reduce spawn grid players), :players players}))
 
 (defn -main
   "I don't do a whole lot ... yet."
