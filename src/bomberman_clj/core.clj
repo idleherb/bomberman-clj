@@ -3,8 +3,11 @@
 
 (defn spawn
   "Spawn an object at the given coordinates."
-  [grid [x y]]
-  (assoc (assoc grid 0 "P") 254 "P"))
+  [{:keys [width height v] :as grid} {:keys [symbol coords] :as object}]
+  (println "core::spawn -" "width:" width "height:" height "symbol:" symbol "coords:" coords)
+  (let [[x y] coords]
+    (println "core::spawn -""x:" x "y:" y, "i:" (+ (* x height) y))
+    (assoc grid :v (assoc v (+ (* x height) y) symbol))))
 
 (defn init-arena
   "Initialize a new (width x height) arena"
