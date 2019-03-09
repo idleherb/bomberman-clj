@@ -14,4 +14,5 @@
         (is (= width (count grid)))
         (is (every? #(= height (count %)) grid))
         (is (every? #(every? nil? %) grid)))
+      (is (contains? arena :players))
     )))
