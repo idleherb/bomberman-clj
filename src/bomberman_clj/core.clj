@@ -4,7 +4,7 @@
 (defn init-arena
   "Initialize a new (width x height) arena"
   [width height]
-  (let [grid (into (vector) (take width (repeat (into (vector) (take height (repeat nil))))))]
+  (let [grid (into (vector) (take (* width height) (repeat nil)))]
     {:grid grid
      :players [0 0]}))
 

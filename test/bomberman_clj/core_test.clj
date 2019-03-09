@@ -11,9 +11,8 @@
       (is (map? arena))
       (is (contains? arena :grid))
       (let [grid (:grid arena)]
-        (is (= width (count grid)))
-        (is (every? #(= height (count %)) grid))
-        (is (every? #(every? nil? %) grid)))
+        (is (= (* width height) (count grid)))
+        (is (every? nil? grid)))
       (is (contains? arena :players))
       (let [players (:players arena)]
         (is (vector? players))
