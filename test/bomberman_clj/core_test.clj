@@ -18,7 +18,7 @@
         (is (vector? players))
         (is (= 2 (count players))))))
 
-  (testing "A player should be spawned on an empty cell of a given arena grid"
+  (testing "2 players should spawn on the top left and the bottom right cell of a given grid"
     (let [width 17
           height 15
           grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}
