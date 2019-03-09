@@ -5,4 +5,5 @@
 (deftest test-core
   (testing "An empty arena should be initialized"
     (let [arena init-arena]
-      (is (not (nil? arena))))))
+      (is (not (nil? arena)))
+      (is (vector? (arena))))))
