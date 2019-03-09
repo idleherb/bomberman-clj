@@ -3,10 +3,12 @@
             [bomberman-clj.core :refer :all]))
 
 (deftest test-core
-  (testing "An empty 10x10 arena should be initialized"
-    (let [arena (init-arena)]
+  (testing "An empty (17 x 15) arena should be initialized"
+    (let [w 17
+          h 15
+          arena (init-arena w h)]
       (is (not (nil? arena)))
       (is (vector? arena))
-      (is (= 10 (count arena)))
-      (is (every? #(= 10 (count %)) arena))
+      (is (= w (count arena)))
+      (is (every? #(= h (count %)) arena))
     )))
