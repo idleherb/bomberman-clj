@@ -8,4 +8,5 @@
       (is (not (nil? arena)))
       (is (vector? arena))
       (is (= 10 (count arena)))
+      (is (every? #(= 10 (count %)) arena))
     )))
