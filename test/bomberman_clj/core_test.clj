@@ -15,4 +15,8 @@
         (is (every? #(= height (count %)) grid))
         (is (every? #(every? nil? %) grid)))
       (is (contains? arena :players))
+      (let [players (:players arena)]
+        (is (vector? players))
+        (is (= 2 (count players)))
+        )
     )))
