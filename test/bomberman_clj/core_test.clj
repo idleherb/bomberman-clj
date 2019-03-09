@@ -17,6 +17,4 @@
       (is (contains? arena :players))
       (let [players (:players arena)]
         (is (vector? players))
-        (is (= 2 (count players)))
-        )
-    )))
+        (is (= 2 (count players)))))))
