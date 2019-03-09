@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [bomberman-clj.core :refer :all]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(deftest test-core
+  (testing "An empty arena should be initialized"
+    (let [arena init-arena]
+      (is (not (nil? arena))))))
