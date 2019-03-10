@@ -59,12 +59,12 @@
   (testing "Grid cells should be identified correctly"
     (let [width 2
           height 3
-          grid {:width width, :height height, :v [0 1 nil 3 4 5]}]
+          grid {:width width, :height height, :v [0 1 nil 3 nil 5]}]
       (is (= 0 (cell-at grid [0 0])))
       (is (= 1 (cell-at grid [0 1])))
       (is (cell-empty? grid [0 2]))
       (is (= 3 (cell-at grid [1 0])))
-      (is (= 4 (cell-at grid [1 1])))
+      (is (cell-empty? grid [1 1]))
       (is (= 5 (cell-at grid [1 2])))))
 
   (testing "An random empty cell should be found"
