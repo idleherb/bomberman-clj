@@ -5,7 +5,7 @@
   "Return grid cell index from coordinates"
   [{:keys [width height v] :as grid} coords]
   (let [[x y] coords]
-    (+ (* x height) y)))
+    (+ (* y width) x)))
 
 (defn cell-at
   "Return the cell of a grid at the given coordinates"
@@ -39,10 +39,9 @@
 (defn spawn
   "Spawn an object at the given coordinates."
   [{:keys [width height v] :as grid} {:keys [symbol coords] :as object}]
-  (let [[x y] coords]
-    (if (not (cell-empty? grid coords))
-      (throw (Exception. "can only spawn in empty cell"))
-      (assoc grid :v (assoc v (+ (* x height) y) symbol)))))
+  (if (not (cell-empty? grid coords))
+    (throw (Exception. "can only spawn in empty cell"))
+    (assoc grid :v (assoc v (cell-idx grid coords) symbol))))
 
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
