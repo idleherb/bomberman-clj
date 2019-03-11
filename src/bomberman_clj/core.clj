@@ -1,11 +1,16 @@
 (ns bomberman-clj.core
   (:gen-class))
 
+(defn cell-idx
+  "Return grid cell index from coordinates"
+  [{:keys [width height v] :as grid} coords]
+  (let [[x y] coords]
+    (+ (* x height) y)))
+
 (defn cell-at
   "Return the cell of a grid at the given coordinates"
   [{:keys [width height v] :as grid} coords]
-  (let [[x y] coords]
-    (nth v (+ (* x height) y))))
+  (nth v (cell-idx grid coords)))
 
 (defn cell-empty?
   "Check if a given cell is empty"
@@ -45,16 +50,49 @@
   (let [grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}]
     (loop [grid grid
            players players
-           player-idx 0]
-      (if (= player-idx (count players))
+           player-idx 1]
+      (if (> player-idx (count players))
         {:grid grid, :players players}
-        (let [coords (find-empty-cell grid)
-              {player-symbol :symbol} (nth players player-idx)
-              player {:symbol player-symbol, :coords coords}
-              players (assoc players player-idx player)
-              grid (spawn grid player)
-              player-idx (inc player-idx)]
-          (recur grid players player-idx))))))
+        (if (contains? ((keyword (str "player-" player-idx)) players) :coords)
+          (let [grid (spawn grid ((keyword (str "player-" player-idx)) players))
+                player-idx (inc player-idx)]
+            (recur grid players player-idx))
+          (let [coords (find-empty-cell grid)
+                {player-symbol :symbol} ((keyword (str "player-" player-idx)) players)
+                player {:symbol player-symbol, :coords coords}
+                players (assoc players (keyword (str "player-" player-idx)) player)
+                grid (spawn grid player)
+                player-idx (inc player-idx)]
+            (recur grid players player-idx)))))))
+
+(defn navigate
+  "Navigate from coordinates into the given direction"
+  [[x y] direction]
+  (case direction
+    :north [x (dec y)]
+    :east [(inc x) y]
+    :south [x (inc y)]
+    :west [(dec x) y]
+    (throw (Exception. (str "invalid direction: " direction)))))
+
+(defn move
+  "Try to move a player in the given direction"
+  [arena player-id direction]
+  (let [{grid :grid, players :players} arena
+        {v :v} grid
+        player (player-id players)
+        {coords :coords, symbol :symbol} player
+        new-coords (navigate coords direction)]
+    (if (cell-empty? grid new-coords)
+      (let [player (assoc player :coords new-coords)
+            players (assoc players player-id player)
+            grid (assoc grid (cell-idx grid coords) nil)
+            grid (spawn grid player)
+            arena (assoc arena :grid grid)
+            arena (assoc arena :players players)]
+        arena)
+      arena)
+    ))
 
 (defn -main
   "I don't do a whole lot ... yet."
