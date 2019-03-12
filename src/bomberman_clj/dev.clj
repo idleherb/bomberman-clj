@@ -37,12 +37,11 @@
 (defn key-to-direction
   [key]
   (case key
-    nil nil
     :up :north
     :right :east
     :down :south
     :left :west
-    (throw (Exception. (str "unsupported key: " key)))))
+    nil))
 
 (defn draw-arena
   [width height players]
@@ -53,7 +52,7 @@
              key nil]
         (when (not= key :escape)
           (let [direction (key-to-direction key)
-                arena (if (not (nil? key)) (move arena :player-1 direction) arena)
+                arena (if (not (nil? direction)) (move arena :player-1 direction) arena)
                 rows (arena-rows arena)
                 {[x y] :coords} (:player-1 (:players arena))]
             (doseq [[row-idx row] (map-indexed vector rows)]
