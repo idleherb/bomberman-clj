@@ -5,7 +5,14 @@
   "Return grid cell index from coordinates"
   [{:keys [width height v] :as grid} coords]
   (let [[x y] coords]
-    (+ (* y width) x)))
+    (when (and (<= 0 x (dec width))
+               (<= 0 y (dec height)))
+      (+ (* y width) x))))
+
+(defn in-grid?
+  "Check if coordinates are within the given grid"
+  [{:keys [width height v] :as grid} coords]
+    (not (nil? (cell-idx grid coords))))
 
 (defn cell-at
   "Return the cell of a grid at the given coordinates"
@@ -27,18 +34,17 @@
   ([grid] (find-empty-cell grid 100))
   ([{:keys [width height v] :as grid} max-tries]
     (loop [coords (rand-coords grid)
-            num-tries 1]
+           num-tries 1]
       (if (cell-empty? grid coords)
-        (do
-          (println "D core::find-empty-cell - took" num-tries "tries")
-          coords)
+        coords
         (if (= max-tries num-tries)
           (throw (Exception. "failed to find empty cell"))
           (recur (rand-coords grid) (inc num-tries)))))))
 
 (defn spawn
   "Spawn an object at the given coordinates."
-  [{:keys [width height v] :as grid} {:keys [symbol coords] :as object}]
+  [{:keys [width height v] :as grid}
+   {:keys [symbol coords] :as object}]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
     (assoc grid :v (assoc v (cell-idx grid coords) symbol))))
@@ -46,7 +52,9 @@
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
-  (let [grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}]
+  (let [grid {:width width,
+              :height height,
+              :v (into (vector) (take (* width height) (repeat nil)))}]
     (loop [grid grid
            players players
            player-idx 1]
@@ -82,7 +90,8 @@
         player (player-id players)
         {coords :coords, symbol :symbol} player
         new-coords (navigate coords direction)]
-    (if (cell-empty? grid new-coords)
+    (if (and (in-grid? grid new-coords)
+             (cell-empty? grid new-coords))
       (let [player (assoc player :coords new-coords)
             players (assoc players player-id player)
             v (:v grid)

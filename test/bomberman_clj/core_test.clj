@@ -75,15 +75,20 @@
           grid {:width width, :height height, :v [1 1 1 1 1 1 1 nil 1]}]
       (is (= [1 2] (find-empty-cell grid)))))
 
-  (testing "A player can move to NESW empty cells"
+  (testing "A player can move to NESW empty cells within grid"
     (let [width 3
           height 3
           players {:player-1 {:symbol \P :coords [1 1]}}
           arena (init-arena width height players)
           arena (move arena :player-1 :south)
+          arena (move arena :player-1 :south)  ; hit wall
           arena (move arena :player-1 :west)
+          arena (move arena :player-1 :west)  ; hit wall
+          arena (move arena :player-1 :west)  ; hit wall
           arena (move arena :player-1 :north)
           arena (move arena :player-1 :north)
+          arena (move arena :player-1 :north)  ; hit wall
+          arena (move arena :player-1 :north)  ; hit wall
           {players :players {v :v} :grid} arena
           {[x y] :coords} (:player-1 players)]
       (is (= 0 x))
