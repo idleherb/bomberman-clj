@@ -5,7 +5,14 @@
   "Return grid cell index from coordinates"
   [{:keys [width height v] :as grid} coords]
   (let [[x y] coords]
-    (+ (* y width) x)))
+    (when (and (<= 0 x (dec width))
+             (<= 0 y (dec height)))
+      (+ (* y width) x))))
+
+(defn in-grid?
+  "Check if coordinates are within the given grid"
+  [{:keys [width height v] :as grid} coords]
+    (not (nil? (cell-idx grid coords))))
 
 (defn cell-at
   "Return the cell of a grid at the given coordinates"
@@ -82,7 +89,8 @@
         player (player-id players)
         {coords :coords, symbol :symbol} player
         new-coords (navigate coords direction)]
-    (if (cell-empty? grid new-coords)
+    (if (and (in-grid? grid new-coords)
+             (cell-empty? grid new-coords))
       (let [player (assoc player :coords new-coords)
             players (assoc players player-id player)
             v (:v grid)
