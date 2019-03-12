@@ -34,22 +34,35 @@
       ))
     ))
 
+(defn key-to-direction
+  [key]
+  (case key
+    nil nil
+    :up :north
+    :right :east
+    :down :south
+    :left :west
+    (throw (Exception. (str "unsupported key: " key)))))
+
 (defn draw-arena
   [width height players]
   (let [scr (s/get-screen :swing)
-        arena (init-arena width height players)
-        rows (arena-rows arena)
-        {[x y] :coords} (:player-1 (:players arena))]
+        arena (init-arena width height players)]
     (s/in-screen scr
-      (doseq [[row-idx row] (map-indexed vector rows)]
-        (doseq [[char-idx char] (map-indexed vector row)]
-          (s/put-string scr       ; screen
-                        (if (= 0 char-idx) char-idx (* 2 char-idx))  ; x
-                        row-idx  ; y
-                        (if (nil? char) "." char)  ; string
-                        {:fg (if (nil? char) :green :white)})))  ; options
-      (println (:players arena))
-      (s/move-cursor scr (* 2 x) y)
-      (s/redraw scr)
-      (s/get-key-blocking scr))
-    ))
+      (loop [arena arena
+             key nil]
+        (when (not= key :escape)
+          (let [direction (key-to-direction key)
+                arena (if (not (nil? key)) (move arena :player-1 direction) arena)
+                rows (arena-rows arena)
+                {[x y] :coords} (:player-1 (:players arena))]
+            (doseq [[row-idx row] (map-indexed vector rows)]
+              (doseq [[char-idx char] (map-indexed vector row)]
+                (s/put-string scr  ; screen
+                              (if (= 0 char-idx) char-idx (* 2 char-idx))  ; x
+                              row-idx  ; y
+                              (if (nil? char) "." char)  ; string
+                              {:fg (if (nil? char) :green :white)})))  ; options
+            (s/move-cursor scr (* 2 x) y)
+            (s/redraw scr)
+            (recur arena (s/get-key-blocking scr))))))))
