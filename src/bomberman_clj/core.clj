@@ -6,7 +6,7 @@
   [{:keys [width height v] :as grid} coords]
   (let [[x y] coords]
     (when (and (<= 0 x (dec width))
-             (<= 0 y (dec height)))
+               (<= 0 y (dec height)))
       (+ (* y width) x))))
 
 (defn in-grid?
@@ -34,18 +34,17 @@
   ([grid] (find-empty-cell grid 100))
   ([{:keys [width height v] :as grid} max-tries]
     (loop [coords (rand-coords grid)
-            num-tries 1]
+           num-tries 1]
       (if (cell-empty? grid coords)
-        (do
-          (println "D core::find-empty-cell - took" num-tries "tries")
-          coords)
+        coords
         (if (= max-tries num-tries)
           (throw (Exception. "failed to find empty cell"))
           (recur (rand-coords grid) (inc num-tries)))))))
 
 (defn spawn
   "Spawn an object at the given coordinates."
-  [{:keys [width height v] :as grid} {:keys [symbol coords] :as object}]
+  [{:keys [width height v] :as grid}
+   {:keys [symbol coords] :as object}]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
     (assoc grid :v (assoc v (cell-idx grid coords) symbol))))
@@ -53,7 +52,9 @@
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
-  (let [grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}]
+  (let [grid {:width width,
+              :height height,
+              :v (into (vector) (take (* width height) (repeat nil)))}]
     (loop [grid grid
            players players
            player-idx 1]
