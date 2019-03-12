@@ -34,13 +34,17 @@
       ))
     ))
 
-(defn key-to-direction
+(defn key-to-player-direction
   [key]
   (case key
-    :up :north
-    :right :east
-    :down :south
-    :left :west
+    :up {:player-id :player-1 :direction :north}
+    \w {:player-id :player-2 :direction :north}
+    :right {:player-id :player-1 :direction :east}
+    \d {:player-id :player-2 :direction :east}
+    :down {:player-id :player-1 :direction :south}
+    \s {:player-id :player-2 :direction :south}
+    :left {:player-id :player-1 :direction :west}
+    \a {:player-id :player-2 :direction :west}
     nil))
 
 (defn draw-arena
@@ -51,10 +55,11 @@
       (loop [arena arena
              key nil]
         (when (not= key :escape)
-          (let [direction (key-to-direction key)
-                arena (if (not (nil? direction)) (move arena :player-1 direction) arena)
+          (let [{player-id :player-id, direction :direction} (key-to-player-direction key)
+                player-id (if (nil? player-id) :player-1 player-id)
+                arena (if (not (nil? direction)) (move arena player-id direction) arena)
                 rows (arena-rows arena)
-                {[x y] :coords} (:player-1 (:players arena))]
+                {[x y] :coords} (player-id (:players arena))]
             (doseq [[row-idx row] (map-indexed vector rows)]
               (doseq [[char-idx char] (map-indexed vector row)]
                 (s/put-string scr  ; screen
