@@ -85,7 +85,8 @@
     (if (cell-empty? grid new-coords)
       (let [player (assoc player :coords new-coords)
             players (assoc players player-id player)
-            grid (assoc grid (cell-idx grid coords) nil)
+            v (:v grid)
+            grid (assoc grid :v (assoc v (cell-idx grid coords) nil))
             grid (spawn grid player)
             arena (assoc arena :grid grid)
             arena (assoc arena :players players)]

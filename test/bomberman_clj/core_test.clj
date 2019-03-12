@@ -84,10 +84,11 @@
           arena (move arena :player-1 :west)
           arena (move arena :player-1 :north)
           arena (move arena :player-1 :north)
-          players (:players arena)
+          {players :players {v :v} :grid} arena
           {[x y] :coords} (:player-1 players)]
       (is (= 0 x))
-      (is (= 0 y))))
+      (is (= 0 y))
+      (is (nil? (nth v 4)))))
 
   (testing "Navigating from coordinates should succeed"
     (let [coords [1 1]
