@@ -27,15 +27,12 @@
     (let [width 17
           height 15
           grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}
-          player-1 {:glyph \P, :coords [0 0]}
-          player-2 {:glyph \Q, :coords [12 7]}
-          player-3 {:glyph \R, :coords [16 14]}
-          grid (spawn grid player-1)
-          grid (spawn grid player-2)
-          grid (spawn grid player-3)]
-      (is (= \P (nth (:v grid) 0)))
-      (is (= \Q (nth (:v grid) 131)))
-      (is (= \R (nth (:v grid) 254)))))
+          grid (spawn grid :player-1 [0 0])
+          grid (spawn grid :player-2 [12 7])
+          grid (spawn grid :player-3 [16 14])]
+      (is (= #{:player-1} (nth (:v grid) 0)))
+      (is (= #{:player-2} (nth (:v grid) 131)))
+      (is (= #{:player-3} (nth (:v grid) 254)))))
 
   (testing "Grid cells should be identified correctly"
     (let [width 2
