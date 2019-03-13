@@ -3,10 +3,10 @@
             [bomberman-clj.core :refer :all]))
 
 (deftest test-core
-  (testing "An empty (17 x 15) arena with 1 player should be initialized"
+  (testing "An empty (17 x 15) arena with 2 players should be initialized"
     (let [width 1
           height 2
-          players {:player-1 {:symbol \P} :player-2 {:symbol \Q}}
+          players {:player-1 {:glyph \P} :player-2 {:glyph \Q}}
           arena (init-arena width height players)]
       (is (not (nil? arena)))
       (is (map? arena))
@@ -27,9 +27,9 @@
     (let [width 17
           height 15
           grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}
-          player-1 {:symbol \P, :coords [0 0]}
-          player-2 {:symbol \Q, :coords [12 7]}
-          player-3 {:symbol \R, :coords [16 14]}
+          player-1 {:glyph \P, :coords [0 0]}
+          player-2 {:glyph \Q, :coords [12 7]}
+          player-3 {:glyph \R, :coords [16 14]}
           grid (spawn grid player-1)
           grid (spawn grid player-2)
           grid (spawn grid player-3)]
@@ -78,7 +78,7 @@
   (testing "A player can move to NESW empty cells within grid"
     (let [width 3
           height 3
-          players {:player-1 {:symbol \P :coords [1 1]}}
+          players {:player-1 {:glyph \P :coords [1 1]}}
           arena (init-arena width height players)
           arena (move arena :player-1 :south)
           arena (move arena :player-1 :south)  ; hit wall

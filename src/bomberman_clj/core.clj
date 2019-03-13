@@ -44,10 +44,10 @@
 (defn spawn
   "Spawn an object at the given coordinates."
   [{:keys [width height v] :as grid}
-   {:keys [symbol coords] :as object}]
+   {:keys [glyph coords] :as object}]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
-    (assoc grid :v (assoc v (cell-idx grid coords) symbol))))
+    (assoc grid :v (assoc v (cell-idx grid coords) glyph))))
 
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
@@ -65,8 +65,8 @@
                 player-idx (inc player-idx)]
             (recur grid players player-idx))
           (let [coords (find-empty-cell grid)
-                {player-symbol :symbol} ((keyword (str "player-" player-idx)) players)
-                player {:symbol player-symbol, :coords coords}
+                {player-glyph :glyph} ((keyword (str "player-" player-idx)) players)
+                player {:glyph player-glyph, :coords coords}
                 players (assoc players (keyword (str "player-" player-idx)) player)
                 grid (spawn grid player)
                 player-idx (inc player-idx)]
@@ -88,7 +88,7 @@
   (let [{grid :grid, players :players} arena
         {v :v} grid
         player (player-id players)
-        {coords :coords, symbol :symbol} player
+        {coords :coords, glyph :glyph} player
         new-coords (navigate coords direction)]
     (if (and (in-grid? grid new-coords)
              (cell-empty? grid new-coords))
