@@ -43,10 +43,10 @@
 
 (defn spawn
   "Spawn an object at the given coordinates."
-  [{:keys [width height v] :as grid} object-id coords]
+  [{:keys [width height v] :as grid} object-id object coords]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
-    (assoc grid :v (assoc v (cell-idx grid coords) {object-id nil}))))
+    (assoc grid :v (assoc v (cell-idx grid coords) {object-id object}))))
 
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
@@ -60,17 +60,19 @@
       (if (> player-idx (count players))
         {:grid grid, :players players}
         (if (contains? ((keyword (str "player-" player-idx)) players) :coords)
+          ; spawn player at given coords
           (let [player-id (keyword (str "player-" player-idx))
-                {coords :coords} (player-id players)
-                grid (spawn grid player-id coords)
+                {coords :coords, :as player} (player-id players)
+                grid (spawn grid player-id player coords)
                 player-idx (inc player-idx)]
             (recur grid players player-idx))
+          ; spawn player at random coords
           (let [coords (find-empty-cell grid)
                 player-id (keyword (str "player-" player-idx))
-                {player-glyph :glyph} (player-id players)
-                player {:glyph player-glyph, :coords coords}
+                {player-glyph :glyph, :as player} (player-id players)
+                player (assoc player :coords coords)
                 players (assoc players player-id player)
-                grid (spawn grid player-id coords)
+                grid (spawn grid player-id player coords)
                 player-idx (inc player-idx)]
             (recur grid players player-idx)))))))
 
@@ -98,7 +100,7 @@
             players (assoc players player-id player)
             v (:v grid)
             grid (assoc grid :v (assoc v (cell-idx grid coords) nil))
-            grid (spawn grid player-id new-coords)
+            grid (spawn grid player-id player new-coords)
             arena (assoc arena :grid grid)
             arena (assoc arena :players players)]
         arena)

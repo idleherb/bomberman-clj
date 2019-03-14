@@ -19,17 +19,23 @@
       (let [players (:players arena)]
         (is (map? players))
         (is (= 2 (count players)))
-        (let [player-1 (:player-1 players)]
+        (let [player-1 (:player-1 players)
+              player-2 (:player-2 players)]
+          (println "###" arena)
           (is (map? player-1))
-          (is (contains? player-1 :coords))))))
+          (is (= \P (:glyph player-1)))
+          (is (contains? player-1 :coords))
+          (is (map? player-2))
+          (is (= \Q (:glyph player-2)))
+          (is (contains? player-2 :coords))))))
 
   (testing "3 players should spawn in the correct positions"
     (let [width 17
           height 15
           grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}
-          grid (spawn grid :player-1 [0 0])
-          grid (spawn grid :player-2 [12 7])
-          grid (spawn grid :player-3 [16 14])
+          grid (spawn grid :player-1 {:glyph \P} [0 0])
+          grid (spawn grid :player-2 {:glyph \Q} [12 7])
+          grid (spawn grid :player-3 {:glyph \R} [16 14])
           cell-player-1 (nth (:v grid) 0)
           cell-player-2 (nth (:v grid) 131)
           cell-player-3 (nth (:v grid) 254)]
