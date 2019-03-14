@@ -3,7 +3,7 @@
 
 (defn cell-idx
   "Return grid cell index from coordinates"
-  [{:keys [width height v] :as grid} coords]
+  [{:keys [width height v], :as grid} coords]
   (let [[x y] coords]
     (when (and (<= 0 x (dec width))
                (<= 0 y (dec height)))
@@ -11,12 +11,12 @@
 
 (defn in-grid?
   "Check if coordinates are within the given grid"
-  [{:keys [width height v] :as grid} coords]
+  [{:keys [width height v], :as grid} coords]
     (not (nil? (cell-idx grid coords))))
 
 (defn cell-at
   "Return the cell of a grid at the given coordinates"
-  [{:keys [width height v] :as grid} coords]
+  [{:keys [width height v], :as grid} coords]
   (nth v (cell-idx grid coords)))
 
 (defn cell-empty?
@@ -26,13 +26,13 @@
 
 (defn rand-coords
   "Return random coordinates within the given grid"
-  [{:keys [width height v] :as grid}]
+  [{:keys [width height v], :as grid}]
   [(rand-int width) (rand-int height)])
 
 (defn find-empty-cell
   "Find a random empty cell within the given grid. Defaults to 100 tries."
   ([grid] (find-empty-cell grid 100))
-  ([{:keys [width height v] :as grid} max-tries]
+  ([{:keys [width height v], :as grid} max-tries]
     (loop [coords (rand-coords grid)
            num-tries 1]
       (if (cell-empty? grid coords)
@@ -43,7 +43,7 @@
 
 (defn spawn
   "Spawn an object at the given coordinates."
-  [{:keys [width height v] :as grid} object-id object coords]
+  [{:keys [width height v], :as grid}, object-id, object coords]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
     (assoc grid :v (assoc v (cell-idx grid coords) {object-id object}))))
@@ -89,10 +89,8 @@
 (defn move
   "Try to move a player in the given direction"
   [arena player-id direction]
-  (let [{grid :grid, players :players} arena
-        {v :v} grid
-        player (player-id players)
-        {coords :coords, glyph :glyph} player
+  (let [{{v :v, :as grid} :grid, players :players} arena
+        {coords :coords, glyph :glyph, :as player} (player-id players)
         new-coords (navigate coords direction)]
     (if (and (in-grid? grid new-coords)
              (cell-empty? grid new-coords))
