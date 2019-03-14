@@ -97,7 +97,10 @@
       (let [player (assoc player :coords new-coords)
             players (assoc players player-id player)
             v (:v grid)
-            grid (assoc grid :v (assoc v (cell-idx grid coords) nil))
+            prev-cell (cell-at grid coords)
+            prev-cell (dissoc prev-cell player-id)
+            prev-cell (if (empty? prev-cell) nil prev-cell)
+            grid (assoc grid :v (assoc v (cell-idx grid coords) prev-cell))
             grid (spawn grid player-id player new-coords)
             arena (assoc arena :grid grid)
             arena (assoc arena :players players)]
@@ -114,9 +117,9 @@
         cell (cell-at grid coords)
         bomb-cell (assoc cell :bomb {:player-id player-id,
                                      :timestamp (System/currentTimeMillis)})]
-      (assoc arena :grid
-        (assoc grid :v
-          (assoc v cell-idx bomb-cell)))))
+    (assoc arena :grid
+      (assoc grid :v
+        (assoc v cell-idx bomb-cell)))))
 
 (defn -main
   "I don't do a whole lot ... yet."
