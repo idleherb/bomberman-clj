@@ -3,7 +3,7 @@
             [bomberman-clj.core :refer :all]))
 
 (deftest test-core
-  (testing "An empty (17 x 15) arena with 2 players should be initialized"
+  (testing "An empty (17 x 15) arena with 2 players and 0 bombs should be initialized"
     (let [width 1
           height 2
           players {:player-1 {:glyph \P} :player-2 {:glyph \Q}}
@@ -26,7 +26,11 @@
           (is (contains? player-1 :coords))
           (is (map? player-2))
           (is (= \Q (:glyph player-2)))
-          (is (contains? player-2 :coords))))))
+          (is (contains? player-2 :coords)))
+      (is (contains? arena :bombs))
+      (let [bombs (:bombs arena)]
+        (is (map? bombs))
+        (is (= 0 (count bombs)))))))
 
   (testing "3 players should spawn in the correct positions"
     (let [width 17
@@ -121,14 +125,19 @@
     (let [v [{:glyph \P}]
           arena {:grid {:width 1, :height 1, :v v}
                 :players {:player-1 {:glyph \P, :coords [0 0]}}}
-          {{v :v, :as grid} :grid, :as arena} (plant-bomb arena :player-1)
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (plant-bomb arena :player-1)
           cell (first v)]
+      (is (= 1 (count bombs)))
+      (let [bomb ((keyword (str "x" 0 "y" 0)) bombs)]
+        (is (map? bomb))
+        (is (= (:player-id bomb) :player-1))
+        (is (contains? bomb :coords))
+        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))
       (is (contains? cell :bomb))
       (let [bomb (:bomb cell)]
         (is (map? bomb))
         (is (= (:player-id bomb) :player-1))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb))))))
-        )))
+        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "a planted bomb should still be there after the player moves away"
     (let [v [{:glyph \P} nil]
@@ -142,4 +151,20 @@
         (is (map? bomb))
         (is (= (:player-id bomb) :player-1))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
+
+  (testing "an evaluated arena without any bombs should have no changes"
+    (let [v [nil nil nil nil {:glyph \P} nil nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}}}
+          evaluated-arena (eval-arena arena)]
+      (is (= evaluated-arena arena))))
+
+  ; (testing "an evaluated arena with a bomb should have a changed bomb timestamp"
+  ;   (let [v [{:bomb {:player-id :player-1, :timestamp (System/currentTimeMillis)}} nil nil
+  ;            nil {:glyph \P} nil
+  ;            nil nil nil]
+  ;         arena {:grid {:width 3, :height 3, :v v}
+  ;                :players {:player-1 {:glyph \P, :coords [1 1]}}}
+  ;         evaluated-arena (eval-arena arena)]
+  ;     (is (not= evaluated-arena arena))))
 )

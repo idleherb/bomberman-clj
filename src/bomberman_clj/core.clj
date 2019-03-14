@@ -58,7 +58,7 @@
            players players
            player-idx 1]
       (if (> player-idx (count players))
-        {:grid grid, :players players}
+        {:grid grid, :players players, :bombs {}}
         (if (contains? ((keyword (str "player-" player-idx)) players) :coords)
           ; spawn player at given coords
           (let [player-id (keyword (str "player-" player-idx))
@@ -111,15 +111,21 @@
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id]
-  (let [{{v :v, :as grid} :grid, players :players} arena
-        {coords :coords, :as player} (player-id players)
+  (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
+        {[x y, :as coords] :coords, :as player} (player-id players)
         cell-idx (cell-idx grid coords)
         cell (cell-at grid coords)
-        bomb-cell (assoc cell :bomb {:player-id player-id,
-                                     :timestamp (System/currentTimeMillis)})]
-    (assoc arena :grid
-      (assoc grid :v
-        (assoc v cell-idx bomb-cell)))))
+        bomb {:player-id player-id, :timestamp (System/currentTimeMillis)}
+        bomb-cell (assoc cell :bomb bomb)
+        bombs (assoc bombs (keyword (str "x" x "y" y)) (assoc bomb :coords coords))]
+    (assoc arena :bombs bombs
+                 :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
+
+(defn eval-arena
+  ""
+  [arena]
+  (let [{{v :v, :as grid} :grid, players :players} arena]
+    arena))
 
 (defn -main
   "I don't do a whole lot ... yet."
