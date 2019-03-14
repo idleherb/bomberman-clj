@@ -29,10 +29,16 @@
           grid {:width width, :height height, :v (into (vector) (take (* width height) (repeat nil)))}
           grid (spawn grid :player-1 [0 0])
           grid (spawn grid :player-2 [12 7])
-          grid (spawn grid :player-3 [16 14])]
-      (is (= #{:player-1} (nth (:v grid) 0)))
-      (is (= #{:player-2} (nth (:v grid) 131)))
-      (is (= #{:player-3} (nth (:v grid) 254)))))
+          grid (spawn grid :player-3 [16 14])
+          cell-player-1 (nth (:v grid) 0)
+          cell-player-2 (nth (:v grid) 131)
+          cell-player-3 (nth (:v grid) 254)]
+      (is (map? cell-player-1))
+      (is (contains? cell-player-1 :player-1))
+      (is (map? cell-player-2))
+      (is (contains? cell-player-2 :player-2))
+      (is (map? cell-player-3))
+      (is (contains? cell-player-3 :player-3))))
 
   (testing "Grid cells should be identified correctly"
     (let [width 2

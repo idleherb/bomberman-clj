@@ -46,7 +46,7 @@
   [{:keys [width height v] :as grid} object-id coords]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
-    (assoc grid :v (assoc v (cell-idx grid coords) #{object-id}))))
+    (assoc grid :v (assoc v (cell-idx grid coords) {object-id nil}))))
 
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
