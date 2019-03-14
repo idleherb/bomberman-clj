@@ -122,7 +122,11 @@
       v [{:glyph \P}]
       arena {:grid {:width 1, :height 1, :v v}
              :players {:player-1 {:glyph \P, :coords [0 0]}}}
-      {{v :v, :as grid} :grid, :as arena} (bomb arena :player-1)
+      {{v :v, :as grid} :grid, :as arena} (plant-bomb arena :player-1)
       cell (first v)]
       (is (contains? cell :bomb))
-    )))
+      (let [bomb (:bomb cell)]
+        (is (map? bomb))
+        (is (= (:player-id bomb) :player-1))
+        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb))))))
+        ))))
