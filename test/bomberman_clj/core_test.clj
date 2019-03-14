@@ -21,7 +21,6 @@
         (is (= 2 (count players)))
         (let [player-1 (:player-1 players)
               player-2 (:player-2 players)]
-          (println "###" arena)
           (is (map? player-1))
           (is (= \P (:glyph player-1)))
           (is (contains? player-1 :coords))
@@ -116,4 +115,14 @@
 
   (testing "Navigating with invalid direction should fail"
     (let [coords [1 1]]
-      (is (thrown-with-msg? Exception #"invalid direction:" (navigate coords :down))))))
+      (is (thrown-with-msg? Exception #"invalid direction:" (navigate coords :down)))))
+
+  (testing "player-1 should place a bomb at in their current position"
+    (let [
+      v [{:glyph \P}]
+      arena {:grid {:width 1, :height 1, :v v}
+             :players {:player-1 {:glyph \P, :coords [0 0]}}}
+      {{v :v, :as grid} :grid, :as arena} (bomb arena :player-1)
+      cell (first v)]
+      (is (contains? cell :bomb))
+    )))

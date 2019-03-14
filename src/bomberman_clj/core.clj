@@ -105,6 +105,19 @@
       arena)
     ))
 
+(defn bomb
+  "Try to plant a bomb with the given player at their current coordinates"
+  [arena player-id]
+  (let [{{v :v, :as grid} :grid, players :players} arena
+        {coords :coords, :as player} (player-id players)
+        cell-idx (cell-idx grid coords)
+        cell (cell-at grid coords)
+        _ (println "core::bomb - cell:" cell)
+        bomb-cell (assoc cell :bomb nil)]
+      (assoc arena :grid
+        (assoc grid :v
+          (assoc v cell-idx bomb-cell)))))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
