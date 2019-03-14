@@ -105,8 +105,7 @@
             arena (assoc arena :grid grid)
             arena (assoc arena :players players)]
         arena)
-      arena)
-    ))
+      arena)))
 
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
@@ -118,8 +117,9 @@
         bomb {:player-id player-id, :timestamp (System/currentTimeMillis)}
         bomb-cell (assoc cell :bomb bomb)
         bombs (assoc bombs (keyword (str "x" x "y" y)) (assoc bomb :coords coords))]
-    (assoc arena :bombs bombs
-                 :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
+    (assoc arena
+      :bombs bombs
+      :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
 
 (defn eval-arena
   ""
