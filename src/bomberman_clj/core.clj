@@ -27,12 +27,12 @@
   [{:keys [width height v], :as grid} coords]
   (nth v (cell-idx grid coords)))
 
-  (defn cell-player-id
-    [cell]
-    "Checks if the given cell contains a player and returns its mapping, else nil"
-    (first ; extract key
-      (first ; extract first (or nil) [player-id, player]
-        (filter (fn [[k _]] (re-matches #"player-\d+" (name k))) cell))))
+(defn cell-player-id
+  [cell]
+  "Checks if the given cell contains a player and returns its mapping, else nil"
+  (first ; extract key
+    (first ; extract first (or nil) [player-id, player]
+      (filter (fn [[k _]] (re-matches #"player-\d+" (name k))) cell))))
 
 (defn cell-empty?
   "Check if a given cell is empty"
@@ -141,8 +141,7 @@
   [grid
    [x y, :as coords]
    transform-coords
-   radius
-   timestamp]
+   radius]
   (loop [[cur-x cur-y] coords
          {v :v, width :width, height :height, :as grid} grid
          break false]
@@ -160,25 +159,17 @@
           (transform-coords [cur-x cur-y])
           (assoc grid :v
             (assoc v (cell-idx grid [cur-x cur-y])
-              (let [cell (assoc cell :fire true)
-                    cell (if (nil? player-id)
-                      cell
-                      (assoc cell player-id
-                        (assoc (player-id cell)
-                          :hit true
-                          :timestamp timestamp)))]
-                cell)))
-            (not (nil? player-id)))))))
+              (assoc cell :fire true)))
+          (not (nil? player-id)))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"
-  [arena bomb-id timestamp]
+  [arena bomb-id]
   (let [{{v :v, width :width, height :height, :as grid} :grid,
          players :players,
          bombs :bombs,
          :as arena} arena
         {[x y, :as coords] :coords} (bomb-id bombs)
-        spread-fire (partial #(spread-fire %1 %2 %3 %4 timestamp))
         grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)

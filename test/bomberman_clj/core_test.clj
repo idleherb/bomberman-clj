@@ -178,9 +178,8 @@
           arena {:grid {:width 5, :height 4, :v v}
                  :players {:player-1 {:glyph \P, :coords [2 2]}}
                  :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
-          timestamp 1552767537306
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
-            (detonate-bomb arena bomb-id timestamp)]
+            (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
         (is (not (contains? (nth v 6) :bomb)))
         (is (contains? (nth v 12) :player-1))
@@ -216,16 +215,11 @@
           arena {:grid {:width 5, :height 4, :v v}
                   :players {:player-1 {:glyph \P, :coords [1 3]}}
                   :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
-          timestamp 1552767537306
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
-            (detonate-bomb arena bomb-id timestamp)]
+            (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
         (is (not (contains? (nth v 6) :bomb)))
-        (let [player-cell (nth v 11)
-              player-1 (:player-1 player-cell)]
-          (is (not (nil? player-1)))
-          (is (contains? player-1 :hit))
-          (is (not (nil? (re-matches #"\d{13}" (str (:timestamp player-1)))))))
+        (is (not (nil? (:player-1 (nth v 11)))))
         (are [cell] (contains? cell :fire)
           (nth v 1)
           (nth v 5)
