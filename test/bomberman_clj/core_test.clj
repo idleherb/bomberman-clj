@@ -122,7 +122,7 @@
       (is (thrown-with-msg? Exception #"invalid direction:" (navigate coords :down)))))
 
   (testing "player-1 should place a bomb at in their current position"
-    (let [v [{:glyph \P}]
+    (let [v [{:player-1 {:glyph \P}}]
           arena {:grid {:width 1, :height 1, :v v}
                 :players {:player-1 {:glyph \P, :coords [0 0]}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (plant-bomb arena :player-1)
@@ -138,7 +138,7 @@
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "a planted bomb should still be there after the player moves away"
-    (let [v [{:glyph \P} nil]
+    (let [v [{:player-1 {:glyph \P}} nil]
           arena {:grid {:width 1, :height 2, :v v}
                   :players {:player-1 {:glyph \P, :coords [0 0]}}}
           arena (plant-bomb arena :player-1)
@@ -150,7 +150,7 @@
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "an evaluated arena without any bombs should have no changes"
-    (let [v [nil nil nil nil {:glyph \P} nil nil nil nil]
+    (let [v [nil nil nil nil {:player-1 {:glyph \P}} nil nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:glyph \P, :coords [1 1]}
                  :bombs {}}}
@@ -159,7 +159,7 @@
 
   (testing "an evaluated arena with an expired bomb should contain detonated bombs"
     (let [v [{:bomb {:timestamp 0}} nil nil
-             nil {:glyph \P} nil
+             nil {:player-1 {:glyph \P}} nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:glyph \P, :coords [1 1]}}
@@ -167,36 +167,39 @@
           evaluated-arena (eval-arena arena 10000)]
       (is (not= evaluated-arena arena))))
 
-  (testing "a detonating bomb should spread horizontally and vertically"
+  (testing "a detonating bomb should spread horizontally and vertically, not hitting the offset player"
     (let [bom {:bomb {:timestamp 0}}
-          plr {:glyph \P}
-          v [nil nil nil nil
-             nil bom nil nil
-             nil nil plr nil
-             nil nil nil nil]
+          plr {:player-1 {:glyph \P}}
+          v [nil nil nil nil nil
+             nil bom nil nil nil
+             nil nil plr nil nil
+             nil nil nil nil nil]
           bomb-id :x0y0
-          arena {:grid {:width 4, :height 4, :v v}
+          arena {:grid {:width 5, :height 4, :v v}
                  :players {:player-1 {:glyph \P, :coords [2 2]}}
                  :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
-        (is (not (contains? (nth v 5) :bomb)))
+        (is (not (contains? (nth v 6) :bomb)))
+        (is (contains? (nth v 12) :player-1))
         (are [cell] (contains? cell :fire)
           (nth v 1)
-          (nth v 4)
           (nth v 5)
-          (nth v 6)
           (nth v 7)
-          (nth v 9)
-          (nth v 13))
+          (nth v 8)
+          (nth v 11)
+          (nth v 16))
         (are [cell] (not (contains? cell :fire))
           (nth v 0)
           (nth v 2)
           (nth v 3)
-          (nth v 8)
+          (nth v 4)
+          (nth v 9)
           (nth v 10)
-          (nth v 11)
           (nth v 12)
           (nth v 14)
-          (nth v 15))))
+          (nth v 15)
+          (nth v 17)
+          (nth v 18)
+          (nth v 19))))
 )
