@@ -155,16 +155,51 @@
   (testing "an evaluated arena without any bombs should have no changes"
     (let [v [nil nil nil nil {:glyph \P} nil nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [1 1]}}}
-          evaluated-arena (eval-arena arena)]
+                 :players {:player-1 {:glyph \P, :coords [1 1]}
+                 :bombs {}}}
+          evaluated-arena (eval-arena arena (System/currentTimeMillis))]
       (is (= evaluated-arena arena))))
 
-  ; (testing "an evaluated arena with a bomb should have a changed bomb timestamp"
-  ;   (let [v [{:bomb {:player-id :player-1, :timestamp (System/currentTimeMillis)}} nil nil
-  ;            nil {:glyph \P} nil
-  ;            nil nil nil]
-  ;         arena {:grid {:width 3, :height 3, :v v}
-  ;                :players {:player-1 {:glyph \P, :coords [1 1]}}}
-  ;         evaluated-arena (eval-arena arena)]
-  ;     (is (not= evaluated-arena arena))))
+  (testing "an evaluated arena with an expired bomb should contain detonated bombs"
+    (let [v [{:bomb {:player-id :player-1, :timestamp 0}} nil nil
+             nil {:glyph \P} nil
+             nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}}
+                 :bombs {:x0y0 {:player-id :player-1, :timestamp 0, :coords [0 0]}}}
+          evaluated-arena (eval-arena arena 10000)]
+      (is (not= evaluated-arena arena))))
+
+  (testing "a detonating bomb should spread horizontally and vertically"
+    (let [bom {:bomb {:player-id :player-1, :timestamp 0}}
+          plr {:glyph \P}
+          v [nil nil nil nil
+             nil bom nil nil
+             nil nil plr nil
+             nil nil nil nil]
+          bomb-id :x0y0
+          arena {:grid {:width 4, :height 4, :v v}
+                 :players {:player-1 {:glyph \P, :coords [2 2]}}
+                 :bombs {bomb-id {:player-id :player-1, :timestamp 0, :coords [1 1]}}}
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (detonate-bomb arena bomb-id)]
+        (is (empty? bombs))
+        (is (not (contains? (nth v 5) :bomb)))
+        (are [cell] (contains? cell :fire)
+          (nth v 1)
+          (nth v 4)
+          (nth v 5)
+          (nth v 6)
+          (nth v 7)
+          (nth v 9)
+          (nth v 13))
+        (are [cell] (not (contains? cell :fire))
+          (nth v 0)
+          (nth v 2)
+          (nth v 3)
+          (nth v 8)
+          (nth v 10)
+          (nth v 11)
+          (nth v 12)
+          (nth v 14)
+          (nth v 15))))
 )

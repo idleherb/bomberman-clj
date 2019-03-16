@@ -1,6 +1,9 @@
 (ns bomberman-clj.core
   (:gen-class))
 
+(def bomb-timeout-ms 10000)
+(def bomb-radius 3)
+
 (defn cell-idx
   "Return grid cell index from coordinates"
   [{:keys [width height v], :as grid} coords]
@@ -108,6 +111,7 @@
       arena)))
 
 (defn plant-bomb
+  ; TODO: remove player-id from bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id]
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
@@ -121,11 +125,54 @@
       :bombs bombs
       :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
 
-(defn eval-arena
-  ""
-  [arena]
-  (let [{{v :v, :as grid} :grid, players :players} arena]
+(defn spread-fire
+  [grid
+   [x y, :as coords]
+   transform-coords]
+  (loop [[cur-x cur-y] coords
+         {v :v, width :width, height :height, :as grid} grid]
+    (if (or (= bomb-radius (Math/abs (- cur-x x)))
+            (= bomb-radius (Math/abs (- cur-y y)))
+            (= cur-x -1)
+            (= cur-x width)
+            (= cur-y -1)
+            (= cur-y height))
+      grid
+      (recur
+        (transform-coords [cur-x cur-y])
+        (assoc grid :v
+          (assoc v (cell-idx grid [cur-x cur-y]) {:fire nil}))))))
+
+(defn detonate-bomb
+  "Detonate a given bomb"
+  [arena bomb-id]
+  (let [{{v :v, width :width, height :height, :as grid} :grid,
+         players :players,
+         bombs :bombs,
+         :as arena} arena
+        {[x y, :as coords] :coords} (bomb-id bombs)
+        grid (spread-fire grid coords (fn [[x y]] [(inc x) y]))
+        grid (spread-fire grid coords (fn [[x y]] [(dec x) y]))
+        grid (spread-fire grid coords (fn [[x y]] [x (inc y)]))
+        grid (spread-fire grid coords (fn [[x y]] [x (dec y)]))
+        arena (assoc arena
+          :bombs (dissoc bombs bomb-id)
+          :grid grid)]
     arena))
+
+(defn eval-arena
+  "Check if any bombs should detonate (and detonate in case)"
+  [arena timestamp]
+  (let [{{v :v, :as grid} :grid, players :players, bombs :bombs, :as arena} arena]
+    (loop [idx 0 arena arena]
+      (if (= idx (count bombs))
+        arena
+        (let [bomb-id (nth (keys bombs) idx)
+              bomb (bomb-id bombs)
+              arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
+                nil
+                arena)]
+          (recur (inc idx) arena))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
