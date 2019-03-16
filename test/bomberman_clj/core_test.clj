@@ -130,13 +130,11 @@
       (is (= 1 (count bombs)))
       (let [bomb ((keyword (str "x" 0 "y" 0)) bombs)]
         (is (map? bomb))
-        (is (= (:player-id bomb) :player-1))
         (is (contains? bomb :coords))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))
       (is (contains? cell :bomb))
       (let [bomb (:bomb cell)]
         (is (map? bomb))
-        (is (= (:player-id bomb) :player-1))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "a planted bomb should still be there after the player moves away"
@@ -149,7 +147,6 @@
       (is (contains? cell :bomb))
       (let [bomb (:bomb cell)]
         (is (map? bomb))
-        (is (= (:player-id bomb) :player-1))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "an evaluated arena without any bombs should have no changes"
@@ -161,17 +158,17 @@
       (is (= evaluated-arena arena))))
 
   (testing "an evaluated arena with an expired bomb should contain detonated bombs"
-    (let [v [{:bomb {:player-id :player-1, :timestamp 0}} nil nil
+    (let [v [{:bomb {:timestamp 0}} nil nil
              nil {:glyph \P} nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:glyph \P, :coords [1 1]}}
-                 :bombs {:x0y0 {:player-id :player-1, :timestamp 0, :coords [0 0]}}}
+                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
           evaluated-arena (eval-arena arena 10000)]
       (is (not= evaluated-arena arena))))
 
   (testing "a detonating bomb should spread horizontally and vertically"
-    (let [bom {:bomb {:player-id :player-1, :timestamp 0}}
+    (let [bom {:bomb {:timestamp 0}}
           plr {:glyph \P}
           v [nil nil nil nil
              nil bom nil nil
@@ -180,7 +177,7 @@
           bomb-id :x0y0
           arena {:grid {:width 4, :height 4, :v v}
                  :players {:player-1 {:glyph \P, :coords [2 2]}}
-                 :bombs {bomb-id {:player-id :player-1, :timestamp 0, :coords [1 1]}}}
+                 :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
         (is (not (contains? (nth v 5) :bomb)))

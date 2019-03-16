@@ -56,19 +56,20 @@
                 {[x y] :coords} (player-id (:players arena))]
             (doseq [[row-idx row] (map-indexed vector rows)]
               (doseq [[cell-idx cell] (map-indexed vector row)]
-                (s/put-string scr  ; screen
-                              (if (= 0 cell-idx) cell-idx (* 2 cell-idx))  ; x
-                              row-idx  ; y
-                              (let [player (cell-player cell)]
-                                (when (not (nil? cell)) (print cell " "))
-                                (cond
-                                  (nil? cell) "."
-                                  (not (nil? player)) (:glyph player)
-                                  (contains? cell :bomb) "X"
-                                  :else (throw (Exception. (str "invalid cell content: " cell))))
-                              )  ; string
-                              {:fg (if (nil? cell) :green :white),
-                               :bg (if (contains? cell :bomb) :red :black)})))  ; options
+                (s/put-string
+                  scr  ; screen
+                  (if (= 0 cell-idx) cell-idx (* 2 cell-idx))  ; x
+                  row-idx  ; y
+                  (let [player (cell-player cell)]
+                    (when (not (nil? cell)) (print cell " "))
+                    (cond
+                      (nil? cell) "."
+                      (not (nil? player)) (:glyph player)
+                      (contains? cell :bomb) "X"
+                      :else (throw (Exception. (str "invalid cell content: " cell))))
+                  )  ; string
+                  {:fg (if (nil? cell) :green :white),
+                    :bg (if (contains? cell :bomb) :red :black)})))  ; options
             (s/move-cursor scr (* 2 x) y)
             (s/redraw scr)
             (recur arena (s/get-key-blocking scr))))))))

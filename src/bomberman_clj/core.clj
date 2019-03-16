@@ -111,14 +111,13 @@
       arena)))
 
 (defn plant-bomb
-  ; TODO: remove player-id from bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id]
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
         {[x y, :as coords] :coords, :as player} (player-id players)
         cell-idx (cell-idx grid coords)
         cell (cell-at grid coords)
-        bomb {:player-id player-id, :timestamp (System/currentTimeMillis)}
+        bomb {:timestamp (System/currentTimeMillis)}
         bomb-cell (assoc cell :bomb bomb)
         bombs (assoc bombs (keyword (str "x" x "y" y)) (assoc bomb :coords coords))]
     (assoc arena
@@ -126,13 +125,15 @@
       :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
 
 (defn spread-fire
+  "Spread fire along x or y axis"
   [grid
    [x y, :as coords]
-   transform-coords]
+   transform-coords
+   radius]
   (loop [[cur-x cur-y] coords
          {v :v, width :width, height :height, :as grid} grid]
-    (if (or (= bomb-radius (Math/abs (- cur-x x)))
-            (= bomb-radius (Math/abs (- cur-y y)))
+    (if (or (= radius (Math/abs (- cur-x x)))
+            (= radius (Math/abs (- cur-y y)))
             (= cur-x -1)
             (= cur-x width)
             (= cur-y -1)
@@ -151,10 +152,10 @@
          bombs :bombs,
          :as arena} arena
         {[x y, :as coords] :coords} (bomb-id bombs)
-        grid (spread-fire grid coords (fn [[x y]] [(inc x) y]))
-        grid (spread-fire grid coords (fn [[x y]] [(dec x) y]))
-        grid (spread-fire grid coords (fn [[x y]] [x (inc y)]))
-        grid (spread-fire grid coords (fn [[x y]] [x (dec y)]))
+        grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
+        grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
+        grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)
+        grid (spread-fire grid coords (fn [[x y]] [x (dec y)]) bomb-radius)
         arena (assoc arena
           :bombs (dissoc bombs bomb-id)
           :grid grid)]
