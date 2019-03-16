@@ -3,7 +3,7 @@
             [bomberman-clj.core :refer :all]))
 
 (deftest test-core
-  (testing "An empty (17 x 15) arena with 2 players should be initialized"
+  (testing "An empty (17 x 15) arena with 2 players and 0 bombs should be initialized"
     (let [width 1
           height 2
           players {:player-1 {:glyph \P} :player-2 {:glyph \Q}}
@@ -26,7 +26,11 @@
           (is (contains? player-1 :coords))
           (is (map? player-2))
           (is (= \Q (:glyph player-2)))
-          (is (contains? player-2 :coords))))))
+          (is (contains? player-2 :coords)))
+      (is (contains? arena :bombs))
+      (let [bombs (:bombs arena)]
+        (is (map? bombs))
+        (is (= 0 (count bombs)))))))
 
   (testing "3 players should spawn in the correct positions"
     (let [width 17
@@ -121,14 +125,17 @@
     (let [v [{:glyph \P}]
           arena {:grid {:width 1, :height 1, :v v}
                 :players {:player-1 {:glyph \P, :coords [0 0]}}}
-          {{v :v, :as grid} :grid, :as arena} (plant-bomb arena :player-1)
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (plant-bomb arena :player-1)
           cell (first v)]
+      (is (= 1 (count bombs)))
+      (let [bomb ((keyword (str "x" 0 "y" 0)) bombs)]
+        (is (map? bomb))
+        (is (contains? bomb :coords))
+        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))
       (is (contains? cell :bomb))
       (let [bomb (:bomb cell)]
         (is (map? bomb))
-        (is (= (:player-id bomb) :player-1))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb))))))
-        )))
+        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "a planted bomb should still be there after the player moves away"
     (let [v [{:glyph \P} nil]
@@ -140,6 +147,56 @@
       (is (contains? cell :bomb))
       (let [bomb (:bomb cell)]
         (is (map? bomb))
-        (is (= (:player-id bomb) :player-1))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
+
+  (testing "an evaluated arena without any bombs should have no changes"
+    (let [v [nil nil nil nil {:glyph \P} nil nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}
+                 :bombs {}}}
+          evaluated-arena (eval-arena arena (System/currentTimeMillis))]
+      (is (= evaluated-arena arena))))
+
+  (testing "an evaluated arena with an expired bomb should contain detonated bombs"
+    (let [v [{:bomb {:timestamp 0}} nil nil
+             nil {:glyph \P} nil
+             nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}}
+                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
+          evaluated-arena (eval-arena arena 10000)]
+      (is (not= evaluated-arena arena))))
+
+  (testing "a detonating bomb should spread horizontally and vertically"
+    (let [bom {:bomb {:timestamp 0}}
+          plr {:glyph \P}
+          v [nil nil nil nil
+             nil bom nil nil
+             nil nil plr nil
+             nil nil nil nil]
+          bomb-id :x0y0
+          arena {:grid {:width 4, :height 4, :v v}
+                 :players {:player-1 {:glyph \P, :coords [2 2]}}
+                 :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (detonate-bomb arena bomb-id)]
+        (is (empty? bombs))
+        (is (not (contains? (nth v 5) :bomb)))
+        (are [cell] (contains? cell :fire)
+          (nth v 1)
+          (nth v 4)
+          (nth v 5)
+          (nth v 6)
+          (nth v 7)
+          (nth v 9)
+          (nth v 13))
+        (are [cell] (not (contains? cell :fire))
+          (nth v 0)
+          (nth v 2)
+          (nth v 3)
+          (nth v 8)
+          (nth v 10)
+          (nth v 11)
+          (nth v 12)
+          (nth v 14)
+          (nth v 15))))
 )

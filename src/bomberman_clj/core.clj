@@ -1,6 +1,9 @@
 (ns bomberman-clj.core
   (:gen-class))
 
+(def bomb-timeout-ms 10000)
+(def bomb-radius 3)
+
 (defn cell-idx
   "Return grid cell index from coordinates"
   [{:keys [width height v], :as grid} coords]
@@ -58,7 +61,7 @@
            players players
            player-idx 1]
       (if (> player-idx (count players))
-        {:grid grid, :players players}
+        {:grid grid, :players players, :bombs {}}
         (if (contains? ((keyword (str "player-" player-idx)) players) :coords)
           ; spawn player at given coords
           (let [player-id (keyword (str "player-" player-idx))
@@ -105,21 +108,72 @@
             arena (assoc arena :grid grid)
             arena (assoc arena :players players)]
         arena)
-      arena)
-    ))
+      arena)))
 
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id]
-  (let [{{v :v, :as grid} :grid, players :players} arena
-        {coords :coords, :as player} (player-id players)
+  (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
+        {[x y, :as coords] :coords, :as player} (player-id players)
         cell-idx (cell-idx grid coords)
         cell (cell-at grid coords)
-        bomb-cell (assoc cell :bomb {:player-id player-id,
-                                     :timestamp (System/currentTimeMillis)})]
-    (assoc arena :grid
-      (assoc grid :v
-        (assoc v cell-idx bomb-cell)))))
+        bomb {:timestamp (System/currentTimeMillis)}
+        bomb-cell (assoc cell :bomb bomb)
+        bombs (assoc bombs (keyword (str "x" x "y" y)) (assoc bomb :coords coords))]
+    (assoc arena
+      :bombs bombs
+      :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
+
+(defn spread-fire
+  "Spread fire along x or y axis"
+  [grid
+   [x y, :as coords]
+   transform-coords
+   radius]
+  (loop [[cur-x cur-y] coords
+         {v :v, width :width, height :height, :as grid} grid]
+    (if (or (= radius (Math/abs (- cur-x x)))
+            (= radius (Math/abs (- cur-y y)))
+            (= cur-x -1)
+            (= cur-x width)
+            (= cur-y -1)
+            (= cur-y height))
+      grid
+      (recur
+        (transform-coords [cur-x cur-y])
+        (assoc grid :v
+          (assoc v (cell-idx grid [cur-x cur-y]) {:fire nil}))))))
+
+(defn detonate-bomb
+  "Detonate a given bomb"
+  [arena bomb-id]
+  (let [{{v :v, width :width, height :height, :as grid} :grid,
+         players :players,
+         bombs :bombs,
+         :as arena} arena
+        {[x y, :as coords] :coords} (bomb-id bombs)
+        grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
+        grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
+        grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)
+        grid (spread-fire grid coords (fn [[x y]] [x (dec y)]) bomb-radius)
+        arena (assoc arena
+          :bombs (dissoc bombs bomb-id)
+          :grid grid)]
+    arena))
+
+(defn eval-arena
+  "Check if any bombs should detonate (and detonate in case)"
+  [arena timestamp]
+  (let [{{v :v, :as grid} :grid, players :players, bombs :bombs, :as arena} arena]
+    (loop [idx 0 arena arena]
+      (if (= idx (count bombs))
+        arena
+        (let [bomb-id (nth (keys bombs) idx)
+              bomb (bomb-id bombs)
+              arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
+                nil
+                arena)]
+          (recur (inc idx) arena))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
