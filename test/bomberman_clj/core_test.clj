@@ -124,7 +124,7 @@
   (testing "player-1 should place a bomb at in their current position"
     (let [v [{:player-1 {:glyph \P}}]
           arena {:grid {:width 1, :height 1, :v v}
-                :players {:player-1 {:glyph \P, :coords [0 0]}}}
+                 :players {:player-1 {:glyph \P, :coords [0 0]}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (plant-bomb arena :player-1)
           cell (first v)]
       (is (= 1 (count bombs)))
@@ -140,7 +140,7 @@
   (testing "a planted bomb should still be there after the player moves away"
     (let [v [{:player-1 {:glyph \P}} nil]
           arena {:grid {:width 1, :height 2, :v v}
-                  :players {:player-1 {:glyph \P, :coords [0 0]}}}
+                 :players {:player-1 {:glyph \P, :coords [0 0]}}}
           arena (plant-bomb arena :player-1)
           {{v :v, :as grid} :grid, :as arena} (move arena :player-1 :south)
           cell (first v)]
@@ -164,7 +164,7 @@
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:glyph \P, :coords [1 1]}}
                  :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
-          evaluated-arena (eval-arena arena 10000)]
+          evaluated-arena (eval-arena arena 1552767537306)]
       (is (not= evaluated-arena arena))))
 
   (testing "a detonating bomb should spread horizontally and vertically, not hitting the offset player"
@@ -174,11 +174,13 @@
              nil bom nil nil nil
              nil nil plr nil nil
              nil nil nil nil nil]
-          bomb-id :x0y0
+          bomb-id :x1y1
           arena {:grid {:width 5, :height 4, :v v}
                  :players {:player-1 {:glyph \P, :coords [2 2]}}
                  :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
-          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (detonate-bomb arena bomb-id)]
+          timestamp 1552767537306
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena}
+            (detonate-bomb arena bomb-id timestamp)]
         (is (empty? bombs))
         (is (not (contains? (nth v 6) :bomb)))
         (is (contains? (nth v 12) :player-1))
@@ -199,6 +201,48 @@
           (nth v 12)
           (nth v 14)
           (nth v 15)
+          (nth v 17)
+          (nth v 18)
+          (nth v 19))))
+
+  (testing "a detonating bomb should kill the nearby player and stop there"
+    (let [bom {:bomb {:timestamp 0}}
+          plr {:player-1 {:glyph \P}}
+          v [nil nil nil nil nil
+             nil bom nil nil nil
+             nil plr nil nil nil
+             nil nil nil nil nil]
+          bomb-id :x1y1
+          arena {:grid {:width 5, :height 4, :v v}
+                  :players {:player-1 {:glyph \P, :coords [1 3]}}
+                  :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
+          timestamp 1552767537306
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena}
+            (detonate-bomb arena bomb-id timestamp)]
+        (is (empty? bombs))
+        (is (not (contains? (nth v 6) :bomb)))
+        (let [player-cell (nth v 11)
+              player-1 (:player-1 player-cell)]
+          (is (not (nil? player-1)))
+          (is (contains? player-1 :hit))
+          (is (not (nil? (re-matches #"\d{13}" (str (:timestamp player-1)))))))
+        (are [cell] (contains? cell :fire)
+          (nth v 1)
+          (nth v 5)
+          (nth v 7)
+          (nth v 8)
+          (nth v 11))
+        (are [cell] (not (contains? cell :fire))
+          (nth v 0)
+          (nth v 2)
+          (nth v 3)
+          (nth v 4)
+          (nth v 9)
+          (nth v 10)
+          (nth v 12)
+          (nth v 14)
+          (nth v 15)
+          (nth v 16)
           (nth v 17)
           (nth v 18)
           (nth v 19))))

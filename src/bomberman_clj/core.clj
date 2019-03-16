@@ -4,6 +4,11 @@
 (def bomb-timeout-ms 10000)
 (def bomb-radius 3)
 
+(defn dissoc-cell
+  [cell key]
+  (let [cell (dissoc cell key)]
+    (if (empty? cell) nil cell)))
+
 (defn cell-idx
   "Return grid cell index from coordinates"
   [{:keys [width height v], :as grid} coords]
@@ -21,6 +26,13 @@
   "Return the cell of a grid at the given coordinates"
   [{:keys [width height v], :as grid} coords]
   (nth v (cell-idx grid coords)))
+
+  (defn cell-player-id
+    [cell]
+    "Checks if the given cell contains a player and returns its mapping, else nil"
+    (first ; extract key
+      (first ; extract first (or nil) [player-id, player]
+        (filter (fn [[k _]] (re-matches #"player-\d+" (name k))) cell))))
 
 (defn cell-empty?
   "Check if a given cell is empty"
@@ -101,7 +113,7 @@
             players (assoc players player-id player)
             v (:v grid)
             prev-cell (cell-at grid coords)
-            prev-cell (dissoc prev-cell player-id)
+            prev-cell (dissoc-cell prev-cell player-id)
             prev-cell (if (empty? prev-cell) nil prev-cell)
             grid (assoc grid :v (assoc v (cell-idx grid coords) prev-cell))
             grid (spawn grid player-id player new-coords)
@@ -129,35 +141,55 @@
   [grid
    [x y, :as coords]
    transform-coords
-   radius]
+   radius
+   timestamp]
   (loop [[cur-x cur-y] coords
-         {v :v, width :width, height :height, :as grid} grid]
-    (if (or (= radius (Math/abs (- cur-x x)))
+         {v :v, width :width, height :height, :as grid} grid
+         break false]
+    (if (or (true? break)
+            (= radius (Math/abs (- cur-x x)))
             (= radius (Math/abs (- cur-y y)))
             (= cur-x -1)
             (= cur-x width)
             (= cur-y -1)
             (= cur-y height))
       grid
-      (recur
-        (transform-coords [cur-x cur-y])
-        (assoc grid :v
-          (assoc v (cell-idx grid [cur-x cur-y]) {:fire nil}))))))
+      (let [cell (cell-at grid [cur-x cur-y])
+            player-id (cell-player-id cell)]
+        (recur
+          (transform-coords [cur-x cur-y])
+          (assoc grid :v
+            (assoc v (cell-idx grid [cur-x cur-y])
+              (let [cell (assoc cell :fire true)
+                    cell (if (nil? player-id)
+                      cell
+                      (assoc cell player-id
+                        (assoc (player-id cell)
+                          :hit true
+                          :timestamp timestamp)))]
+                cell)))
+            (not (nil? player-id)))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"
-  [arena bomb-id]
+  [arena bomb-id timestamp]
   (let [{{v :v, width :width, height :height, :as grid} :grid,
          players :players,
          bombs :bombs,
          :as arena} arena
         {[x y, :as coords] :coords} (bomb-id bombs)
+        spread-fire (partial #(spread-fire %1 %2 %3 %4 timestamp))
         grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (dec y)]) bomb-radius)
+        {v :v} grid
+        grid (assoc grid :v
+          (assoc v (cell-idx grid coords)
+            (dissoc-cell (cell-at grid coords) :bomb)))
+        bombs (dissoc bombs bomb-id)
         arena (assoc arena
-          :bombs (dissoc bombs bomb-id)
+          :bombs bombs
           :grid grid)]
     arena))
 
