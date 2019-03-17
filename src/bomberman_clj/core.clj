@@ -194,7 +194,7 @@
         (let [bomb-id (nth (keys bombs) idx)
               bomb (bomb-id bombs)
               arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
-                nil
+                (detonate-bomb arena bomb-id)
                 arena)]
           (recur (inc idx) arena))))))
 
