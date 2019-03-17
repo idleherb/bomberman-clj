@@ -30,8 +30,8 @@
 (defn cell-player-id
   [cell]
   "Checks if the given cell contains a player and returns its mapping, else nil"
-  (first ; extract key
-    (first ; extract first (or nil) [player-id, player]
+  (first ; player-id (or nil)
+    (first ; first (or nil) [player-id, player]
       (filter (fn [[k _]] (re-matches #"player-\d+" (name k))) cell))))
 
 (defn cell-empty?
@@ -165,9 +165,9 @@
 (defn detonate-bomb
   "Detonate a given bomb"
   [arena bomb-id]
-  (let [{{v :v, width :width, height :height, :as grid} :grid,
-         players :players,
-         bombs :bombs,
+  (let [{{v :v, width :width, height :height, :as grid} :grid
+         players :players
+         bombs :bombs
          :as arena} arena
         {[x y, :as coords] :coords} (bomb-id bombs)
         grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
