@@ -2,6 +2,8 @@
   (:require [clojure.test :refer :all]
             [bomberman-clj.core :refer :all]))
 
+(def ts-now 1552767537306)
+
 (deftest test-core
   (testing "An empty (17 x 15) arena with 2 players and 0 bombs should be initialized"
     (let [width 1
@@ -149,25 +151,7 @@
         (is (map? bomb))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
-  (testing "an evaluated arena without any bombs should have no changes"
-    (let [v [nil nil nil nil {:player-1 {:glyph \P}} nil nil nil nil]
-          arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [1 1]}
-                 :bombs {}}}
-          evaluated-arena (eval-arena arena (System/currentTimeMillis))]
-      (is (= evaluated-arena arena))))
-
-  (testing "an evaluated arena with an expired bomb should contain detonated bombs"
-    (let [v [{:bomb {:timestamp 0}} nil nil
-             nil {:player-1 {:glyph \P}} nil
-             nil nil nil]
-          arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [1 1]}}
-                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
-          evaluated-arena (eval-arena arena 1552767537306)]
-      (is (not= evaluated-arena arena))))
-
-  (testing "a detonating bomb should spread horizontally and vertically, not hitting the offset player"
+  (testing "a detonating bomb should spread horizontally and vertically, passing by the offset player"
     (let [bom {:bomb {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
           v [nil nil nil nil nil
@@ -204,7 +188,7 @@
           (nth v 18)
           (nth v 19))))
 
-  (testing "a detonating bomb should kill the nearby player and stop there"
+  (testing "a detonating bomb should spread until the nearby player and stop there"
     (let [bom {:bomb {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
           v [nil nil nil nil nil
@@ -213,8 +197,8 @@
              nil nil nil nil nil]
           bomb-id :x1y1
           arena {:grid {:width 5, :height 4, :v v}
-                  :players {:player-1 {:glyph \P, :coords [1 3]}}
-                  :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
+                 :players {:player-1 {:glyph \P, :coords [1 3]}}
+                 :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
@@ -240,4 +224,28 @@
           (nth v 17)
           (nth v 18)
           (nth v 19))))
+
+  (testing "an evaluated arena without any bombs should have no changes"
+    (let [plr  {:player-1 {:glyph \P}}
+          v [nil nil nil
+             nil plr nil
+             nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}
+                 :bombs {}}}
+          evaluated-arena (eval-arena arena ts-now)]
+      (is (= evaluated-arena arena))))
+
+  (testing "an evaluated arena with an expired bomb should contain detonated bombs"
+    (let [bom {:bomb {:timestamp 0}}
+          plr {:player-1 {:glyph \P}}
+          v [bom nil nil
+             nil plr nil
+             nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}}
+                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
+          evaluated-arena (eval-arena arena ts-now)]
+      (is (not= evaluated-arena arena)
+      ())))
 )
