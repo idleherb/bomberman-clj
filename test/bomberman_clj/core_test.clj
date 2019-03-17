@@ -138,12 +138,11 @@
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
           cell (first v)]
       (is (= 1 (count bombs)))
-      (let [bomb ((keyword (str "x" 0 "y" 0)) bombs)]
-        (is (map? bomb))
-        (is (contains? bomb :coords))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))
-      (is (contains? cell :bomb))
-      (let [bomb (:bomb cell)]
+      (let [bomb (:bomb-x0y0 bombs)]
+        (is (vector? bomb))
+        (is (= 2 (count bomb))))
+      (is (contains? cell :bomb-x0y0))
+      (let [bomb (:bomb-x0y0 cell)]
         (is (map? bomb))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
@@ -152,28 +151,29 @@
           arena {:grid {:width 1, :height 2, :v v}
                  :players {:player-1 [0 0]}}
           arena (plant-bomb arena :player-1)
-          {{v :v, :as grid} :grid, :as arena} (move arena :player-1 :south)
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :south)
           cell (first v)]
-      (is (contains? cell :bomb))
-      (let [bomb (:bomb cell)]
+      (is (= 1 (count bombs)))
+      (is (contains? cell :bomb-x0y0))
+      (let [bomb (:bomb-x0y0 cell)]
         (is (map? bomb))
         (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
 
   (testing "a detonating bomb should spread horizontally and vertically, passing by the offset player"
-    (let [bom {:bomb {:timestamp 0}}
+    (let [bomb-id :bomb-x1y1
+          bom {bomb-id {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
           v [nil nil nil nil nil
              nil bom nil nil nil
              nil nil plr nil nil
              nil nil nil nil nil]
-          bomb-id :x1y1
           arena {:grid {:width 5, :height 4, :v v}
                  :players {:player-1 [2 2]}
-                 :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
+                 :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
-        (is (not (contains? (nth v 6) :bomb)))
+        (is (not (contains? (nth v 6) bomb-id)))
         (is (contains? (nth v 12) :player-1))
         (are [cell] (contains? cell :fire)
           (nth v 1)
@@ -197,20 +197,20 @@
           (nth v 19))))
 
   (testing "a detonating bomb should spread until the nearby player and stop there"
-    (let [bom {:bomb {:timestamp 0}}
+    (let [bomb-id :bomb-x1y1
+          bom {bomb-id {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
           v [nil nil nil nil nil
              nil bom nil nil nil
              nil plr nil nil nil
              nil nil nil nil nil]
-          bomb-id :x1y1
           arena {:grid {:width 5, :height 4, :v v}
                  :players {:player-1 [1 3]}
-                 :bombs {bomb-id {:timestamp 0, :coords [1 1]}}}
+                 :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id)]
         (is (empty? bombs))
-        (is (not (contains? (nth v 6) :bomb)))
+        (is (not (contains? (nth v 6) bomb-id)))
         (is (not (nil? (:player-1 (nth v 11)))))
         (are [cell] (contains? cell :fire)
           (nth v 1)
@@ -239,22 +239,22 @@
              nil plr nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [1 1]}}
+                 :players {:player-1 [1 1]}
                  :bombs {}}
           evaluated-arena (eval-arena arena ts-now)]
       (is (= evaluated-arena arena))))
 
   (testing "an evaluated arena with an expired bomb should contain fire"
-    (let [bom {:bomb {:timestamp 0}}
+    (let [bomb-id :bomb-x0y0
+          bom {bomb-id {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
           v [bom nil nil
              nil plr nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [1 1]}}
-                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
+                 :players {:player-1 [1 1]}
+                 :bombs {bomb-id [0 0]}}
           {{v :v, :as grid} :grid
-           {player-1 :player-1} :players
            bombs :bombs
            :as evaluated-arena} (eval-arena arena ts-now)]
       (is (not= evaluated-arena arena))
@@ -270,21 +270,23 @@
         (nth v 7)
         (nth v 8))
       (is (not (contains? (nth v 0) :bomb)))
-      (is (not (contains? player-1 :hit)))
+      (is (not (contains? (:player-1 (nth v 4)) :hit)))
       (is (= 0 (count bombs)))))
 
   (testing "an evaluated arena with an expired bomb should hit the nearby player"
-    (let [bom {:bomb {:timestamp 0}}
+    (let [bomb-id1 :bomb-x0y0
+          bomb-id2 :bomb-x2y1
+          bm1 {bomb-id1 {:timestamp 0}}
+          bm2 {bomb-id2 {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
-          v [bom nil nil
-             nil nil bom
+          v [bm1 nil nil
+             nil nil bm2
              plr nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [0 2]}}
-                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}
-                         :x2y1 {:timestamp 0, :coords [2 1]}}}
+                 :players {:player-1 [0 2]}
+                 :bombs {bomb-id1 [0 0]
+                         bomb-id2 [2 1]}}
           {{v :v, :as grid} :grid
-           {player-1 :player-1} :players
            bombs :bombs
            :as evaluated-arena} (eval-arena arena ts-now)]
       (is (not= evaluated-arena arena))
@@ -299,9 +301,9 @@
         (nth v 8))
       (are [cell] (not (contains? cell :fire))
         (nth v 7))
-      (is (not (contains? (nth v 0) :bomb)))
-      (is (not (contains? (nth v 5) :bomb)))
-      (is (contains? player-1 :hit))
+      (is (not (contains? (nth v 0) bomb-id1)))
+      (is (not (contains? (nth v 5) bomb-id2)))
+      (is (contains? (:player-1 (nth v 6)) :hit))
       (is (= 0 (count bombs)))))
 
   ; (testing "Bomb detonations should propagate to nearby bombs, leaving others unchanged"

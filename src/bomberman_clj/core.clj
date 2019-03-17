@@ -142,10 +142,11 @@
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
         [x y, :as coords] (player-id players)
         bomb {:timestamp (System/currentTimeMillis)}  ; TODO: make timestamp parameter
-        bombs (assoc bombs (keyword (str "x" x "y" y)) (assoc bomb :coords coords))]
+        bomb-id (keyword (str "bomb-x" x "y" y))
+        bombs (assoc bombs bomb-id coords)]
     (assoc arena
       :bombs bombs
-      :grid (assoc-grid-cell grid coords :bomb bomb))))
+      :grid (assoc-grid-cell grid coords bomb-id bomb))))
 
 (defn spread-fire
   "Spread fire along x or y axis"
@@ -178,12 +179,12 @@
          players :players
          bombs :bombs
          :as arena} arena
-        {[x y, :as coords] :coords} (bomb-id bombs)
+        [x y, :as coords] (bomb-id bombs)
         grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (dec y)]) bomb-radius)
-        grid (dissoc-grid-cell grid coords :bomb)
+        grid (dissoc-grid-cell grid coords bomb-id)
         bombs (dissoc bombs bomb-id)
         arena (assoc arena
           :bombs bombs
@@ -194,22 +195,31 @@
   "Check if any bombs should detonate (and detonate in case)"
   [arena timestamp]
   (let [{bombs :bombs, :as arena} arena
-        arena (loop [idx 0 arena arena]
-          (if (= idx (count bombs))  ; TODO: >=, since detonate-bomb removes bombs
+        ; update bombs
+        arena (loop [idx 0 {grid :grid, :as arena} arena]
+          (if (= idx (count bombs))
             arena
             (let [bomb-id (nth (keys bombs) idx)
-                  bomb (bomb-id bombs)
+                  bomb-coords (bomb-id bombs)
+                  bomb (bomb-id (cell-at grid bomb-coords))
                   arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
                     (detonate-bomb arena bomb-id)
                     arena)]
               (recur (inc idx) arena))))
         {grid :grid, players :players} arena
-        arena (assoc arena :players (into {} (map
-          (fn [[player-id {coords :coords, :as player}]]
-            [player-id (if (contains? (cell-at grid coords) :fire)
-              (assoc player :hit true)
-              player)])
-          players)))]
+        ; update players
+        grid (loop [idx 0 grid grid]
+          (if (= idx (count players))
+            grid
+            (let [player-id (nth (keys players) idx)
+                  player-coords (player-id players)
+                  cell (cell-at grid player-coords)
+                  grid (if (contains? cell :fire)
+                    (assoc-grid-cell grid player-coords player-id
+                      (assoc (player-id cell) :hit true))
+                    grid)]
+              (recur (inc idx) grid))))
+        arena (assoc arena :grid grid)]
       arena
     ))
 
