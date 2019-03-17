@@ -4,35 +4,50 @@
 (def bomb-timeout-ms 10000)
 (def bomb-radius 3)
 
-(defn dissoc-cell
-  [cell key]
-  (let [cell (dissoc cell key)]
-    (if (empty? cell) nil cell)))
-
 (defn cell-idx
   "Return grid cell index from coordinates"
-  [{:keys [width height v], :as grid} coords]
-  (let [[x y] coords]
-    (when (and (<= 0 x (dec width))
-               (<= 0 y (dec height)))
-      (+ (* y width) x))))
+  [{:keys [width height], :as grid} [x y, :as coords]]
+  (when (and (<= 0 x (dec width))
+             (<= 0 y (dec height)))
+    (+ (* y width) x)))
+
+(defn cell-at
+  "Return the grid cell at the given coordinates"
+  [{v :v, :as grid} coords]
+  (nth v (cell-idx grid coords)))
+
+(defn assoc-grid-cell
+  ([{v :v, :as grid} coords key val]
+    (assoc grid :v
+      (assoc v (cell-idx grid coords)
+        (assoc (cell-at grid coords) key val))))
+  ([{v :v, :as grid} coords cell]
+    (assoc grid :v
+      (assoc v (cell-idx grid coords) cell))))
+
+(defn dissoc-grid-cell
+  "Like dissoc, but returns nil if the cell is empty afterwards."
+  [{v :v, :as grid} coords k]
+  (let [cell (dissoc (cell-at grid coords) k)
+        cell (if (empty? cell) nil cell)]
+    (assoc-grid-cell grid coords cell)))
 
 (defn in-grid?
   "Check if coordinates are within the given grid"
-  [{:keys [width height v], :as grid} coords]
-    (not (nil? (cell-idx grid coords))))
-
-(defn cell-at
-  "Return the cell of a grid at the given coordinates"
-  [{:keys [width height v], :as grid} coords]
-  (nth v (cell-idx grid coords)))
+  [grid coords]
+  (not (nil? (cell-idx grid coords))))
 
 (defn cell-player-id
-  [cell]
   "Checks if the given cell contains a player and returns its mapping, else nil"
+  [cell]
   (first ; player-id (or nil)
     (first ; first (or nil) [player-id, player]
       (filter (fn [[k _]] (re-matches #"player-\d+" (name k))) cell))))
+
+(defn cell-player
+  "Return the player in the given cell if any"
+  ([cell] (cell-player cell (cell-player-id cell)))
+  ([cell player-id] (player-id cell)))
 
 (defn cell-empty?
   "Check if a given cell is empty"
@@ -41,13 +56,13 @@
 
 (defn rand-coords
   "Return random coordinates within the given grid"
-  [{:keys [width height v], :as grid}]
+  [{:keys [width height], :as grid}]
   [(rand-int width) (rand-int height)])
 
 (defn find-empty-cell
   "Find a random empty cell within the given grid. Defaults to 100 tries."
   ([grid] (find-empty-cell grid 100))
-  ([{:keys [width height v], :as grid} max-tries]
+  ([grid max-tries]
     (loop [coords (rand-coords grid)
            num-tries 1]
       (if (cell-empty? grid coords)
@@ -58,10 +73,13 @@
 
 (defn spawn
   "Spawn an object at the given coordinates."
-  [{:keys [width height v], :as grid}, object-id, object coords]
+  [{v :v, :as grid}
+   object-id
+   object
+   coords]
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
-    (assoc grid :v (assoc v (cell-idx grid coords) {object-id object}))))
+    (assoc-grid-cell grid coords object-id object)))
 
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
@@ -73,27 +91,26 @@
            players players
            player-idx 1]
       (if (> player-idx (count players))
-        {:grid grid, :players players, :bombs {}}
-        (if (contains? ((keyword (str "player-" player-idx)) players) :coords)
-          ; spawn player at given coords
-          (let [player-id (keyword (str "player-" player-idx))
-                {coords :coords, :as player} (player-id players)
-                grid (spawn grid player-id player coords)
-                player-idx (inc player-idx)]
-            (recur grid players player-idx))
-          ; spawn player at random coords
-          (let [coords (find-empty-cell grid)
-                player-id (keyword (str "player-" player-idx))
-                {player-glyph :glyph, :as player} (player-id players)
-                player (assoc player :coords coords)
-                players (assoc players player-id player)
-                grid (spawn grid player-id player coords)
-                player-idx (inc player-idx)]
-            (recur grid players player-idx)))))))
+        {:bombs {}
+         :grid grid
+         :players (into {} (map (fn [[k v]] [k (:coords v)])) players)}
+        (let [player-id (keyword (str "player-" player-idx))]
+          (if (contains? (player-id players) :coords)
+            ; spawn player at given coords
+            (let [{coords :coords, :as player} (player-id players)
+                  grid (spawn grid player-id (dissoc player :coords) coords)
+                  player-idx (inc player-idx)]
+              (recur grid players player-idx))
+            ; spawn player at random coords
+            (let [coords (find-empty-cell grid)
+                  grid (spawn grid player-id (player-id players) coords)
+                  players (assoc players player-id {:coords coords})
+                  player-idx (inc player-idx)]
+              (recur grid players player-idx))))))))
 
 (defn navigate
   "Navigate from coordinates into the given direction"
-  [[x y] direction]
+  [[x y, :as coords] direction]
   (case direction
     :north [x (dec y)]
     :east [(inc x) y]
@@ -105,20 +122,17 @@
   "Try to move a player in the given direction"
   [arena player-id direction]
   (let [{{v :v, :as grid} :grid, players :players} arena
-        {coords :coords, glyph :glyph, :as player} (player-id players)
+        coords (player-id players)
+        player (player-id (cell-at grid coords))
         new-coords (navigate coords direction)]
     (if (and (in-grid? grid new-coords)
              (cell-empty? grid new-coords))
-      (let [player (assoc player :coords new-coords)
-            players (assoc players player-id player)
-            v (:v grid)
-            prev-cell (cell-at grid coords)
-            prev-cell (dissoc-cell prev-cell player-id)
-            prev-cell (if (empty? prev-cell) nil prev-cell)
-            grid (assoc grid :v (assoc v (cell-idx grid coords) prev-cell))
+      (let [grid (dissoc-grid-cell grid coords player-id)
             grid (spawn grid player-id player new-coords)
-            arena (assoc arena :grid grid)
-            arena (assoc arena :players players)]
+            players (assoc players player-id new-coords)
+            arena (assoc arena
+              :grid grid
+              :players players)]
         arena)
       arena)))
 
@@ -126,15 +140,12 @@
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id]
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
-        {[x y, :as coords] :coords, :as player} (player-id players)
-        cell-idx (cell-idx grid coords)
-        cell (cell-at grid coords)
-        bomb {:timestamp (System/currentTimeMillis)}
-        bomb-cell (assoc cell :bomb bomb)
+        [x y, :as coords] (player-id players)
+        bomb {:timestamp (System/currentTimeMillis)}  ; TODO: make timestamp parameter
         bombs (assoc bombs (keyword (str "x" x "y" y)) (assoc bomb :coords coords))]
     (assoc arena
       :bombs bombs
-      :grid (assoc grid :v (assoc v cell-idx bomb-cell)))))
+      :grid (assoc-grid-cell grid coords :bomb bomb))))
 
 (defn spread-fire
   "Spread fire along x or y axis"
@@ -143,7 +154,7 @@
    transform-coords
    radius]
   (loop [[cur-x cur-y] coords
-         {v :v, width :width, height :height, :as grid} grid
+         {:keys [v width height], :as grid} grid
          break false]
     (if (or (true? break)
             (= radius (Math/abs (- cur-x x)))
@@ -157,15 +168,13 @@
             player-id (cell-player-id cell)]
         (recur
           (transform-coords [cur-x cur-y])
-          (assoc grid :v
-            (assoc v (cell-idx grid [cur-x cur-y])
-              (assoc cell :fire true)))
+          (assoc-grid-cell grid [cur-x cur-y] :fire true)
           (not (nil? player-id)))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"
   [arena bomb-id]
-  (let [{{v :v, width :width, height :height, :as grid} :grid
+  (let [{{:keys [v width height], :as grid} :grid
          players :players
          bombs :bombs
          :as arena} arena
@@ -174,10 +183,7 @@
         grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)
         grid (spread-fire grid coords (fn [[x y]] [x (dec y)]) bomb-radius)
-        {v :v} grid
-        grid (assoc grid :v
-          (assoc v (cell-idx grid coords)
-            (dissoc-cell (cell-at grid coords) :bomb)))
+        grid (dissoc-grid-cell grid coords :bomb)
         bombs (dissoc bombs bomb-id)
         arena (assoc arena
           :bombs bombs
