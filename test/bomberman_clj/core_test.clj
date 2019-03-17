@@ -269,28 +269,30 @@
     (let [bom {:bomb {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
           v [bom nil nil
-             nil nil nil
+             nil nil bom
              plr nil nil]
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:glyph \P, :coords [0 2]}}
-                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
+                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}
+                         :x2y1 {:timestamp 0, :coords [2 1]}}}
           {{v :v, :as grid} :grid
-            {player-1 :player-1} :players
-            bombs :bombs
-            :as evaluated-arena} (eval-arena arena ts-now)]
+           {player-1 :player-1} :players
+           bombs :bombs
+           :as evaluated-arena} (eval-arena arena ts-now)]
       (is (not= evaluated-arena arena))
       (are [cell] (contains? cell :fire)
         (nth v 0)
         (nth v 1)
         (nth v 2)
         (nth v 3)
-        (nth v 6))
-      (are [cell] (not (contains? cell :fire))
         (nth v 4)
+        (nth v 6)
         (nth v 5)
-        (nth v 7)
         (nth v 8))
+      (are [cell] (not (contains? cell :fire))
+        (nth v 7))
       (is (not (contains? (nth v 0) :bomb)))
+      (is (not (contains? (nth v 5) :bomb)))
       (is (contains? player-1 :hit))
       (is (= 0 (count bombs)))))
 )
