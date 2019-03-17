@@ -226,13 +226,13 @@
           (nth v 19))))
 
   (testing "an evaluated arena without any bombs should have no changes"
-    (let [plr  {:player-1 {:glyph \P}}
+    (let [plr {:player-1 {:glyph \P}}
           v [nil nil nil
              nil plr nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:glyph \P, :coords [1 1]}
-                 :bombs {}}}
+                 :players {:player-1 {:glyph \P, :coords [1 1]}}
+                 :bombs {}}
           evaluated-arena (eval-arena arena ts-now)]
       (is (= evaluated-arena arena))))
 
@@ -257,11 +257,40 @@
         (nth v 3)
         (nth v 6))
       (are [cell] (not (contains? cell :fire))
-          (nth v 4)
-          (nth v 5)
-          (nth v 7)
-          (nth v 8))
+        (nth v 4)
+        (nth v 5)
+        (nth v 7)
+        (nth v 8))
       (is (not (contains? (nth v 0) :bomb)))
       (is (not (contains? player-1 :hit)))
+      (is (= 0 (count bombs)))))
+
+  (testing "an evaluated arena with an expired bomb should hit the nearby player"
+    (let [bom {:bomb {:timestamp 0}}
+          plr {:player-1 {:glyph \P}}
+          v [bom nil nil
+             nil nil nil
+             plr nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:glyph \P, :coords [0 2]}}
+                 :bombs {:x0y0 {:timestamp 0, :coords [0 0]}}}
+          {{v :v, :as grid} :grid
+            {player-1 :player-1} :players
+            bombs :bombs
+            :as evaluated-arena} (eval-arena arena ts-now)]
+      (is (not= evaluated-arena arena))
+      (are [cell] (contains? cell :fire)
+        (nth v 0)
+        (nth v 1)
+        (nth v 2)
+        (nth v 3)
+        (nth v 6))
+      (are [cell] (not (contains? cell :fire))
+        (nth v 4)
+        (nth v 5)
+        (nth v 7)
+        (nth v 8))
+      (is (not (contains? (nth v 0) :bomb)))
+      (is (contains? player-1 :hit))
       (is (= 0 (count bombs)))))
 )

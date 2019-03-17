@@ -187,16 +187,25 @@
 (defn eval-arena
   "Check if any bombs should detonate (and detonate in case)"
   [arena timestamp]
-  (let [{{v :v, :as grid} :grid, players :players, bombs :bombs, :as arena} arena]
-    (loop [idx 0 arena arena]
-      (if (= idx (count bombs))
-        arena
-        (let [bomb-id (nth (keys bombs) idx)
-              bomb (bomb-id bombs)
-              arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
-                (detonate-bomb arena bomb-id)
-                arena)]
-          (recur (inc idx) arena))))))
+  (let [{bombs :bombs, :as arena} arena
+        arena (loop [idx 0 arena arena]
+          (if (= idx (count bombs))  ; TODO: >=, since detonate-bomb removes bombs
+            arena
+            (let [bomb-id (nth (keys bombs) idx)
+                  bomb (bomb-id bombs)
+                  arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
+                    (detonate-bomb arena bomb-id)
+                    arena)]
+              (recur (inc idx) arena))))
+        {grid :grid, players :players} arena
+        arena (assoc arena :players (into {} (map
+          (fn [[player-id {coords :coords, :as player}]]
+            [player-id (if (contains? (cell-at grid coords) :fire)
+              (assoc player :hit true)
+              player)])
+          players)))]
+      arena
+    ))
 
 (defn -main
   "I don't do a whole lot ... yet."
