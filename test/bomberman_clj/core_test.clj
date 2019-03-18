@@ -134,7 +134,7 @@
     (let [v [{:player-1 {:glyph \P}}]
           arena {:grid {:width 1, :height 1, :v v}
                  :players {:player-1 [0 0]}}
-          arena (plant-bomb arena :player-1)
+          arena (plant-bomb arena :player-1 ts-now)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
           cell (first v)]
       (is (= 1 (count bombs)))
@@ -144,20 +144,20 @@
       (is (contains? cell :bomb-x0y0))
       (let [bomb (:bomb-x0y0 cell)]
         (is (map? bomb))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
+        (is (= ts-now (:timestamp bomb))))))
 
   (testing "a planted bomb should still be there after the player moves away"
     (let [v [{:player-1 {:glyph \P}} nil]
           arena {:grid {:width 1, :height 2, :v v}
                  :players {:player-1 [0 0]}}
-          arena (plant-bomb arena :player-1)
+          arena (plant-bomb arena :player-1 ts-now)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :south)
           cell (first v)]
       (is (= 1 (count bombs)))
       (is (contains? cell :bomb-x0y0))
       (let [bomb (:bomb-x0y0 cell)]
         (is (map? bomb))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
+        (is (= ts-now (:timestamp bomb))))))
 
   (testing "a detonating bomb should spread horizontally and vertically, passing by the offset player"
     (let [bomb-id :bomb-x1y1

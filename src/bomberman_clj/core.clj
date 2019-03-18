@@ -138,10 +138,10 @@
 
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
-  [arena player-id]
+  [arena player-id timestamp]
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
         [x y, :as coords] (player-id players)
-        bomb {:timestamp (System/currentTimeMillis)}  ; TODO: make timestamp parameter
+        bomb {:timestamp timestamp}
         bomb-id (keyword (str "bomb-x" x "y" y))
         bombs (assoc bombs bomb-id coords)]
     (assoc arena
