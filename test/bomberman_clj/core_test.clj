@@ -198,7 +198,7 @@
         (nth v 18)
         (nth v 19))))
 
-  (testing "a detonating bomb should spread until the nearby player and stop there"
+  (testing "a detonating bomb should spread through the nearby player"
     (let [bomb-id :bomb-x1y1
           bom {bomb-id {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
@@ -220,7 +220,8 @@
           (nth v 5)
           (nth v 7)
           (nth v 8)
-          (nth v 11))
+          (nth v 11)
+          (nth v 16))
         (are [cell] (not (contains? cell :fire))
           (nth v 0)
           (nth v 2)
@@ -231,7 +232,6 @@
           (nth v 12)
           (nth v 14)
           (nth v 15)
-          (nth v 16)
           (nth v 17)
           (nth v 18)
           (nth v 19))))

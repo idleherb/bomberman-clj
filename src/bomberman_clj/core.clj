@@ -156,10 +156,8 @@
    radius
    detonate-bomb]
   (loop [[cur-x cur-y] coords
-         {:keys [width height], :as grid} grid
-         break false]
-    (if (or (true? break)
-            (= radius (Math/abs (- cur-x x)))
+         {:keys [width height], :as grid} grid]
+    (if (or (= radius (Math/abs (- cur-x x)))
             (= radius (Math/abs (- cur-y y)))
             (= cur-x -1)
             (= cur-x width)
@@ -174,12 +172,10 @@
                            (not (contains? bomb :detonated)))
               (detonate-bomb arena bomb-id)
               arena)
-            grid (:grid arena)
-            player-id (cell-player-id cell)]
+            grid (:grid arena)]
         (recur
           (transform-coords [cur-x cur-y])
-          (assoc-grid-cell grid [cur-x cur-y] :fire true)
-          (not (nil? player-id)))))))
+          (assoc-grid-cell grid [cur-x cur-y] :fire true))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"
