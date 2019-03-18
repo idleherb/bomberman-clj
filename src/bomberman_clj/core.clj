@@ -184,7 +184,7 @@
   (let [{grid :grid, bombs :bombs, :as arena} arena
         [x y, :as coords] (bomb-id bombs)
         cell (cell-at grid coords)
-        bomb (assoc (bomb-id cell) :detonated true)
+        bomb (assoc (bomb-id cell) :detonated {:timestamp timestamp})
         grid (assoc-grid-cell grid coords bomb-id bomb)
         arena (assoc arena :grid grid)
         spread-fire #(spread-fire %1 coords %2 bomb-radius detonate-bomb timestamp)
