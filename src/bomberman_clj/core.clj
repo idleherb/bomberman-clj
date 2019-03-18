@@ -150,12 +150,13 @@
 
 (defn spread-fire
   "Spread fire along x or y axis"
-  [grid
+  [{grid :grid, :as arena}
    [x y, :as coords]
    transform-coords
-   radius]
+   radius
+   detonate-bomb]
   (loop [[cur-x cur-y] coords
-         {:keys [v width height], :as grid} grid
+         {:keys [width height], :as grid} grid
          break false]
     (if (or (true? break)
             (= radius (Math/abs (- cur-x x)))
@@ -164,8 +165,16 @@
             (= cur-x width)
             (= cur-y -1)
             (= cur-y height))
-      grid
-      (let [cell (cell-at grid [cur-x cur-y])
+      (assoc arena :grid grid)
+      (let [bomb-id (keyword (str "bomb-x" cur-x "y" cur-y))
+            cell (cell-at grid [cur-x cur-y])
+            bomb (bomb-id cell)
+            arena (assoc arena :grid grid)
+            arena (if (and (not (nil? bomb))
+                           (not (contains? bomb :detonated)))
+              (detonate-bomb arena bomb-id)
+              arena)
+            grid (:grid arena)
             player-id (cell-player-id cell)]
         (recur
           (transform-coords [cur-x cur-y])
@@ -175,34 +184,30 @@
 (defn detonate-bomb
   "Detonate a given bomb"
   [arena bomb-id]
-  (let [{{:keys [v width height], :as grid} :grid
-         players :players
-         bombs :bombs
-         :as arena} arena
+  (let [{grid :grid, bombs :bombs, :as arena} arena
         [x y, :as coords] (bomb-id bombs)
-        grid (spread-fire grid coords (fn [[x y]] [(inc x) y]) bomb-radius)
-        grid (spread-fire grid coords (fn [[x y]] [(dec x) y]) bomb-radius)
-        grid (spread-fire grid coords (fn [[x y]] [x (inc y)]) bomb-radius)
-        grid (spread-fire grid coords (fn [[x y]] [x (dec y)]) bomb-radius)
-        grid (dissoc-grid-cell grid coords bomb-id)
-        bombs (dissoc bombs bomb-id)
-        arena (assoc arena
-          :bombs bombs
-          :grid grid)]
+        cell (cell-at grid coords)
+        bomb (assoc (bomb-id cell) :detonated true)
+        grid (assoc-grid-cell grid coords bomb-id bomb)
+        arena (assoc arena :grid grid)
+        arena (spread-fire arena coords (fn [[x y]] [(inc x) y]) bomb-radius detonate-bomb)
+        arena (spread-fire arena coords (fn [[x y]] [(dec x) y]) bomb-radius detonate-bomb)
+        arena (spread-fire arena coords (fn [[x y]] [x (inc y)]) bomb-radius detonate-bomb)
+        arena (spread-fire arena coords (fn [[x y]] [x (dec y)]) bomb-radius detonate-bomb)]
     arena))
 
 (defn eval-arena
   "Check if any bombs should detonate (and detonate in case)"
   [arena timestamp]
-  (let [{bombs :bombs, :as arena} arena
-        ; update bombs
-        arena (loop [idx 0 {grid :grid, :as arena} arena]
+  (let [; update bombs
+        arena (loop [idx 0 {bombs :bombs, grid :grid, :as arena} arena]
           (if (= idx (count bombs))
             arena
             (let [bomb-id (nth (keys bombs) idx)
                   bomb-coords (bomb-id bombs)
                   bomb (bomb-id (cell-at grid bomb-coords))
-                  arena (if (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
+                  arena (if (and (<= bomb-timeout-ms (- timestamp (:timestamp bomb)))
+                                 (not (contains? bomb :detonated)))
                     (detonate-bomb arena bomb-id)
                     arena)]
               (recur (inc idx) arena))))

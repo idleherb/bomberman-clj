@@ -33,7 +33,7 @@
     :tab {:player-id :player-2, :action #(plant-bomb % :player-2)}
     nil))
 
-(defn cell-player
+(defn dev-cell-player
   [cell]
   (cond
     (nil? cell) nil
@@ -60,7 +60,7 @@
                   scr  ; screen
                   (if (= 0 cell-idx) cell-idx (* 2 cell-idx))  ; x
                   row-idx  ; y
-                  (let [player (cell-player cell)]
+                  (let [player (dev-cell-player cell)]
                     (when (not (nil? cell)) (print cell " "))
                     (cond
                       (nil? cell) "."

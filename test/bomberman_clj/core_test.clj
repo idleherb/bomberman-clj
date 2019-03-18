@@ -172,29 +172,31 @@
                  :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id)]
-        (is (empty? bombs))
-        (is (not (contains? (nth v 6) bomb-id)))
-        (is (contains? (nth v 12) :player-1))
-        (are [cell] (contains? cell :fire)
-          (nth v 1)
-          (nth v 5)
-          (nth v 7)
-          (nth v 8)
-          (nth v 11)
-          (nth v 16))
-        (are [cell] (not (contains? cell :fire))
-          (nth v 0)
-          (nth v 2)
-          (nth v 3)
-          (nth v 4)
-          (nth v 9)
-          (nth v 10)
-          (nth v 12)
-          (nth v 14)
-          (nth v 15)
-          (nth v 17)
-          (nth v 18)
-          (nth v 19))))
+      (is (= 1 (count bombs)))
+      (let [bomb (bomb-id (nth v 6))]
+        (is (contains? bomb :detonated)))
+      (is (contains? (nth v 12) :player-1))
+      (are [cell] (contains? cell :fire)
+        (nth v 1)
+        (nth v 5)
+        (nth v 6)
+        (nth v 7)
+        (nth v 8)
+        (nth v 11)
+        (nth v 16))
+      (are [cell] (not (contains? cell :fire))
+        (nth v 0)
+        (nth v 2)
+        (nth v 3)
+        (nth v 4)
+        (nth v 9)
+        (nth v 10)
+        (nth v 12)
+        (nth v 14)
+        (nth v 15)
+        (nth v 17)
+        (nth v 18)
+        (nth v 19))))
 
   (testing "a detonating bomb should spread until the nearby player and stop there"
     (let [bomb-id :bomb-x1y1
@@ -209,8 +211,9 @@
                  :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id)]
-        (is (empty? bombs))
-        (is (not (contains? (nth v 6) bomb-id)))
+        (is (= 1 (count bombs)))
+        (let [bomb (bomb-id (nth v 6))]
+          (is (contains? bomb :detonated)))
         (is (not (nil? (:player-1 (nth v 11)))))
         (are [cell] (contains? cell :fire)
           (nth v 1)
@@ -269,9 +272,10 @@
         (nth v 5)
         (nth v 7)
         (nth v 8))
-      (is (not (contains? (nth v 0) :bomb)))
-      (is (not (contains? (:player-1 (nth v 4)) :hit)))
-      (is (= 0 (count bombs)))))
+      (is (= 1 (count bombs)))
+      (let [bomb (bomb-id (nth v 0))]
+        (is (contains? bomb :detonated)))
+      (is (not (contains? (:player-1 (nth v 4)) :hit)))))
 
   (testing "an evaluated arena with an expired bomb should hit the nearby player"
     (let [bomb-id1 :bomb-x0y0
@@ -301,42 +305,47 @@
         (nth v 8))
       (are [cell] (not (contains? cell :fire))
         (nth v 7))
-      (is (not (contains? (nth v 0) bomb-id1)))
-      (is (not (contains? (nth v 5) bomb-id2)))
-      (is (contains? (:player-1 (nth v 6)) :hit))
-      (is (= 0 (count bombs)))))
+      (is (= 2 (count bombs)))
+      (let [bomb (bomb-id1 (nth v 0))]
+        (is (contains? bomb :detonated)))
+      (let [bomb (bomb-id2 (nth v 5))]
+        (is (contains? bomb :detonated)))
+      (is (contains? (:player-1 (nth v 6)) :hit))))
 
-  ; (testing "Bomb detonations should propagate to nearby bombs, leaving others unchanged"
-  ;   (let [bm1 {:bomb :x0y0}
-  ;         bm2 {:bomb :x2y0}
-  ;         bm3 {:bomb :x1y2}
-  ;         plr {:player-1 {:glyph \P}}
-  ;         v [bm1 nil bm2
-  ;            nil plr nil
-  ;            nil bm3 nil]
-  ;         arena {:grid {:width 3, :height 3, :v v}
-  ;                :players {:player-1 {:glyph \P, :coords [0 2]}}
-  ;                :bombs {:x0y0 {:timestamp 1000000000000, :coords [0 0]}
-  ;                        :x2y0 {:timestamp 9999999999999, :coords [2 0]}
-  ;                        :x1y2 {:timestamp 9999999999999, :coords [1 2]}}}
-  ;         {{v :v, :as grid} :grid
-  ;           {player-1 :player-1} :players
-  ;           bombs :bombs
-  ;           :as evaluated-arena} (eval-arena arena ts-now)]
-  ;     (is (not= evaluated-arena arena))
-  ;     (are [cell] (contains? cell :fire)
-  ;       (nth v 0)
-  ;       (nth v 1)
-  ;       (nth v 2)
-  ;       (nth v 3)
-  ;       (nth v 4)
-  ;       (nth v 6)
-  ;       (nth v 5)
-  ;       (nth v 8))
-  ;     (are [cell] (not (contains? cell :fire))
-  ;       (nth v 7))
-  ;     (is (not (contains? (nth v 0) :bomb)))
-  ;     (is (not (contains? (nth v 5) :bomb)))
-  ;     (is (contains? player-1 :hit))
-  ;     (is (= 0 (count bombs)))))
+  (testing "Bomb detonations should propagate to nearby bombs, leaving others unchanged"
+    (let [bm1 {:bomb-x0y0 {:timestamp 1000000000000}}
+          bm2 {:bomb-x2y0 {:timestamp 9999999999999}}
+          bm3 {:bomb-x1y2 {:timestamp 9999999999999}}
+          plr {:player-1 {:glyph \P}}
+          v [bm1 nil bm2
+             nil plr nil
+             nil bm3 nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 [1 1]}
+                 :bombs {:bomb-x0y0 [0 0]
+                         :bomb-x2y0 [2 0]
+                         :bomb-x1y2 [1 2]}}
+          {{v :v, :as grid} :grid
+           bombs :bombs
+           :as evaluated-arena} (eval-arena arena 2222222222222)]
+      (is (not= evaluated-arena arena))
+      (are [cell] (contains? cell :fire)
+        (nth v 0)
+        (nth v 1)
+        (nth v 2)
+        (nth v 3)
+        (nth v 5)
+        (nth v 6)
+        (nth v 8))
+      (are [cell] (not (contains? cell :fire))
+        (nth v 4)
+        (nth v 7))
+      (let [bomb-x0y0 (:bomb-x0y0 (nth v 0))]
+        (is (contains? bomb-x0y0 :detonated)))
+      (let [bomb-x2y0 (:bomb-x2y0 (nth v 2))]
+        (is (contains? bomb-x2y0 :detonated)))
+      (let [bomb-x1y2 (:bomb-x1y2 (nth v 7))]
+        (is (not (contains? bomb-x1y2 :detonated))))
+      (is (not (contains? (:player-1 (nth v 4)) :hit)))
+      (is (= 3 (count bombs)))))
 )
