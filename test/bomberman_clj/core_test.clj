@@ -171,12 +171,13 @@
                  :players {:player-1 [2 2]}
                  :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
-            (detonate-bomb arena bomb-id)]
+            (detonate-bomb arena bomb-id ts-now)]
       (is (= 1 (count bombs)))
       (let [bomb (bomb-id (nth v 6))]
         (is (contains? bomb :detonated)))
       (is (contains? (nth v 12) :player-1))
-      (are [cell] (contains? cell :fire)
+      (are [cell] (and (contains? cell :fire)
+                       (= ts-now (:timestamp (:fire cell))))
         (nth v 1)
         (nth v 5)
         (nth v 6)
@@ -210,12 +211,13 @@
                  :players {:player-1 [1 3]}
                  :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
-            (detonate-bomb arena bomb-id)]
+            (detonate-bomb arena bomb-id ts-now)]
         (is (= 1 (count bombs)))
         (let [bomb (bomb-id (nth v 6))]
           (is (contains? bomb :detonated)))
         (is (not (nil? (:player-1 (nth v 11)))))
-        (are [cell] (contains? cell :fire)
+        (are [cell] (and (contains? cell :fire)
+                         (= ts-now (:timestamp (:fire cell))))
           (nth v 1)
           (nth v 5)
           (nth v 7)
