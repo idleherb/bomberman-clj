@@ -317,7 +317,8 @@
       (let [bomb (bomb-id2 (nth v 5))]
         (is (contains? bomb :detonated))
         (is (= ts-now (:timestamp (:detonated bomb)))))
-      (is (contains? (:player-1 (nth v 6)) :hit))))
+      (is (contains? (:player-1 (nth v 6)) :hit))
+      (is (= ts-now (:timestamp (:hit (:player-1 (nth v 6))))))))
 
   (testing "Bomb detonations should propagate to nearby bombs, leaving others unchanged"
     (let [bm1 {:bomb-x0y0 {:timestamp 1000000000000}}

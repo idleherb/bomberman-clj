@@ -219,7 +219,7 @@
                   cell (cell-at grid player-coords)
                   grid (if (contains? cell :fire)
                     (assoc-grid-cell grid player-coords player-id
-                      (assoc (player-id cell) :hit true))
+                      (assoc (player-id cell) :hit {:timestamp timestamp}))
                     grid)]
               (recur (inc idx) grid))))
         arena (assoc arena :grid grid)]
