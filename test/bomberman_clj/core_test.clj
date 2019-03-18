@@ -134,7 +134,7 @@
     (let [v [{:player-1 {:glyph \P}}]
           arena {:grid {:width 1, :height 1, :v v}
                  :players {:player-1 [0 0]}}
-          arena (plant-bomb arena :player-1)
+          arena (plant-bomb arena :player-1 ts-now)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
           cell (first v)]
       (is (= 1 (count bombs)))
@@ -144,20 +144,20 @@
       (is (contains? cell :bomb-x0y0))
       (let [bomb (:bomb-x0y0 cell)]
         (is (map? bomb))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
+        (is (= ts-now (:timestamp bomb))))))
 
   (testing "a planted bomb should still be there after the player moves away"
     (let [v [{:player-1 {:glyph \P}} nil]
           arena {:grid {:width 1, :height 2, :v v}
                  :players {:player-1 [0 0]}}
-          arena (plant-bomb arena :player-1)
+          arena (plant-bomb arena :player-1 ts-now)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :south)
           cell (first v)]
       (is (= 1 (count bombs)))
       (is (contains? cell :bomb-x0y0))
       (let [bomb (:bomb-x0y0 cell)]
         (is (map? bomb))
-        (is (not (nil? (re-matches #"\d{13}" (str (:timestamp bomb)))))))))
+        (is (= ts-now (:timestamp bomb))))))
 
   (testing "a detonating bomb should spread horizontally and vertically, passing by the offset player"
     (let [bomb-id :bomb-x1y1
@@ -171,12 +171,14 @@
                  :players {:player-1 [2 2]}
                  :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
-            (detonate-bomb arena bomb-id)]
+            (detonate-bomb arena bomb-id ts-now)]
       (is (= 1 (count bombs)))
       (let [bomb (bomb-id (nth v 6))]
-        (is (contains? bomb :detonated)))
+        (is (contains? bomb :detonated))
+        (is (= ts-now (:timestamp (:detonated bomb)))))
       (is (contains? (nth v 12) :player-1))
-      (are [cell] (contains? cell :fire)
+      (are [cell] (and (contains? cell :fire)
+                       (= ts-now (:timestamp (:fire cell))))
         (nth v 1)
         (nth v 5)
         (nth v 6)
@@ -198,7 +200,7 @@
         (nth v 18)
         (nth v 19))))
 
-  (testing "a detonating bomb should spread until the nearby player and stop there"
+  (testing "a detonating bomb should spread through the nearby player"
     (let [bomb-id :bomb-x1y1
           bom {bomb-id {:timestamp 0}}
           plr {:player-1 {:glyph \P}}
@@ -210,17 +212,20 @@
                  :players {:player-1 [1 3]}
                  :bombs {bomb-id [1 1]}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
-            (detonate-bomb arena bomb-id)]
+            (detonate-bomb arena bomb-id ts-now)]
         (is (= 1 (count bombs)))
         (let [bomb (bomb-id (nth v 6))]
-          (is (contains? bomb :detonated)))
+          (is (contains? bomb :detonated))
+          (is (= ts-now (:timestamp (:detonated bomb)))))
         (is (not (nil? (:player-1 (nth v 11)))))
-        (are [cell] (contains? cell :fire)
+        (are [cell] (and (contains? cell :fire)
+                         (= ts-now (:timestamp (:fire cell))))
           (nth v 1)
           (nth v 5)
           (nth v 7)
           (nth v 8)
-          (nth v 11))
+          (nth v 11)
+          (nth v 16))
         (are [cell] (not (contains? cell :fire))
           (nth v 0)
           (nth v 2)
@@ -231,7 +236,6 @@
           (nth v 12)
           (nth v 14)
           (nth v 15)
-          (nth v 16)
           (nth v 17)
           (nth v 18)
           (nth v 19))))
@@ -274,7 +278,8 @@
         (nth v 8))
       (is (= 1 (count bombs)))
       (let [bomb (bomb-id (nth v 0))]
-        (is (contains? bomb :detonated)))
+        (is (contains? bomb :detonated))
+        (is (= ts-now (:timestamp (:detonated bomb)))))
       (is (not (contains? (:player-1 (nth v 4)) :hit)))))
 
   (testing "an evaluated arena with an expired bomb should hit the nearby player"
@@ -307,10 +312,13 @@
         (nth v 7))
       (is (= 2 (count bombs)))
       (let [bomb (bomb-id1 (nth v 0))]
-        (is (contains? bomb :detonated)))
+        (is (contains? bomb :detonated))
+        (is (= ts-now (:timestamp (:detonated bomb)))))
       (let [bomb (bomb-id2 (nth v 5))]
-        (is (contains? bomb :detonated)))
-      (is (contains? (:player-1 (nth v 6)) :hit))))
+        (is (contains? bomb :detonated))
+        (is (= ts-now (:timestamp (:detonated bomb)))))
+      (is (contains? (:player-1 (nth v 6)) :hit))
+      (is (= ts-now (:timestamp (:hit (:player-1 (nth v 6))))))))
 
   (testing "Bomb detonations should propagate to nearby bombs, leaving others unchanged"
     (let [bm1 {:bomb-x0y0 {:timestamp 1000000000000}}
@@ -340,12 +348,14 @@
       (are [cell] (not (contains? cell :fire))
         (nth v 4)
         (nth v 7))
-      (let [bomb-x0y0 (:bomb-x0y0 (nth v 0))]
-        (is (contains? bomb-x0y0 :detonated)))
-      (let [bomb-x2y0 (:bomb-x2y0 (nth v 2))]
-        (is (contains? bomb-x2y0 :detonated)))
-      (let [bomb-x1y2 (:bomb-x1y2 (nth v 7))]
-        (is (not (contains? bomb-x1y2 :detonated))))
+      (let [bomb (:bomb-x0y0 (nth v 0))]
+        (is (contains? bomb :detonated))
+        (is (= 2222222222222 (:timestamp (:detonated bomb)))))
+      (let [bomb (:bomb-x2y0 (nth v 2))]
+        (is (contains? bomb :detonated))
+        (is (= 2222222222222 (:timestamp (:detonated bomb)))))
+      (let [bomb (:bomb-x1y2 (nth v 7))]
+        (is (not (contains? bomb :detonated))))
       (is (not (contains? (:player-1 (nth v 4)) :hit)))
       (is (= 3 (count bombs)))))
 )
