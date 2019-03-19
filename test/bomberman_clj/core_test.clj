@@ -90,9 +90,9 @@
           height 3
           grid {:width width
                 :height height
-                :v [1 1   1
-                    1 1   1
-                    1 nil 1]}]
+                :v [{:player-1 {}} {:player-2 {}} {:player-3 {}}
+                    {:player-4 {}} {:player-5 {}} {:player-6 {}}
+                    {:player-7 {}} nil            {:player-8 {}}]}]
       (is (= [1 2] (find-empty-cell grid)))))
 
   (testing "A player can move to NESW empty cells within grid"
@@ -358,4 +358,32 @@
         (is (not (contains? bomb :detonated))))
       (is (not (contains? (:player-1 (nth v 4)) :hit)))
       (is (= 3 (count bombs)))))
+
+  (testing "A player walking into a cell with fire should be hit"
+    (let [bom {:bomb-x0y0 {:timestamp 0}}
+          plr {:player-1 {:glyph \P}}
+          v [bom nil
+             nil plr]
+          arena {:grid {:width 2, :height 2, :v v}
+                  :players {:player-1 [1 1]}
+                  :bombs {:bomb-x0y0 [0 0]}}
+          arena (eval-arena arena 1000000000000)
+          arena (move arena :player-1 :north)
+          arena (move arena :player-1 :north)
+          arena (move arena :player-1 :north)
+          arena (eval-arena arena ts-now)
+          {{v :v, :as grid} :grid, :as arena} arena]
+      (are [cell] (and (contains? cell :fire)
+                       (= 1000000000000 (:timestamp (:fire cell))))
+        (nth v 0)
+        (nth v 1)
+        (nth v 2))
+      (are [cell] (not (contains? cell :fire))
+        (nth v 3))
+      (let [bomb (:bomb-x0y0 (nth v 0))]
+        (is (contains? bomb :detonated))
+        (is (= 1000000000000 (:timestamp (:detonated bomb)))))
+      (let [player (:player-1 (nth v 1))]
+        (is (contains? player :hit))
+        (is (= ts-now (:timestamp (:hit player)))))))
 )

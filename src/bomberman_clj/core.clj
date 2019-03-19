@@ -37,6 +37,19 @@
   [grid coords]
   (not (nil? (cell-idx grid coords))))
 
+(defn cell-bomb-id
+  "Checks if the given cell contains a bomb and returns its mapping, else nil"
+  [cell]
+  (first ; bomb-id (or nil)
+    (first ; first (or nil) [bomb-id, bomb]
+      (filter (fn [[k _]] (re-matches #"bomb-x\d+y\d+" (name k))) cell))))
+
+(defn cell-bomb
+  "Return the bomb in the given cell if any"
+  [cell]
+  (let [bomb-id (cell-bomb-id cell)]
+    (when (not (nil? bomb-id)) (bomb-id cell))))
+
 (defn cell-player-id
   "Checks if the given cell contains a player and returns its mapping, else nil"
   [cell]
@@ -47,12 +60,15 @@
 (defn cell-player
   "Return the player in the given cell if any"
   ([cell] (cell-player cell (cell-player-id cell)))
-  ([cell player-id] (player-id cell)))
+  ([cell player-id] (when (not (nil? player-id)) (player-id cell))))
 
 (defn cell-empty?
   "Check if a given cell is empty"
   [grid coords]
-  (nil? (cell-at grid coords)))
+  (let [cell (cell-at grid coords)]
+    (or (nil? cell)
+        (and (nil? (cell-player cell))
+             (nil? (cell-bomb cell))))))
 
 (defn rand-coords
   "Return random coordinates within the given grid"
