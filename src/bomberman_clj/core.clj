@@ -1,5 +1,5 @@
 (ns bomberman-clj.core
-  (:gen-class))
+  (:require [bomberman-clj.specs :as specs]))
 
 (def bomb-timeout-ms 10000)
 (def bomb-radius 3)
@@ -7,6 +7,8 @@
 (defn cell-idx
   "Return grid cell index from coordinates"
   [{:keys [width height], :as grid} [x y, :as coords]]
+  {:pre [(specs/valid? ::specs/grid grid)
+         (specs/valid? ::specs/coords coords)]}
   (when (and (<= 0 x (dec width))
              (<= 0 y (dec height)))
     (+ (* y width) x)))
@@ -14,20 +16,32 @@
 (defn cell-at
   "Return the grid cell at the given coordinates"
   [{v :v, :as grid} coords]
+  {:pre [(specs/valid? ::specs/grid grid)
+         (specs/valid? ::specs/coords coords)]
+   :post [(specs/valid? ::specs/cell %)]}
   (nth v (cell-idx grid coords)))
 
 (defn assoc-grid-cell
   ([{v :v, :as grid} coords key val]
+   {:pre [(specs/valid? ::specs/grid grid)
+          (specs/valid? ::specs/coords coords)]
+    :post [(specs/valid? ::specs/grid %)]}
     (assoc grid :v
       (assoc v (cell-idx grid coords)
         (assoc (cell-at grid coords) key val))))
   ([{v :v, :as grid} coords cell]
+    {:pre [(specs/valid? ::specs/grid grid)
+           (specs/valid? ::specs/coords coords)]
+     :post [(specs/valid? ::specs/grid %)]}
     (assoc grid :v
       (assoc v (cell-idx grid coords) cell))))
 
 (defn dissoc-grid-cell
   "Like dissoc, but returns nil if the cell is empty afterwards."
   [{v :v, :as grid} coords k]
+  {:pre [(specs/valid? ::specs/grid grid)
+         (specs/valid? ::specs/coords coords)]
+   :post [(specs/valid? ::specs/grid %)]}
   (let [cell (dissoc (cell-at grid coords) k)
         cell (if (empty? cell) nil cell)]
     (assoc-grid-cell grid coords cell)))
@@ -35,11 +49,14 @@
 (defn in-grid?
   "Check if coordinates are within the given grid"
   [grid coords]
+  {:pre [(specs/valid? ::specs/grid grid)
+         (specs/valid? ::specs/coords coords)]}
   (not (nil? (cell-idx grid coords))))
 
 (defn cell-bomb-id
   "Checks if the given cell contains a bomb and returns its mapping, else nil"
   [cell]
+  {:pre [(specs/valid? ::specs/cell cell)]}
   (first ; bomb-id (or nil)
     (first ; first (or nil) [bomb-id, bomb]
       (filter (fn [[k _]] (re-matches #"bomb-x\d+y\d+" (name k))) cell))))
@@ -47,24 +64,32 @@
 (defn cell-bomb
   "Return the bomb in the given cell if any"
   [cell]
+  {:pre [(specs/valid? ::specs/cell cell)]}
   (let [bomb-id (cell-bomb-id cell)]
     (when (not (nil? bomb-id)) (bomb-id cell))))
 
 (defn cell-player-id
   "Checks if the given cell contains a player and returns its mapping, else nil"
   [cell]
+  {:pre [(specs/valid? ::specs/cell cell)]}
   (first ; player-id (or nil)
     (first ; first (or nil) [player-id, player]
       (filter (fn [[k _]] (re-matches #"player-\d+" (name k))) cell))))
 
 (defn cell-player
   "Return the player in the given cell if any"
-  ([cell] (cell-player cell (cell-player-id cell)))
-  ([cell player-id] (when (not (nil? player-id)) (player-id cell))))
+  ([cell]
+   {:pre [(specs/valid? ::specs/cell cell)]}
+   (cell-player cell (cell-player-id cell)))
+  ([cell player-id]
+   {:pre [(specs/valid? ::specs/cell cell)]}
+   (when (not (nil? player-id)) (player-id cell))))
 
 (defn cell-empty?
   "Check if a given cell is empty"
   [grid coords]
+  {:pre [(specs/valid? ::specs/grid grid)
+         (specs/valid? ::specs/coords coords)]}
   (let [cell (cell-at grid coords)]
     (or (nil? cell)
         (and (nil? (cell-player cell))
@@ -73,12 +98,16 @@
 (defn rand-coords
   "Return random coordinates within the given grid"
   [{:keys [width height], :as grid}]
+  {:pre [(specs/valid? ::specs/grid grid)]
+   :post [(specs/valid? ::specs/coords %)]}
   [(rand-int width) (rand-int height)])
 
 (defn find-empty-cell
   "Find a random empty cell within the given grid. Defaults to 100 tries."
   ([grid] (find-empty-cell grid 100))
   ([grid max-tries]
+   {:pre [(specs/valid? ::specs/grid grid)]
+    :post [(specs/valid? ::specs/coords %)]}
     (loop [coords (rand-coords grid)
            num-tries 1]
       (if (cell-empty? grid coords)
@@ -93,6 +122,9 @@
    object-id
    object
    coords]
+  {:pre [(specs/valid? ::specs/grid grid)
+         (specs/valid? ::specs/coords coords)]
+   :post [(specs/valid? ::specs/grid %)]}
   (if (not (cell-empty? grid coords))
     (throw (Exception. "can only spawn in empty cell"))
     (assoc-grid-cell grid coords object-id object)))
@@ -100,6 +132,7 @@
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
+  {:post [(specs/valid? ::specs/arena %)]}
   (let [grid {:width width,
               :height height,
               :v (into (vector) (take (* width height) (repeat nil)))}]
@@ -127,6 +160,7 @@
 (defn navigate
   "Navigate from coordinates into the given direction"
   [[x y, :as coords] direction]
+  {:pre [(specs/valid? ::specs/coords coords)]}
   (case direction
     :north [x (dec y)]
     :east [(inc x) y]
@@ -137,6 +171,8 @@
 (defn move
   "Try to move a player in the given direction"
   [arena player-id direction]
+  {:pre [(specs/valid? ::specs/arena arena)]
+   :post [(specs/valid? ::specs/arena %)]}
   (let [{{v :v, :as grid} :grid, players :players} arena
         coords (player-id players)
         player (player-id (cell-at grid coords))
@@ -155,6 +191,9 @@
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
         [x y, :as coords] (player-id players)
         bomb {:timestamp timestamp}
@@ -172,6 +211,10 @@
    radius
    detonate-bomb
    timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
   (loop [[cur-x cur-y] coords
          {:keys [width height], :as grid} grid]
     (if (or (= radius (Math/abs (- cur-x x)))
@@ -197,6 +240,9 @@
 (defn detonate-bomb
   "Detonate a given bomb"
   [arena bomb-id timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
   (let [{grid :grid, bombs :bombs, :as arena} arena
         [x y, :as coords] (bomb-id bombs)
         cell (cell-at grid coords)
@@ -213,6 +259,9 @@
 (defn eval-arena
   "Check if any bombs should detonate (and detonate in case)"
   [arena timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
   (let [; update bombs
         arena (loop [idx 0 {bombs :bombs, grid :grid, :as arena} arena]
           (if (= idx (count bombs))
@@ -241,8 +290,3 @@
         arena (assoc arena :grid grid)]
       arena
     ))
-
-(defn -main
-  "I don't do a whole lot ... yet."
-  [& args]
-  (println "Hello, World!"))

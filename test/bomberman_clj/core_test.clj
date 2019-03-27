@@ -42,19 +42,20 @@
       (is (contains? cell-player-3 :player-3))))
 
   (testing "Grid cells should be identified correctly"
-    (let [width 2
+    (let [bmb {:bomb {:timestamp ts-now}}
+          width 2
           height 3
           grid {:width width
                 :height height
-                :v [0   1
-                    nil 3
-                    4   5]}]
-      (is (= 0 (cell-at grid [0 0])))
-      (is (= 1 (cell-at grid [1 0])))
+                :v [bmb bmb
+                    nil bmb
+                    bmb bmb]}]
+      (is (= bmb (cell-at grid [0 0])))
+      (is (= bmb (cell-at grid [1 0])))
       (is (cell-empty? grid [0 1]))
-      (is (= 3 (cell-at grid [1 1])))
-      (is (= 4 (cell-at grid [0 2])))
-      (is (= 5 (cell-at grid [1 2])))))
+      (is (= bmb (cell-at grid [1 1])))
+      (is (= bmb (cell-at grid [0 2])))
+      (is (= bmb (cell-at grid [1 2])))))
 
   (testing "A pair of random coordinates should be found"
     (let [width 2
@@ -71,28 +72,30 @@
       (is (<= 0 y (- height 1)))))
 
   (testing "Grid cells should be identified correctly"
-    (let [width 2
+    (let [bmb {:bomb {:timestamp ts-now}}
+          width 2
           height 3
           grid {:width width
                 :height height
-                :v [0   1
-                    nil 3
-                    nil 5]}]
-      (is (= 0 (cell-at grid [0 0])))
-      (is (= 1 (cell-at grid [1 0])))
+                :v [bmb bmb
+                    nil bmb
+                    nil bmb]}]
+      (is (= bmb (cell-at grid [0 0])))
+      (is (= bmb (cell-at grid [1 0])))
       (is (cell-empty? grid [0 1]))
-      (is (= 3 (cell-at grid [1 1])))
+      (is (= bmb (cell-at grid [1 1])))
       (is (cell-empty? grid [0 2]))
-      (is (= 5 (cell-at grid [1 2])))))
+      (is (= bmb (cell-at grid [1 2])))))
 
   (testing "An random empty cell should be found"
-    (let [width 3
+    (let [plr {:glyph \P}
+          width 3
           height 3
           grid {:width width
                 :height height
-                :v [{:player-1 {}} {:player-2 {}} {:player-3 {}}
-                    {:player-4 {}} {:player-5 {}} {:player-6 {}}
-                    {:player-7 {}} nil            {:player-8 {}}]}]
+                :v [{:player-1 plr} {:player-2 plr} {:player-3 plr}
+                    {:player-4 plr} {:player-5 plr} {:player-6 plr}
+                    {:player-7 plr} nil             {:player-8 plr}]}]
       (is (= [1 2] (find-empty-cell grid)))))
 
   (testing "A player can move to NESW empty cells within grid"
@@ -133,7 +136,8 @@
   (testing "player-1 should place a bomb at in their current position"
     (let [v [{:player-1 {:glyph \P}}]
           arena {:grid {:width 1, :height 1, :v v}
-                 :players {:player-1 [0 0]}}
+                 :players {:player-1 [0 0]}
+                 :bombs {}}
           arena (plant-bomb arena :player-1 ts-now)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
           cell (first v)]
@@ -149,7 +153,8 @@
   (testing "a planted bomb should still be there after the player moves away"
     (let [v [{:player-1 {:glyph \P}} nil]
           arena {:grid {:width 1, :height 2, :v v}
-                 :players {:player-1 [0 0]}}
+                 :players {:player-1 [0 0]}
+                 :bombs {}}
           arena (plant-bomb arena :player-1 ts-now)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :south)
           cell (first v)]
