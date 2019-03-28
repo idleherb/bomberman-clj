@@ -4,7 +4,8 @@
   :license {:name "The Unlicense"
             :url "https://unlicense.org/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [clojure-lanterna "0.9.7"]]
+                 [clojure-lanterna "0.9.7"]
+                 [midje "1.9.3"]]
   :main ^:skip-aot bomberman-clj.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

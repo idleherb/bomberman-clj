@@ -1,1 +1,1 @@
-{:dev {:plugins [[lein-cloverage "1.1.1"]]}}
+{:dev {:plugins [[lein-midje "3.2.1"]]}}
