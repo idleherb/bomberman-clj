@@ -56,6 +56,23 @@
         (count bomb) => 2)
       (:bomb-x0y0 cell) => {:timestamp timestamp}))
 
+  (fact "only one bomb can be planted at the same time"
+    (let [ts-1st 1000000000000
+          ts-2nd 2000000000000
+          v [{:player-1 {:glyph \P}}]
+          arena {:grid {:width 1, :height 1, :v v}
+                  :players {:player-1 [0 0]}
+                  :bombs {}}
+          arena (plant-bomb arena :player-1 ts-1st)
+          arena (plant-bomb arena :player-1 ts-2nd)
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
+          cell (first v)]
+      (count bombs) => 1
+      (let [bomb (:bomb-x0y0 bombs)]
+        bomb => vector?
+        (count bomb) => 2)
+      (:bomb-x0y0 cell) => {:timestamp ts-1st}))
+
   (fact "a planted bomb is still there after the player moves away"
     (let [timestamp (make-timestamp)
           v [{:player-1 {:glyph \P}} nil]

@@ -1,5 +1,6 @@
 (ns bomberman-clj.arena
-  (:require [bomberman-clj.config :as config]
+  (:require [bomberman-clj.cells :as cells]
+            [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
             [bomberman-clj.specs :as specs]
             [bomberman-clj.util :as util]))
@@ -63,9 +64,11 @@
         bomb {:timestamp timestamp}
         bomb-id (keyword (str "bomb-x" x "y" y))
         bombs (assoc bombs bomb-id coords)]
-    (assoc arena
-      :bombs bombs
-      :grid (grid/assoc-grid-cell grid coords bomb-id bomb))))
+    (if (nil? (cells/cell-bomb (grid/cell-at grid coords)))
+      (assoc arena
+       :bombs bombs
+        :grid (grid/assoc-grid-cell grid coords bomb-id bomb))
+      arena)))
 
 (defn spread-fire
   "Spread fire along x or y axis"
