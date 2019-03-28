@@ -5,11 +5,6 @@
             [bomberman-clj.specs :as specs]
             [bomberman-clj.util :as util]))
 
-(defn- init-player
-  "Add default properties to the given player"
-  [player]
-  (merge player {:bomb-count config/bomb-count}))
-
 (defn init-arena
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
@@ -24,7 +19,7 @@
                                   [player-id (:coords player)])
                           players))}
       (let [player-id (keyword (str "player-" player-idx))
-            player (init-player (player-id players))]
+            player (players/init-player (player-id players))]
         (if (contains? player :coords)
           ; spawn player at given coords
           (let [grid (grid/spawn grid
