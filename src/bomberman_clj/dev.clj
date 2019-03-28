@@ -1,5 +1,5 @@
 (ns bomberman-clj.dev
-  (:require [bomberman-clj.core :refer :all])
+  (:require [bomberman-clj.arena :refer :all])
   (:require [lanterna.screen :as s]))
 
 (defn arena-rows
@@ -25,12 +25,12 @@
     :right {:player-id :player-1, :action #(move % :player-1 :east)}
     :down {:player-id :player-1, :action #(move % :player-1 :south)}
     :left {:player-id :player-1, :action #(move % :player-1 :west)}
-    \space {:player-id :player-1, :action #(plant-bomb % :player-1)}
+    \space {:player-id :player-1, :action #(plant-bomb % :player-1)}  ; fix call
     \w {:player-id :player-2, :action #(move % :player-2 :north)}
     \d {:player-id :player-2, :action #(move % :player-2 :east)}
     \s {:player-id :player-2, :action #(move % :player-2 :south)}
     \a {:player-id :player-2, :action #(move % :player-2 :west)}
-    :tab {:player-id :player-2, :action #(plant-bomb % :player-2)}
+    :tab {:player-id :player-2, :action #(plant-bomb % :player-2)}  ; fix call
     nil))
 
 (defn dev-cell-player
@@ -53,7 +53,7 @@
                 player-id (if (nil? player-id) :player-1 player-id)
                 arena (if (not (nil? action)) (action arena) arena)
                 rows (arena-rows arena)
-                {[x y] :coords} (player-id (:players arena))]
+                [x y, :as coords] (player-id (:players arena))]
             (doseq [[row-idx row] (map-indexed vector rows)]
               (doseq [[cell-idx cell] (map-indexed vector row)]
                 (s/put-string
@@ -64,7 +64,7 @@
                     (when (not (nil? cell)) (print cell " "))
                     (cond
                       (nil? cell) "."
-                      (not (nil? player)) (:glyph player)
+                      (not (nil? player)) (str (:glyph player))
                       (contains? cell :bomb) "X"
                       :else (throw (Exception. (str "invalid cell content: " cell))))
                   )  ; string
