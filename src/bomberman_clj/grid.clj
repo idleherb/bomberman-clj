@@ -11,7 +11,8 @@
 
 (defn cell-idx
   "Return grid cell index from coordinates"
-  [{:keys [width height], :as grid} [x y, :as coords]]
+  [{:keys [width height], :as grid}
+   {:keys [x y], :as coords}]
   {:pre [(specs/valid? ::specs/grid grid)
          (specs/valid? ::specs/coords coords)]}
   (when (and (<= 0 x (dec width))
@@ -93,7 +94,7 @@
   [{:keys [width height], :as grid}]
   {:pre [(specs/valid? ::specs/grid grid)]
    :post [(specs/valid? ::specs/coords %)]}
-  [(rand-int width) (rand-int height)])
+  {:x (rand-int width), :y (rand-int height)})
 
 (defn find-empty-cell
   "Find a random empty cell within the given grid. Defaults to 100 tries."

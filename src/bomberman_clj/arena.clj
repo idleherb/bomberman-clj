@@ -62,7 +62,7 @@
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/arena %)]}
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
-        [x y, :as coords] (player-id players)
+        {x :x, y :y, :as coords} (player-id players)
         player (grid/player-at grid player-id coords)]
     (if (and (players/has-bombs? player)
              (not (grid/cell-has-bomb? grid coords)))
@@ -79,16 +79,16 @@
 (defn spread-fire
   "Spread fire along x or y axis"
   [{grid :grid, :as arena}
-    [x y, :as coords]
-    transform-coords
-    radius
-    detonate-bomb
-    timestamp]
+   {x :x, y :y, :as coords}
+   transform-coords
+   radius
+   detonate-bomb
+   timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
          (specs/valid? ::specs/coords coords)
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/arena %)]}
-  (loop [[cur-x cur-y] coords
+  (loop [{cur-x :x, cur-y :y} coords
           {:keys [width height], :as grid} grid]
     (if (or (= radius (Math/abs (- cur-x x)))
             (= radius (Math/abs (- cur-y y)))
@@ -98,7 +98,7 @@
             (= cur-y height))
       (assoc arena :grid grid)
       (let [bomb-id (keyword (str "bomb-x" cur-x "y" cur-y))
-            bomb (grid/bomb-at grid bomb-id [cur-x cur-y])
+            bomb (grid/bomb-at grid bomb-id {:x cur-x, :y cur-y})
             arena (assoc arena :grid grid)
             arena (if (and (not (nil? bomb))
                            (not (contains? bomb :detonated)))
@@ -106,8 +106,8 @@
               arena)
             grid (:grid arena)]
         (recur
-          (transform-coords [cur-x cur-y])
-          (grid/assoc-grid-cell grid [cur-x cur-y] :fire {:timestamp timestamp}))))))
+          (transform-coords {:x cur-x, :y cur-y})
+          (grid/assoc-grid-cell grid {:x cur-x, :y cur-y} :fire {:timestamp timestamp}))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"
@@ -116,15 +116,15 @@
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/arena %)]}
   (let [{grid :grid, bombs :bombs, :as arena} arena
-        [x y, :as coords] (bomb-id bombs)
+        {x :x, y :y, :as coords} (bomb-id bombs)
         bomb (assoc (grid/bomb-at grid bomb-id coords) :detonated {:timestamp timestamp})
         grid (grid/assoc-grid-cell grid coords bomb-id bomb)
         arena (assoc arena :grid grid)
         spread-fire #(spread-fire %1 coords %2 config/bomb-radius detonate-bomb timestamp)
-        arena (spread-fire arena (fn [[x y]] [(inc x) y]))
-        arena (spread-fire arena (fn [[x y]] [(dec x) y]))
-        arena (spread-fire arena (fn [[x y]] [x (inc y)]))
-        arena (spread-fire arena (fn [[x y]] [x (dec y)]))]
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x (inc x), :y y}))
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x (dec x), :y y}))
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x x, :y (inc y)}))
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x x, :y (dec y)}))]
     arena))
 
 (defn eval-arena

@@ -17,7 +17,7 @@
 
 (s/def ::x int?)
 (s/def ::y int?)
-(s/def ::coords (s/and (s/coll-of int? :kind vector) #(= 2 (count %))))  ; TODO: {:x, :y}
+(s/def ::coords (s/keys :req-un [::x ::y]))
 
 (s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
 (s/def ::hit (s/keys :req-un [::timestamp]))

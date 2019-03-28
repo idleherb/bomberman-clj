@@ -25,7 +25,7 @@
           v [nil nil nil
              nil plr nil
              nil nil nil]
-          players {:player-1 [1 1]}
+          players {:player-1 {:x 1, :y 1}}
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
           arena (move arena :player-1 :south)
           arena (move arena :player-1 :south)  ; hit wall
@@ -37,7 +37,7 @@
           arena (move arena :player-1 :north)  ; hit wall
           arena (move arena :player-1 :north)  ; hit wall
           {players :players {v :v} :grid} arena
-          [x y, :as coords] (:player-1 players)]
+          {x :x, y :y, :as coords} (:player-1 players)]
       x => 0
       y => 0
       (nth v 4) => nil?))
@@ -46,14 +46,14 @@
     (let [timestamp (make-timestamp)
           v [{:player-1 {:glyph \P, :bomb-count 3}}]
           arena {:grid {:width 1, :height 1, :v v}
-                 :players {:player-1 [0 0]}
+                 :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
           arena (plant-bomb arena :player-1 timestamp)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
           cell (first v)]
       (count bombs) => 1
       (let [bomb (:bomb-x0y0 bombs)]
-        bomb => vector?
+        bomb => map?
         (count bomb) => 2)
       (:bomb-x0y0 cell) => {:timestamp timestamp}))
 
@@ -62,7 +62,7 @@
           ts-2nd 2000000000000
           v [{:player-1 {:glyph \P, :bomb-count 3}}]
           arena {:grid {:width 1, :height 1, :v v}
-                  :players {:player-1 [0 0]}
+                  :players {:player-1 {:x 0, :y 0}}
                   :bombs {}}
           arena (plant-bomb arena :player-1 ts-1st)
           arena (plant-bomb arena :player-1 ts-2nd)
@@ -70,7 +70,7 @@
           cell (first v)]
       (count bombs) => 1
       (let [bomb (:bomb-x0y0 bombs)]
-        bomb => vector?
+        bomb => map?
         (count bomb) => 2)
       (:bomb-x0y0 cell) => {:timestamp ts-1st}))
 
@@ -78,7 +78,7 @@
     (let [timestamp (make-timestamp)
           v [{:player-1 {:glyph \P, :bomb-count 3}} nil]
           arena {:grid {:width 1, :height 2, :v v}
-                 :players {:player-1 [0 0]}
+                 :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
           arena (plant-bomb arena :player-1 timestamp)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :south)
@@ -90,7 +90,7 @@
     (let [timestamp (make-timestamp)
           v [{:player-1 {:glyph \P, :bomb-count 2}} nil nil nil]
           arena {:grid {:width 1, :height 4, :v v}
-                 :players {:player-1 [0 0]}
+                 :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
           arena (plant-bomb arena :player-1 timestamp)
           arena (move arena :player-1 :south)
@@ -119,8 +119,8 @@
              nil nil plr nil nil
              nil nil nil nil nil]
           arena {:grid {:width 5, :height 4, :v v}
-                 :players {:player-1 [2 2]}
-                 :bombs {bomb-id [1 1]}}
+                 :players {:player-1 {:x 2, :y 2}}
+                 :bombs {bomb-id {:x 1, :y 1}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id timestamp)]
       (count bombs) => 1
@@ -165,8 +165,8 @@
              nil plr nil nil nil
              nil nil nil nil nil]
           arena {:grid {:width 5, :height 4, :v v}
-                 :players {:player-1 [1 3]}
-                 :bombs {bomb-id [1 1]}}
+                 :players {:player-1 {:x 1, :y 3}}
+                 :bombs {bomb-id {:x 1, :y 1}}}
           {{v :v, :as grid} :grid, bombs :bombs, :as arena}
             (detonate-bomb arena bomb-id timestamp)]
         (count bombs) => 1
@@ -206,7 +206,7 @@
              nil plr nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 [1 1]}
+                 :players {:player-1 {:x 1, :y 1}}
                  :bombs {}}
           evaluated-arena (eval-arena arena (make-timestamp))]
       evaluated-arena => arena))
@@ -220,8 +220,8 @@
              nil plr nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 [1 1]}
-                 :bombs {bomb-id [0 0]}}
+                 :players {:player-1 {:x 1, :y 1}}
+                 :bombs {bomb-id {:x 0, :y 0}}}
           {{v :v, :as grid} :grid
             bombs :bombs
             :as evaluated-arena} (eval-arena arena timestamp)]
@@ -259,9 +259,9 @@
              nil nil bm2
              plr nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 [0 2]}
-                 :bombs {bomb-id1 [0 0]
-                         bomb-id2 [2 1]}}
+                 :players {:player-1 {:x 0, :y 2}}
+                 :bombs {bomb-id1 {:x 0, :y 0}
+                         bomb-id2 {:x 2, :y 1}}}
           {{v :v, :as grid} :grid
             bombs :bombs
             :as evaluated-arena} (eval-arena arena timestamp)]
@@ -299,10 +299,10 @@
              nil plr nil
              nil bm3 nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 [1 1]}
-                 :bombs {:bomb-x0y0 [0 0]
-                         :bomb-x2y0 [2 0]
-                         :bomb-x1y2 [1 2]}}
+                 :players {:player-1 {:x 1, :y 1}}
+                 :bombs {:bomb-x0y0 {:x 0, :y 0}
+                         :bomb-x2y0 {:x 2, :y 0}
+                         :bomb-x1y2 {:x 1, :y 2}}}
           {{v :v, :as grid} :grid
             bombs :bombs
             :as evaluated-arena} (eval-arena arena 2222222222222)]
@@ -340,8 +340,8 @@
           v [bom nil
              nil plr]
           arena {:grid {:width 2, :height 2, :v v}
-                 :players {:player-1 [1 1]}
-                 :bombs {:bomb-x0y0 [0 0]}}
+                 :players {:player-1 {:x 1, :y 1}}
+                 :bombs {:bomb-x0y0 {:x 0, :y 0}}}
           arena (eval-arena arena 1001111111111)
           arena (move arena :player-1 :north)
           arena (move arena :player-1 :north)

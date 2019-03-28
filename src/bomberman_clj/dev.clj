@@ -54,7 +54,7 @@
                 player-id (if (nil? player-id) :player-1 player-id)
                 arena (if (not (nil? action)) (action arena) arena)
                 rows (arena-rows arena)
-                [x y, :as coords] (player-id (:players arena))]
+                {:keys [x y], :as coords} (player-id (:players arena))]
             (doseq [[row-idx row] (map-indexed vector rows)]
               (doseq [[cell-idx cell] (map-indexed vector row)]
                 (s/put-string
@@ -70,7 +70,7 @@
                       :else (throw (Exception. (str "invalid cell content: " cell))))
                   )  ; string
                   {:fg (if (nil? cell) :green :white),
-                    :bg (if (not (nil? (cells/cell-bomb-id cell))) :red :black)})))  ; options
+                   :bg (if (not (nil? (cells/cell-bomb-id cell))) :red :black)})))  ; options
             (s/move-cursor scr (* 2 x) y)
             (s/redraw scr)
             (recur arena (s/get-key-blocking scr))))))))

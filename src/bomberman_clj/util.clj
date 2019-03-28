@@ -3,11 +3,11 @@
 
 (defn navigate
   "Navigate from coordinates into the given direction"
-  [[x y, :as coords] direction]
+  [{:keys [x y], :as coords} direction]
   {:pre [(specs/valid? ::specs/coords coords)]}
   (case direction
-    :north [x (dec y)]
-    :east [(inc x) y]
-    :south [x (inc y)]
-    :west [(dec x) y]
+    :north {:x x, :y (dec y)}
+    :east {:x (inc x), :y y}
+    :south {:x x, :y (inc y)}
+    :west {:x (dec x), :y y}
     (throw (Exception. (str "invalid direction: " direction)))))
