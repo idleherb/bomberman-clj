@@ -13,6 +13,7 @@
 (def max-grid-height 20)
 
 (s/def ::glyph char?)
+(s/def ::bomb-count (s/and int? #(>= % 0 )))
 
 (s/def ::x int?)
 (s/def ::y int?)
@@ -20,8 +21,8 @@
 
 (s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
 (s/def ::hit (s/keys :req-un [::timestamp]))
-(s/def ::player-1 (s/keys :req-un [::glyph] :opt-un [::coords ::hit]))
-(s/def ::player-2 (s/keys :req-un [::glyph] :opt-un [::coords ::hit]))
+(s/def ::player-1 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
+(s/def ::player-2 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
 
 (s/def ::bomb (s/keys :req-un [::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
