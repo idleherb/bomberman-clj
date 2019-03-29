@@ -26,7 +26,7 @@
       (:player-3 cell-player-3) => {:glyph \R, :bomb-count 3}))
 
   (fact "cells are being identified correctly"
-    (let [bmb {:bomb {:timestamp (make-timestamp)}}
+    (let [bmb {:bomb {:player-id :player-1, :timestamp (make-timestamp)}}
           width 2
           height 3
           grid {:width width

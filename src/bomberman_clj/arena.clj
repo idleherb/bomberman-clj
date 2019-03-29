@@ -67,7 +67,7 @@
     (if (and (players/has-bombs? player)
              (not (grid/cell-has-bomb? grid coords)))
       (let [bomb-id (keyword (str "bomb-x" x "y" y))
-            bomb {:timestamp timestamp}
+            bomb {:player-id player-id, :timestamp timestamp}
             bombs (assoc bombs bomb-id coords)
             player (players/dec-bombs player)
             grid (grid/assoc-grid-cell grid coords bomb-id bomb)
@@ -119,6 +119,11 @@
         {x :x, y :y, :as coords} (bomb-id bombs)
         bomb (assoc (grid/bomb-at grid bomb-id coords) :detonated {:timestamp timestamp})
         grid (grid/assoc-grid-cell grid coords bomb-id bomb)
+        player-id (:player-id bomb)
+        player-coords (player-id (:players arena))
+        player (grid/player-at grid player-id player-coords)
+        player (players/inc-bombs player)
+        grid (grid/assoc-grid-cell grid player-coords player-id player)
         arena (assoc arena :grid grid)
         spread-fire #(spread-fire %1 coords %2 config/bomb-radius detonate-bomb timestamp)
         arena (spread-fire arena (fn [{x :x, y :y}] {:x (inc x), :y y}))

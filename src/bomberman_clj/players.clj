@@ -15,3 +15,7 @@
   (if (has-bombs? player)
     (assoc player :bomb-count (dec (:bomb-count player)))
     player))
+
+(defn inc-bombs
+  [player]
+  (assoc player :bomb-count (inc (:bomb-count player))))

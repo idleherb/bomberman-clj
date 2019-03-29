@@ -24,7 +24,8 @@
 (s/def ::player-1 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
 (s/def ::player-2 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
 
-(s/def ::bomb (s/keys :req-un [::timestamp]))
+(s/def ::player-id (s/and keyword? #(re-matches #"player-\d+" (name %))))
+(s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
 
 (s/def ::cell (s/nilable (s/keys :opt-un [::bomb ::fire ::player-1 ::player-2])))
