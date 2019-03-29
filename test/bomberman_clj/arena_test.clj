@@ -335,7 +335,7 @@
       (count bombs) => 3))
 
   (fact "a player walking into a cell with fire gets hit"
-    (let [timestamp (make-timestamp)
+    (let [timestamp 1001111111122
           bom {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
           plr {:player-1 {:glyph \P, :bomb-count 3}}
           v [bom nil
@@ -364,4 +364,17 @@
       (let [bomb (:bomb-x0y0 (nth v 0))]
         (:detonated bomb) => {:timestamp 1001111111111})
       (:hit (:player-1 (nth v 1))) => {:timestamp timestamp}))
+     
+  (fact "at arena evaluation, expired detonated bombs get removed"
+    (let [timestamp (make-timestamp)
+          bmb {:player-id :player-1
+                :timestamp 1000000000000
+                :detonated {:timestamp 1000000010000}}
+          v [{:bomb-x0y0 bmb}]
+          arena {:grid {:width 1, :height 1, :v v}
+                  :players {}
+                  :bombs {:bomb-x0y0 {:x 0, :y 0}}}
+          arena (eval-arena arena timestamp)
+          {{v :v, :as grid} :grid} arena]
+      (:bomb-x0y0 (first v)) => nil?))
 )

@@ -1,5 +1,6 @@
 (ns bomberman-clj.arena
-  (:require [bomberman-clj.config :as config]
+  (:require [bomberman-clj.bombs :as bombs]
+            [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
             [bomberman-clj.players :as players]
             [bomberman-clj.specs :as specs]
@@ -133,7 +134,7 @@
     arena))
 
 (defn eval-arena
-  "Check if any bombs should detonate (and detonate in case)"
+  "Check if any bombs should detonate (and detonate in case). Remove expired bombs."
   [arena timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
          (specs/valid? ::specs/timestamp timestamp)]
@@ -145,7 +146,12 @@
             (let [bomb-id (nth (keys bombs) idx)
                   bomb-coords (bomb-id bombs)
                   bomb (grid/bomb-at grid bomb-id bomb-coords)
-                  arena (if (and (<= config/bomb-timeout-ms (- timestamp (:timestamp bomb)))
+                  bomb-expired (bombs/bomb-expired? bomb timestamp)
+                  arena (if bomb-expired
+                    (assoc arena :grid (grid/dissoc-grid-cell grid bomb-coords bomb-id))
+                    arena)
+                  arena (if (and (not bomb-expired)
+                                 (<= config/bomb-timeout-ms (- timestamp (:timestamp bomb)))
                                  (not (contains? bomb :detonated)))
                     (detonate-bomb arena bomb-id timestamp)
                     arena)]
