@@ -186,11 +186,31 @@
         cell (grid/cell-at grid coords)]
     (if-let [player-id (cells/cell-player-id cell)]
       (let [player (player-id cell)]
-        (if (grid/cell-on-fire? grid coords)
+        (if (and (grid/cell-on-fire? grid coords)
+                 (nil? (:hit player)))
           (assoc arena :grid
             (grid/assoc-grid-cell grid coords player-id
               (assoc (grid/player-at grid player-id coords) :hit {:timestamp timestamp})))
           arena))
+      arena)))
+
+(defn remove-expired-player-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+          (specs/valid? ::specs/coords coords)
+          (specs/valid? ::specs/timestamp timestamp)]
+    :post [(specs/valid? ::specs/arena %)]}
+  (let [grid (:grid arena)
+        cell (grid/cell-at grid coords)]
+    (if-let [player-id (cells/cell-player-id cell)]
+      (if-let [hit (:hit (player-id cell))]
+        (assoc arena
+          :grid (grid/assoc-grid-cell grid coords
+                  (if (<= config/player-expiration-ms (- timestamp (:timestamp hit)))
+                    (dissoc cell player-id)
+                    cell))
+          :players (assoc (:players arena) :player-id nil))
+        arena)
       arena)))
 
 (defn update-player-
@@ -200,7 +220,8 @@
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/arena %)]}
   (-> arena
-      (hit-player- coords timestamp)))
+      (hit-player- coords timestamp)
+      (remove-expired-player- coords timestamp)))
 
 (defn update-fire-
   [arena coords timestamp]

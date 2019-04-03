@@ -365,16 +365,24 @@
         (:detonated bomb) => {:timestamp 1001111111111})
       (:hit (:player-1 (nth v 1))) => {:timestamp timestamp}))
      
-  (fact "at arena evaluation, expired detonated bombs and fire get removed"
-    (let [bmb {:player-id :player-1
+  (fact "at arena evaluation, expired detonated bombs, fire and hit players get removed"
+    (let [bomb {:player-id :player-1
                 :timestamp 1000000000000
                 :detonated {:timestamp 1000000010000}}
-          v [{:bomb-x0y0 bmb, :fire {:timestamp 1000000010000}}]
+          player {:glyph \P
+                  :hit {:timestamp 1000000010000}
+                  :bomb-count 0}
+          v [{:bomb-x0y0 bomb
+              :fire {:timestamp 1000000010000}
+              :player-1 player}]
           arena {:grid {:width 1, :height 1, :v v}
-                  :players {}
-                  :bombs {:bomb-x0y0 {:x 0, :y 0}}}
+                 :players {:player-1 {:x 0, :y 0}}
+                 :bombs {:bomb-x0y0 {:x 0, :y 0}}}
           arena (eval-arena arena (make-timestamp))
-          {{v :v, :as grid} :grid} arena]
-      (:bomb-x0y0 (first v)) => nil?
-      (:fire (first v)) => nil?))
+          {{v :v, :as grid} :grid} arena
+          cell (first v)]
+      (:bomb-x0y0 cell) => nil?
+      (:fire cell) => nil?
+      (:player-1 cell) => nil?
+      (:player-1 arena) => nil?))
 )
