@@ -176,7 +176,7 @@
       (remove-expired-bomb- coords timestamp)
       (detonate-timed-out-bomb- coords timestamp)))
 
-(defn update-player-
+(defn hit-player-
   [arena coords timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
          (specs/valid? ::specs/coords coords)
@@ -192,6 +192,15 @@
               (assoc (grid/player-at grid player-id coords) :hit {:timestamp timestamp})))
           arena))
       arena)))
+
+(defn update-player-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (-> arena
+      (hit-player- coords timestamp)))
 
 (defn update-fire-
   [arena coords timestamp]
