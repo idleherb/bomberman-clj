@@ -11,3 +11,9 @@
     :south {:x x, :y (inc y)}
     :west {:x (dec x), :y y}
     (throw (Exception. (str "invalid direction: " direction)))))
+
+(defn expired?
+  [old-ts new-ts expiration-ms]
+  {:pre [(specs/valid? ::specs/timestamp old-ts)
+         (specs/valid? ::specs/timestamp new-ts)]}
+  (>= (- new-ts old-ts) expiration-ms))

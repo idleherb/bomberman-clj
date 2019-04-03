@@ -27,8 +27,8 @@
 (defn cell-player
   "Return the player in the given cell if any"
   ([cell]
-    {:pre [(specs/valid? ::specs/cell cell)]}
-    (cell-player cell (cell-player-id cell)))
+   {:pre [(specs/valid? ::specs/cell cell)]}
+   (cell-player cell (cell-player-id cell)))
   ([cell player-id]
-    {:pre [(specs/valid? ::specs/cell cell)]}
-    (when (not (nil? player-id)) (player-id cell))))
+   {:pre [(specs/valid? ::specs/cell cell)]}
+   (when (not (nil? player-id)) (player-id cell))))
