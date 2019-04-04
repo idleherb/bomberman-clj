@@ -6,6 +6,7 @@
                                          move
                                          plant-bomb]]
             [bomberman-clj.cells :as cells]
+            [bomberman-clj.config :as config]
             [bomberman-clj.test-data :refer [make-timestamp]]))
 
 (facts "about arenas"
@@ -202,15 +203,15 @@
             (nth v 19))))
 
   (fact "an evaluated arena without any bombs has no changes"
-    (let [plr {:player-1 {:glyph \P, :bomb-count 3}}
-          v [nil nil nil
-             nil plr nil
+    (let [pl1 {:player-1 {:glyph \P, :bomb-count 1}}
+          pl2 {:player-2 {:glyph \Q, :bomb-count 1}}
+          v [nil nil pl2
+             nil pl1 nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
-                 :players {:player-1 {:x 1, :y 1}}
-                 :bombs {}}
-          evaluated-arena (eval-arena arena (make-timestamp))]
-      evaluated-arena => arena))
+                 :players {:player-1 {:x 1, :y 1}, :player-2 {:x 0, :y 2}}
+                 :bombs {}}]
+          (eval-arena arena (make-timestamp)) => arena))
 
   (fact "an evaluated arena with an expired bomb contains fire"
     (let [timestamp (make-timestamp)
@@ -379,10 +380,25 @@
                  :players {:player-1 {:x 0, :y 0}}
                  :bombs {:bomb-x0y0 {:x 0, :y 0}}}
           arena (eval-arena arena (make-timestamp))
-          {{v :v, :as grid} :grid} arena
+          {{v :v, :as grid} :grid, players :players} arena
           cell (first v)]
       (:bomb-x0y0 cell) => nil?
       (:fire cell) => nil?
       (:player-1 cell) => nil?
-      (:player-1 arena) => nil?))
+      (:player-1 players) => nil?))
+
+  (fact "last man standing wins"
+    (let [ts-1 (make-timestamp)
+          ts-2 (+ (make-timestamp) config/bomb-timeout-ms)
+          arena (-> (init-arena 3 3 {:player-1 {:glyph \P, :bomb-count 1, :coords {:x 0 :y 0}}
+                                     :player-2 {:glyph \Q, :bomb-count 1, :coords {:x 1 :y 0}}})
+                    (plant-bomb :player-1 ts-1)
+                    (move :player-1 :south)
+                    (move :player-1 :east)
+                    (eval-arena ts-2))
+          _ (println "!!!" arena)
+          {{v :v, :as grid} :grid, players :players} arena]
+      (count players) => 2
+      (count (filter (comp nil? second) players)) => 1
+      (:winner arena) => {:player-id :player-1, :timestamp ts-2}))
 )

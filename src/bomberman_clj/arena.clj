@@ -209,7 +209,7 @@
                   (if (<= config/player-expiration-ms (- timestamp (:timestamp hit)))
                     (dissoc cell player-id)
                     cell))
-          :players (assoc (:players arena) :player-id nil))
+          :players (assoc (:players arena) player-id nil))
         arena)
       arena)))
 
@@ -239,23 +239,36 @@
             cell)))
       arena)))
 
+(defn update-winner-
+  [arena timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (let [players (:players arena)
+        alive-players (filter (comp some? second) players)]
+    (if (= 1 (count alive-players))
+      (assoc arena :winner {:player-id (first (first alive-players))
+                             :timestamp timestamp})
+      arena)))
+
 (defn eval-arena
   "Check if any bombs should detonate (and detonate in case). Remove expired bombs and fire."
   [arena timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/arena %)]}
-  (let [{{:keys [width height], :as grid} :grid} arena]
-    (loop [arena arena y 0]
-      (if (= height y)
-        arena
-        (recur
-          (loop [arena arena x 0]
-            (if (= width x)
-              arena
-              (recur (-> arena
-                        (update-bomb-   {:x x, :y y} timestamp)
-                        (update-player- {:x x, :y y} timestamp)
-                        (update-fire-   {:x x, :y y} timestamp))
-                     (inc x))))
-            (inc y))))))
+  (let [{{:keys [width height], :as grid} :grid} arena
+        arena (loop [arena arena y 0]
+                (if (= height y)
+                  arena
+                  (recur
+                    (loop [arena arena x 0]
+                      (if (= width x)
+                        arena
+                        (recur (-> arena
+                                  (update-bomb-   {:x x, :y y} timestamp)
+                                  (update-player- {:x x, :y y} timestamp)
+                                  (update-fire-   {:x x, :y y} timestamp))
+                              (inc x))))
+                      (inc y))))]
+        (update-winner- arena timestamp)))
