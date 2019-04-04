@@ -387,18 +387,38 @@
       (:player-1 cell) => nil?
       (:player-1 players) => nil?))
 
-  (fact "last man standing wins"
+  (fact "a game is over when less than 2 players are alive"
     (let [ts-1 (make-timestamp)
           ts-2 (+ (make-timestamp) config/bomb-timeout-ms)
-          arena (-> (init-arena 3 3 {:player-1 {:glyph \P, :bomb-count 1, :coords {:x 0 :y 0}}
-                                     :player-2 {:glyph \Q, :bomb-count 1, :coords {:x 1 :y 0}}})
-                    (plant-bomb :player-1 ts-1)
-                    (move :player-1 :south)
-                    (move :player-1 :east)
-                    (eval-arena ts-2))
-          _ (println "!!!" arena)
-          {{v :v, :as grid} :grid, players :players} arena]
-      (count players) => 2
-      (count (filter (comp nil? second) players)) => 1
-      (:winner arena) => {:player-id :player-1, :timestamp ts-2}))
+          arena (init-arena 3 3 {:player-1 {:glyph \P, :bomb-count 1, :coords {:x 0 :y 0}}
+                                 :player-2 {:glyph \Q, :bomb-count 1, :coords {:x 1 :y 0}}})]
+
+      (fact "last man standing wins"
+        (let [arena (-> arena
+                        (plant-bomb :player-1 ts-1)
+                        (move :player-1 :south)
+                        (move :player-1 :east)
+                        (eval-arena ts-2))
+              players (:players arena)]
+          (count players) => 2
+          (count (filter (comp nil? second) players)) => 1
+          (:gameover arena) => {:winner :player-1, :timestamp ts-2}))
+
+      (fact "no winner on empty arena"
+        (let [arena (-> arena
+                        (plant-bomb :player-1 ts-1)
+                        (move :player-1 :south)
+                        (eval-arena ts-2))
+              players (:players arena)]
+          (count players) => 2
+          (count (filter (comp nil? second) players)) => 2
+          (:gameover arena) => {:timestamp ts-2}))
+
+      (fact "with 2 players, the game is ongoing"
+        (let [arena (eval-arena arena ts-2)
+              players (:players arena)]
+          (count players) => 2
+          (count (filter (comp nil? second) players)) => 0
+          (:gameover arena) => nil?))
+  ))
 )

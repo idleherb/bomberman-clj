@@ -239,16 +239,16 @@
             cell)))
       arena)))
 
-(defn update-winner-
+(defn update-gameover-
   [arena timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/arena %)]}
-  (let [players (:players arena)
-        alive-players (filter (comp some? second) players)]
-    (if (= 1 (count alive-players))
-      (assoc arena :winner {:player-id (first (first alive-players))
-                             :timestamp timestamp})
+  (let [alive-players (filter (comp some? second) (:players arena))]
+    (condp = (count alive-players)
+      0 (assoc arena :gameover {:timestamp timestamp})
+      1 (assoc arena :gameover {:timestamp timestamp
+                                :winner (first (first alive-players))})
       arena)))
 
 (defn eval-arena
@@ -271,4 +271,4 @@
                                   (update-fire-   {:x x, :y y} timestamp))
                               (inc x))))
                       (inc y))))]
-        (update-winner- arena timestamp)))
+        (update-gameover- arena timestamp)))

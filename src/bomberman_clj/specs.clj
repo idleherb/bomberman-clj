@@ -38,5 +38,6 @@
 
 (s/def ::bombs map?)
 (s/def ::players map?)
-(s/def ::winner (s/keys :req-un [::player-id ::timestamp]))
-(s/def ::arena (s/keys :req-un [::bombs ::grid ::players] :opt-un [::winner]))
+(s/def ::winner (s/and keyword? #(re-matches #"player-\d+" (name %))))
+(s/def ::gameover (s/keys :req-un [::timestamp] opt-un [::winner]))
+(s/def ::arena (s/keys :req-un [::bombs ::grid ::players] :opt-un [::gameover]))
