@@ -1,6 +1,9 @@
 (ns bomberman-clj.arena
-  (:require [bomberman-clj.config :as config]
+  (:require [bomberman-clj.bombs :as bombs]
+            [bomberman-clj.cells :as cells]
+            [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
+            [bomberman-clj.players :as players]
             [bomberman-clj.specs :as specs]
             [bomberman-clj.util :as util]))
 
@@ -8,47 +11,49 @@
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
   {:post [(specs/valid? ::specs/arena %)]}
-  (let [grid {:width width,
-              :height height,
-              :v (into (vector) (take (* width height) (repeat nil)))}]
-    (loop [grid grid
-            players players
-            player-idx 1]
-      (if (> player-idx (count players))
-        {:bombs {}
-          :grid grid
-          :players (into {} (map (fn [[k v]] [k (:coords v)])) players)}
-        (let [player-id (keyword (str "player-" player-idx))]
-          (if (contains? (player-id players) :coords)
-            ; spawn player at given coords
-            (let [{coords :coords, :as player} (player-id players)
-                  grid (grid/spawn grid player-id (dissoc player :coords) coords)
-                  player-idx (inc player-idx)]
-              (recur grid players player-idx))
-            ; spawn player at random coords
-            (let [coords (grid/find-empty-cell grid)
-                  grid (grid/spawn grid player-id (player-id players) coords)
-                  players (assoc players player-id {:coords coords})
-                  player-idx (inc player-idx)]
-              (recur grid players player-idx))))))))
+  (loop [grid (grid/init-grid width height)
+         players players
+         player-idx 1]
+    (if (> player-idx (count players))
+      {:bombs {}
+       :grid grid
+       :players (into {} (map (fn [[player-id player]] 
+                                  [player-id (:coords player)])
+                          players))}
+      (let [player-id (keyword (str "player-" player-idx))
+            player (players/init-player (player-id players))]
+        (if (contains? player :coords)
+          ; spawn player at given coords
+          (let [grid (grid/spawn grid
+                                 player-id
+                                 (dissoc player :coords)
+                                 (:coords player))
+                players (assoc players player-id player)
+                player-idx (inc player-idx)]
+            (recur grid players player-idx))
+          ; spawn player at random coords
+          (let [coords (grid/find-empty-cell grid)
+                grid (grid/spawn grid player-id player coords)
+                players (assoc players player-id (merge player {:coords coords}))
+                player-idx (inc player-idx)]
+            (recur grid players player-idx)))))))
 
 (defn move
   "Try to move a player in the given direction"
   [arena player-id direction]
   {:pre [(specs/valid? ::specs/arena arena)]
-    :post [(specs/valid? ::specs/arena %)]}
+   :post [(specs/valid? ::specs/arena %)]}
   (let [{{v :v, :as grid} :grid, players :players} arena
         coords (player-id players)
         player (player-id (grid/cell-at grid coords))
         new-coords (util/navigate coords direction)]
     (if (and (grid/in-grid? grid new-coords)
-              (grid/cell-empty? grid new-coords))
+             (grid/cell-empty? grid new-coords))
       (let [grid (grid/dissoc-grid-cell grid coords player-id)
             grid (grid/spawn grid player-id player new-coords)
             players (assoc players player-id new-coords)
-            arena (assoc arena
-              :grid grid
-              :players players)]
+            arena (assoc arena :grid grid
+                               :players players)]
         arena)
       arena)))
 
@@ -56,30 +61,36 @@
   "Try to plant a bomb with the given player at their current coordinates"
   [arena player-id timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
-          (specs/valid? ::specs/timestamp timestamp)]
-    :post [(specs/valid? ::specs/arena %)]}
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena
-        [x y, :as coords] (player-id players)
-        bomb {:timestamp timestamp}
-        bomb-id (keyword (str "bomb-x" x "y" y))
-        bombs (assoc bombs bomb-id coords)]
-    (assoc arena
-      :bombs bombs
-      :grid (grid/assoc-grid-cell grid coords bomb-id bomb))))
+        {x :x, y :y, :as coords} (player-id players)
+        player (grid/player-at grid player-id coords)]
+    (if (and (players/has-bombs? player)
+             (not (grid/cell-has-bomb? grid coords)))
+      (let [bomb-id (keyword (str "bomb-x" x "y" y))
+            bomb {:player-id player-id, :timestamp timestamp}
+            bombs (assoc bombs bomb-id coords)
+            player (players/dec-bombs player)
+            grid (grid/assoc-grid-cell grid coords bomb-id bomb)
+            grid (grid/assoc-grid-cell grid coords player-id player)]
+          (assoc arena :bombs bombs
+                       :grid grid))
+       arena)))
 
 (defn spread-fire
   "Spread fire along x or y axis"
   [{grid :grid, :as arena}
-    [x y, :as coords]
-    transform-coords
-    radius
-    detonate-bomb
-    timestamp]
+   {x :x, y :y, :as coords}
+   transform-coords
+   radius
+   detonate-bomb
+   timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
-          (specs/valid? ::specs/coords coords)
-          (specs/valid? ::specs/timestamp timestamp)]
-    :post [(specs/valid? ::specs/arena %)]}
-  (loop [[cur-x cur-y] coords
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (loop [{cur-x :x, cur-y :y} coords
           {:keys [width height], :as grid} grid]
     (if (or (= radius (Math/abs (- cur-x x)))
             (= radius (Math/abs (- cur-y y)))
@@ -89,68 +100,175 @@
             (= cur-y height))
       (assoc arena :grid grid)
       (let [bomb-id (keyword (str "bomb-x" cur-x "y" cur-y))
-            cell (grid/cell-at grid [cur-x cur-y])
-            bomb (bomb-id cell)
+            bomb (grid/bomb-at grid bomb-id {:x cur-x, :y cur-y})
             arena (assoc arena :grid grid)
             arena (if (and (not (nil? bomb))
-                            (not (contains? bomb :detonated)))
+                           (not (contains? bomb :detonated)))
               (detonate-bomb arena bomb-id timestamp)
               arena)
             grid (:grid arena)]
         (recur
-          (transform-coords [cur-x cur-y])
-          (grid/assoc-grid-cell grid [cur-x cur-y] :fire {:timestamp timestamp}))))))
+          (transform-coords {:x cur-x, :y cur-y})
+          (grid/assoc-grid-cell grid {:x cur-x, :y cur-y} :fire {:timestamp timestamp}))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"
   [arena bomb-id timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
-          (specs/valid? ::specs/timestamp timestamp)]
-    :post [(specs/valid? ::specs/arena %)]}
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
   (let [{grid :grid, bombs :bombs, :as arena} arena
-        [x y, :as coords] (bomb-id bombs)
-        cell (grid/cell-at grid coords)
-        bomb (assoc (bomb-id cell) :detonated {:timestamp timestamp})
+        {x :x, y :y, :as coords} (bomb-id bombs)
+        bomb (assoc (grid/bomb-at grid bomb-id coords) :detonated {:timestamp timestamp})
         grid (grid/assoc-grid-cell grid coords bomb-id bomb)
+        player-id (:player-id bomb)
+        player-coords (player-id (:players arena))
+        player (grid/player-at grid player-id player-coords)
+        player (players/inc-bombs player)
+        grid (grid/assoc-grid-cell grid player-coords player-id player)
         arena (assoc arena :grid grid)
         spread-fire #(spread-fire %1 coords %2 config/bomb-radius detonate-bomb timestamp)
-        arena (spread-fire arena (fn [[x y]] [(inc x) y]))
-        arena (spread-fire arena (fn [[x y]] [(dec x) y]))
-        arena (spread-fire arena (fn [[x y]] [x (inc y)]))
-        arena (spread-fire arena (fn [[x y]] [x (dec y)]))]
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x (inc x), :y y}))
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x (dec x), :y y}))
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x x, :y (inc y)}))
+        arena (spread-fire arena (fn [{x :x, y :y}] {:x x, :y (dec y)}))]
     arena))
 
-(defn eval-arena
-  "Check if any bombs should detonate (and detonate in case)"
-  [arena timestamp]
+(defn remove-expired-bomb-
+  [arena coords timestamp]
   {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (let [grid (:grid arena)
+        cell (grid/cell-at grid coords)]
+    (if-let [bomb-id (cells/cell-bomb-id cell)]
+      (assoc arena :grid
+        (grid/assoc-grid-cell grid coords
+          (if (bombs/bomb-expired? (bomb-id cell) timestamp)
+            (dissoc cell bomb-id)
+            cell)))
+      arena)))
+
+(defn detonate-timed-out-bomb-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (let [grid (:grid arena)
+        cell (grid/cell-at grid coords)]
+    (if-let [bomb-id (cells/cell-bomb-id cell)]
+      (let [bomb (bomb-id cell)]
+        (if (and (not (contains? bomb :detonated))
+                 (<= config/bomb-timeout-ms (- timestamp (:timestamp bomb))))
+          (detonate-bomb arena bomb-id timestamp)
+          arena))
+      arena)))
+
+(defn update-bomb-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (-> arena
+      (remove-expired-bomb- coords timestamp)
+      (detonate-timed-out-bomb- coords timestamp)))
+
+(defn hit-player-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (let [grid (:grid arena)
+        cell (grid/cell-at grid coords)]
+    (if-let [player-id (cells/cell-player-id cell)]
+      (let [player (player-id cell)]
+        (if (and (grid/cell-on-fire? grid coords)
+                 (nil? (:hit player)))
+          (assoc arena :grid
+            (grid/assoc-grid-cell grid coords player-id
+              (assoc (grid/player-at grid player-id coords) :hit {:timestamp timestamp})))
+          arena))
+      arena)))
+
+(defn remove-expired-player-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+          (specs/valid? ::specs/coords coords)
           (specs/valid? ::specs/timestamp timestamp)]
     :post [(specs/valid? ::specs/arena %)]}
-  (let [; update bombs
-        arena (loop [idx 0 {bombs :bombs, grid :grid, :as arena} arena]
-          (if (= idx (count bombs))
-            arena
-            (let [bomb-id (nth (keys bombs) idx)
-                  bomb-coords (bomb-id bombs)
-                  bomb (bomb-id (grid/cell-at grid bomb-coords))
-                  arena (if (and (<= config/bomb-timeout-ms (- timestamp (:timestamp bomb)))
-                                  (not (contains? bomb :detonated)))
-                    (detonate-bomb arena bomb-id timestamp)
-                    arena)]
-              (recur (inc idx) arena))))
-        {grid :grid, players :players} arena
-        ; update players
-        grid (loop [idx 0 grid grid]
-          (if (= idx (count players))
-            grid
-            (let [player-id (nth (keys players) idx)
-                  player-coords (player-id players)
-                  cell (grid/cell-at grid player-coords)
-                  grid (if (contains? cell :fire)
-                    (grid/assoc-grid-cell grid player-coords player-id
-                      (assoc (player-id cell) :hit {:timestamp timestamp}))
-                    grid)]
-              (recur (inc idx) grid))))
-        arena (assoc arena :grid grid)]
-      arena
-    ))
+  (let [grid (:grid arena)
+        cell (grid/cell-at grid coords)]
+    (if-let [player-id (cells/cell-player-id cell)]
+      (if-let [hit (:hit (player-id cell))]
+        (assoc arena
+          :grid (grid/assoc-grid-cell grid coords
+                  (if (<= config/player-expiration-ms (- timestamp (:timestamp hit)))
+                    (dissoc cell player-id)
+                    cell))
+          :players (assoc (:players arena) player-id nil))
+        arena)
+      arena)))
+
+(defn update-player-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/coords coords)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (-> arena
+      (hit-player- coords timestamp)
+      (remove-expired-player- coords timestamp)))
+
+(defn update-fire-
+  [arena coords timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+          (specs/valid? ::specs/coords coords)
+          (specs/valid? ::specs/timestamp timestamp)]
+    :post [(specs/valid? ::specs/arena %)]}
+  (let [grid (:grid arena)
+        cell (grid/cell-at grid coords)]
+    (if-let [fire (:fire cell)]
+      (assoc arena :grid
+        (grid/assoc-grid-cell grid coords
+          (if (<= config/fire-expiration-ms (- timestamp (:timestamp fire)))
+            (dissoc cell :fire)
+            cell)))
+      arena)))
+
+(defn update-gameover-
+  [arena timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (let [alive-players (filter (comp some? second) (:players arena))]
+    (condp = (count alive-players)
+      0 (assoc arena :gameover {:timestamp timestamp})
+      1 (assoc arena :gameover {:timestamp timestamp
+                                :winner (first (first alive-players))})
+      arena)))
+
+(defn eval-arena
+  "Check if any bombs should detonate (and detonate in case). Remove expired bombs and fire."
+  [arena timestamp]
+  {:pre [(specs/valid? ::specs/arena arena)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/arena %)]}
+  (let [{{:keys [width height], :as grid} :grid} arena
+        arena (loop [arena arena y 0]
+                (if (= height y)
+                  arena
+                  (recur
+                    (loop [arena arena x 0]
+                      (if (= width x)
+                        arena
+                        (recur (-> arena
+                                  (update-bomb-   {:x x, :y y} timestamp)
+                                  (update-player- {:x x, :y y} timestamp)
+                                  (update-fire-   {:x x, :y y} timestamp))
+                              (inc x))))
+                      (inc y))))]
+        (update-gameover- arena timestamp)))

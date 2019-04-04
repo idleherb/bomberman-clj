@@ -13,17 +13,19 @@
 (def max-grid-height 20)
 
 (s/def ::glyph char?)
+(s/def ::bomb-count (s/and int? #(>= % 0 )))
 
 (s/def ::x int?)
 (s/def ::y int?)
-(s/def ::coords (s/and (s/coll-of int? :kind vector) #(= 2 (count %))))  ; TODO: {:x, :y}
+(s/def ::coords (s/keys :req-un [::x ::y]))
 
 (s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
 (s/def ::hit (s/keys :req-un [::timestamp]))
-(s/def ::player-1 (s/keys :req-un [::glyph] :opt-un [::coords ::hit]))
-(s/def ::player-2 (s/keys :req-un [::glyph] :opt-un [::coords ::hit]))
+(s/def ::player-1 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
+(s/def ::player-2 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
 
-(s/def ::bomb (s/keys :req-un [::timestamp]))
+(s/def ::player-id (s/and keyword? #(re-matches #"player-\d+" (name %))))
+(s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
 
 (s/def ::cell (s/nilable (s/keys :opt-un [::bomb ::fire ::player-1 ::player-2])))
@@ -36,4 +38,6 @@
 
 (s/def ::bombs map?)
 (s/def ::players map?)
-(s/def ::arena (s/keys :req-un [::bombs ::grid ::players]))
+(s/def ::winner (s/and keyword? #(re-matches #"player-\d+" (name %))))
+(s/def ::gameover (s/keys :req-un [::timestamp] opt-un [::winner]))
+(s/def ::arena (s/keys :req-un [::bombs ::grid ::players] :opt-un [::gameover]))
