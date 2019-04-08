@@ -16,4 +16,4 @@
       (let [ts-first (:timestamp (first events))
             ts-last (:timestamp (last events))]
         (- ts-last ts-first) => #(< 3550 % 3650))))
-  )
+)
