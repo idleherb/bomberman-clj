@@ -1,16 +1,23 @@
 (ns bomberman-clj.specs
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.core.async :as async]
+            [clojure.spec.alpha :as s]))
 
 (defn valid? [spec obj]
   (let [valid (s/valid? spec obj)]
     (when (not valid)
       (do
+        (println)
+        (println "E specs::valid? - vvvvvvvvvvvvvvvvvvvvvvvv")
         (println (str "E specs::valid? - obj:" obj))
-        (println (s/explain-str spec obj))))
+        (println (s/explain-str spec obj))
+        (println "E specs::valid? - ^^^^^^^^^^^^^^^^^^^^^^^^")
+        (println)))
     valid))
 
 (def max-grid-width 20)
 (def max-grid-height 20)
+
+(s/def ::chan #(satisfies? clojure.core.async.impl.protocols/Channel %))
 
 (s/def ::glyph char?)
 (s/def ::bomb-count (s/and int? #(>= % 0 )))
