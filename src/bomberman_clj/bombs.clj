@@ -5,7 +5,7 @@
 
 (defn bomb-expired?
   [bomb timestamp]
-  {:pre (specs/valid? ::specs/timestamp timestamp)}
+  ; {:pre (specs/valid? ::specs/timestamp timestamp)}
   (and (contains? bomb :detonated)
        (util/expired? (:timestamp (:detonated bomb))
                       timestamp
