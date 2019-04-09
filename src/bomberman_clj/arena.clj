@@ -47,8 +47,9 @@
     (if-let [coords (player-id players)]
       (let [player (player-id (grid/cell-at grid coords))
             new-coords (util/navigate coords direction)]
-        (if (and (grid/in-grid? grid new-coords)
-                (grid/cell-empty? grid new-coords))
+        (if (and (not (contains? player :hit))
+                 (grid/in-grid? grid new-coords)
+                 (grid/cell-empty? grid new-coords))
           (let [grid (grid/dissoc-grid-cell grid coords player-id)
                 grid (grid/spawn grid player-id player new-coords)
                 players (assoc players player-id new-coords)
@@ -69,8 +70,9 @@
   (let [{{v :v, :as grid} :grid, players :players, bombs :bombs} arena]
     (if-let [{x :x, y :y, :as coords} (player-id players)]
       (let [player (grid/player-at grid player-id coords)]
-        (if (and (players/has-bombs? player)
-                (not (grid/cell-has-bomb? grid coords)))
+        (if (and (not (contains? player :hit))
+                 (players/has-bombs? player)
+                 (not (grid/cell-has-bomb? grid coords)))
           (let [bomb-id (keyword (str "bomb-x" x "y" y))
                 bomb {:player-id player-id, :timestamp timestamp}
                 bombs (assoc bombs bomb-id coords)
