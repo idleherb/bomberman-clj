@@ -21,32 +21,52 @@
       ))
     ))
 
+(defn- clear-screen
+  [scr width height]
+  (let [mask (reduce str (repeat width " "))]
+    (loop [y 0]
+      (when (< y height)
+        (do
+          (s/put-string scr 0 y mask {:bg :black})
+          (recur (inc y)))))))
+
 (defn- draw-arena
   [arena scr]
-  (doseq [[row-idx row] (map-indexed vector (arena-rows arena))]
-    (doseq [[cell-idx cell] (map-indexed vector row)]
-      (let [bomb (cells/cell-bomb cell)
-            fire? (contains? cell :fire)
-            player (cells/cell-player cell)]
-        (s/put-string
-          scr  ; screen
-          (if (= 0 cell-idx) cell-idx (* 2 cell-idx))  ; x
-          row-idx  ; y
-            (cond
-              (nil? cell) "."
-              (some? player) (str (:glyph player))
-              (some? bomb) "X"
-              fire? "#"
-              :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
-          {:fg (cond
-                 (nil? cell) :green
-                 fire? :black
-                 :else :white)
-           :bg (cond
-                 fire? :yellow
-                 (some? bomb) :red
-                 :else :black)}))))  ; options
-  (s/move-cursor scr 100 100)
+  (if-let [gameover (:gameover arena)]
+    (let [{{:keys [width height], :as grid} :grid} arena
+          text (if (contains? gameover :winner)
+                 (str "*** " (:winner gameover) " won! ***")
+                 "*** No winner! ***")
+          x (int (/ (- (* 2 width) (count text)) 2))
+          y (int (/ height 2))]
+      (clear-screen scr (* 2 width) height)
+      (s/put-string scr x y text {:fg :white, :bg :black}))
+    ; else
+    (do
+      (doseq [[row-idx row] (map-indexed vector (arena-rows arena))]
+        (doseq [[cell-idx cell] (map-indexed vector row)]
+          (let [bomb (cells/cell-bomb cell)
+                fire? (contains? cell :fire)
+                player (cells/cell-player cell)]
+            (s/put-string
+              scr  ; screen
+              (if (= 0 cell-idx) cell-idx (* 2 cell-idx))  ; x
+              row-idx  ; y
+                (cond
+                  (nil? cell) "."
+                  (some? player) (str (:glyph player))
+                  (some? bomb) "X"
+                  fire? "#"
+                  :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
+              {:fg (cond
+                    (nil? cell) :green
+                    fire? :black
+                    :else :white)
+              :bg (cond
+                    fire? :yellow
+                    (some? bomb) :red
+                    :else :black)}))))  ; options
+      (s/move-cursor scr 100 100)))
   (s/redraw scr))
 
 (defn- key-to-event
