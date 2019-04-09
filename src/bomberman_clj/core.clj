@@ -7,9 +7,9 @@
 
 (defn- player-action
   [arena event]
-  {:pre [(specs/valid? ::specs/arena arena)
-         (specs/valid? ::specs/event event)]
-   :post [(specs/valid? ::specs/arena %)]}
+  ; {:pre [(specs/valid? ::specs/arena arena)
+  ;        (specs/valid? ::specs/event event)]
+  ;  :post [(specs/valid? ::specs/arena %)]}
   (let [{:keys [timestamp player-id action payload]} event]
     (condp = action
       :move (arena/move arena player-id payload)
@@ -20,10 +20,10 @@
 
 (defn game-loop
   [arena ch-in ch-out]
-  {:pre [(specs/valid? ::specs/arena arena)
-         (specs/valid? ::specs/chan ch-in)
-         (specs/valid? ::specs/chan ch-out)]
-   :post [(specs/valid? ::specs/chan %)]}
+  ; {:pre [(specs/valid? ::specs/arena arena)
+  ;        (specs/valid? ::specs/chan ch-in)
+  ;        (specs/valid? ::specs/chan ch-out)]
+  ;  :post [(specs/valid? ::specs/chan %)]}
   (async/go-loop [arena arena]
     (if-let [{timestamp :timestamp, type :type, :as event} (async/<! ch-in)]
       (if (= type :exit)
