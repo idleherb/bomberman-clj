@@ -13,6 +13,6 @@
     (recur)))
 
 (defn unset
-  [ch-frame-rate]
-  {:pre [(specs/valid? ::specs/chan ch-frame-rate)]}
-  (async/close! ch-frame-rate))
+  [ch-fps]
+  {:pre [(specs/valid? ::specs/chan ch-fps)]}
+  (async/close! ch-fps))
