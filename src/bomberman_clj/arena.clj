@@ -103,7 +103,7 @@
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/arena %)]}
   (loop [{cur-x :x, cur-y :y} coords
-          {:keys [width height], :as grid} grid]
+         {:keys [width height], :as grid} grid]
     (if (or (= radius (Math/abs (- cur-x x)))
             (= radius (Math/abs (- cur-y y)))
             (= cur-x -1)
@@ -121,7 +121,9 @@
             grid (:grid arena)]
         (recur
           (transform-coords {:x cur-x, :y cur-y})
-          (grid/assoc-grid-cell grid {:x cur-x, :y cur-y} :fire {:timestamp timestamp}))))))
+          (if (grid/wall? grid {:x cur-x, :y cur-y})
+            grid
+            (grid/assoc-grid-cell grid {:x cur-x, :y cur-y} :fire {:timestamp timestamp})))))))
 
 (defn detonate-bomb
   "Detonate a given bomb"

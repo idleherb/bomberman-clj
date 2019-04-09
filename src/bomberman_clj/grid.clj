@@ -87,7 +87,12 @@
   (let [cell (cell-at grid coords)]
     (or (nil? cell)
         (and (nil? (cells/cell-player cell))
-             (nil? (cells/cell-bomb cell))))))
+             (nil? (cells/cell-bomb cell))
+             (nil? (:wall cell))))))
+
+(defn wall?
+  [grid coords]
+  (some? (:wall (cell-at grid coords))))
 
 (defn rand-coords
   "Return random coordinates within the given grid"

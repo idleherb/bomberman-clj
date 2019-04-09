@@ -43,6 +43,29 @@
       y => 0
       (nth v 4) => nil?))
 
+  (fact "a player can't move through solid walls"
+    (let [plr {:player-1 {:glyph \P, :bomb-count 3}}
+          wal {:wall :solid, :glyph \█}
+          v [nil nil nil
+             wal plr nil
+             nil wal nil]
+          players {:player-1 {:x 1, :y 1}}
+          arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
+          arena (move arena :player-1 :south)  ; hit wall
+          arena (move arena :player-1 :south)  ; hit wall
+          arena (move arena :player-1 :west)  ; hit wall
+          arena (move arena :player-1 :west)  ; hit wall
+          arena (move arena :player-1 :west)  ; hit wall
+          arena (move arena :player-1 :north)
+          arena (move arena :player-1 :north)  ; hit wall
+          arena (move arena :player-1 :north)  ; hit wall
+          arena (move arena :player-1 :north)  ; hit wall
+          {players :players {v :v} :grid} arena
+          {x :x, y :y, :as coords} (:player-1 players)]
+      x => 1
+      y => 0
+      (nth v 4) => nil?))
+
   (fact "player-1 places a bomb at their current position"
     (let [timestamp (make-timestamp)
           v [{:player-1 {:glyph \P, :bomb-count 3}}]
@@ -112,11 +135,12 @@
 
   (fact "a detonating bomb spreads horizontally and vertically, passing by the offset player"
     (let [timestamp (make-timestamp)
+          wal {:wall :solid, :glyph \█}
           bomb-id :bomb-x1y1
           bom {bomb-id {:player-id :player-1, :timestamp 1000000000000}}
           plr {:player-1 {:glyph \P, :bomb-count 0}}
           v [nil nil nil nil nil
-             nil bom nil nil nil
+             nil bom nil wal nil
              nil nil plr nil nil
              nil nil nil nil nil]
           arena {:grid {:width 5, :height 4, :v v}
@@ -129,6 +153,7 @@
       (let [bomb (bomb-id (nth v 6))]
         (:detonated bomb) => {:timestamp timestamp})
       player-1 => {:glyph \P, :bomb-count 1}
+      (nth v 8) => wal
       (tabular
         (fact "cells with fire"
           (:fire ?cell) => {:timestamp timestamp})
@@ -137,7 +162,6 @@
           (nth v 5)
           (nth v 6)
           (nth v 7)
-          (nth v 8)
           (nth v 11)
           (nth v 16))
       (tabular
@@ -148,6 +172,7 @@
           (nth v 2)
           (nth v 3)
           (nth v 4)
+          (nth v 8)
           (nth v 9)
           (nth v 10)
           (nth v 12)
@@ -336,23 +361,22 @@
       (count bombs) => 3))
 
   (fact "a player walking into a cell with fire gets hit"
-    (let [timestamp 1001111111122
+    (let [timestamp 1000000003022
           bom {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
-          plr {:player-1 {:glyph \P, :bomb-count 3}}
-          v [bom nil
-             nil plr]
-          arena {:grid {:width 2, :height 2, :v v}
-                 :players {:player-1 {:x 1, :y 1}}
+          pl1 {:player-1 {:glyph \P, :bomb-count 3}}
+          pl2 {:player-2 {:glyph \Q, :bomb-count 3}}
+          v [bom nil nil
+             nil pl1 pl2]
+          arena {:grid {:width 3, :height 2, :v v}
+                 :players {:player-1 {:x 1, :y 1}, :player-2 {:x 2, :y 1}}
                  :bombs {:bomb-x0y0 {:x 0, :y 0}}}
-          arena (eval-arena arena 1001111111111)
-          arena (move arena :player-1 :north)
-          arena (move arena :player-1 :north)
+          arena (eval-arena arena 1000000003000)
           arena (move arena :player-1 :north)
           arena (eval-arena arena timestamp)
           {{v :v, :as grid} :grid, :as arena} arena]
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp 1001111111111})
+          (:fire ?cell) => {:timestamp 1000000003000})
           ?cell
           (nth v 0)
           (nth v 1)
@@ -361,9 +385,10 @@
         (fact "cells without fire"
           (:fire ?cell) => nil?)
           ?cell
-          (nth v 3))
+          (nth v 4)
+          (nth v 5))
       (let [bomb (:bomb-x0y0 (nth v 0))]
-        (:detonated bomb) => {:timestamp 1001111111111})
+        (:detonated bomb) => {:timestamp 1000000003000})
       (:hit (:player-1 (nth v 1))) => {:timestamp timestamp}))
      
   (fact "at arena evaluation, expired detonated bombs, fire and hit players get removed"
