@@ -43,7 +43,7 @@
 
 (defn main
   []
-  (let [arena (arena/init-arena 25 15 {:player-1 {:glyph \@}
+  (let [arena (arena/init-arena 17 15 {:player-1 {:glyph \@}
                                        :player-2 {:glyph \&}})
         ch-in (async/chan)
         ch-out (async/chan)

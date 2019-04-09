@@ -14,8 +14,8 @@
         (println)))
     valid))
 
-(def max-grid-width 25)
-(def max-grid-height 20)
+(def max-grid-width 999)
+(def max-grid-height 999)
 
 (s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
 (s/def ::type keyword?)
