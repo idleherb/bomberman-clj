@@ -14,10 +14,16 @@
         (println)))
     valid))
 
-(def max-grid-width 20)
+(def max-grid-width 25)
 (def max-grid-height 20)
 
+(s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
+(s/def ::type keyword?)
+(s/def ::action keyword?)
+(s/def ::player-id (s/and keyword? #(re-matches #"player-\d+" (name %))))
+
 (s/def ::chan #(satisfies? clojure.core.async.impl.protocols/Channel %))
+(s/def ::event (s/keys :req-un [::type ::timestamp] ::opt-un [::action ::payload ::player-id]))
 
 (s/def ::glyph char?)
 (s/def ::bomb-count (s/and int? #(>= % 0 )))
@@ -26,12 +32,10 @@
 (s/def ::y int?)
 (s/def ::coords (s/keys :req-un [::x ::y]))
 
-(s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
 (s/def ::hit (s/keys :req-un [::timestamp]))
 (s/def ::player-1 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
 (s/def ::player-2 (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
 
-(s/def ::player-id (s/and keyword? #(re-matches #"player-\d+" (name %))))
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
 

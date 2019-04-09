@@ -13,10 +13,12 @@
           players {:player-1 {:x 1, :y 1}}
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
           ch-in (async/chan)
-          ch-out (async/chan)]
+          ch-out (async/chan)
+          timestamp (make-timestamp)]
       (game-loop arena ch-in ch-out)
-      (async/put! ch-in {:timestamp (make-timestamp), :type :refresh})
-      (async/<!! ch-out) => {:state (assoc arena :gameover {:timestamp (make-timestamp)
+      (async/put! ch-in {:timestamp timestamp, :type :refresh})
+      (async/<!! ch-out) => {:timestamp timestamp
+                             :state (assoc arena :gameover {:timestamp timestamp
                                                             :winner :player-1})}
       (async/close! ch-in)))
 
@@ -28,29 +30,31 @@
           players {:player-1 {:x 1, :y 1}}
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
           ch-in (async/chan)
-          ch-out (async/chan)]
+          ch-out (async/chan)
+          timestamp (make-timestamp)]
       (game-loop arena ch-in ch-out)
-      (async/put! ch-in {:timestamp (make-timestamp)
+      (async/put! ch-in {:timestamp timestamp
                          :type :action
                          :action :plant-bomb
                          :player-id :player-1})
-      (async/put! ch-in {:timestamp (make-timestamp)
+      (async/put! ch-in {:timestamp timestamp
                          :type :action
                          :action :move
                          :player-id :player-1
                          :payload :east})
-      (async/put! ch-in {:timestamp (make-timestamp)
+      (async/put! ch-in {:timestamp timestamp
                          :type :action
                          :action :move
                          :player-id :player-1
                          :payload :south})
-      (async/put! ch-in {:timestamp (make-timestamp), :type :refresh})
-      (async/<!! ch-out) => {:state {
+      (async/put! ch-in {:timestamp timestamp, :type :refresh})
+      (async/<!! ch-out) => {:timestamp timestamp
+                             :state {
         :bombs {:bomb-x1y1 {:x 1 :y 1}}
         :gameover {:timestamp 1552767537306 :winner :player-1}
         :grid {:height 3
                :v [nil nil nil
-                   nil {:bomb-x1y1 {:player-id :player-1 :timestamp 1552767537306}} nil
+                   nil {:bomb-x1y1 {:player-id :player-1 :timestamp timestamp}} nil
                    nil nil {:player-1 {:bomb-count 0 :glyph \P}}]
                :width 3}
         :players {:player-1 {:x 2 :y 2}}}}
