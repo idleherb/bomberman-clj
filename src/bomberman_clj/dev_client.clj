@@ -100,6 +100,7 @@
       \s {:type :action, :player-id :player-2, :action :move, :payload :down, :timestamp timestamp}
       \a {:type :action, :player-id :player-2, :action :move, :payload :left, :timestamp timestamp}
       :tab {:type :action, :player-id :player-2, :action :plant-bomb, :timestamp timestamp}
+      :enter {:type :restart}
       {:type :dummy})))
 
 (defn join
@@ -122,10 +123,6 @@
             :escape (do
               (println "D dev_client::join - exit requested...")
               (async/go (async/>! ch-in {:type :exit})))
-            :enter (do
-              (println "D dev_client::join - restart requested...")
-              (async/go (async/>! ch-in {:type :restart}))
-              (recur))
             (do
               (async/go (async/>! ch-in (key-to-event key)))
               (recur))))))))
