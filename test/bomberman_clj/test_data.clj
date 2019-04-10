@@ -8,5 +8,6 @@
 
 (defn make-cell-bomb-p1 [] {:bomb {:player-id :player-1, :timestamp (make-timestamp)}})
 (defn make-cell-p1 [] {:player-1 (make-player-1)})
+(defn make-cell-p2 [] {:player-2 (make-player-2)})
 (defn make-cell-hard-block [] {:block {:type :hard}})
 (defn make-cell-soft-block [] {:block {:type :soft}})

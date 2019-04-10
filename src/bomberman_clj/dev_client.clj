@@ -85,16 +85,16 @@
                   :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
                 {:fg (cond
                        (nil? cell) :green
-                       (some? player) :black
                        (and soft-block? fire?) :yellow
                        block? :green
                        fire? :black
+                       (some? player) :black
                        :else :white)
                  :bg (cond
                        (and soft-block? fire?) :black
                        fire? :yellow
-                       (some? player) :white
                        (some? bomb) :red
+                       (some? player) :white
                        :else :black)}))))  ; options
         (s/move-cursor scr 100 100)))
     (s/redraw scr)))

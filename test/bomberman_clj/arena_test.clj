@@ -13,7 +13,7 @@
           arena (a/init width height players)
           {{v :v, :as grid} :grid, players :players, bombs :bombs} arena]
       (count v) => (* width height)
-      (count (filter (complement nil?) v)) => (+ 2 (* 8 7))
+      (count (filter (complement nil?) v)) => #(>= % (+ 2 (* 8 7)))
       (count players) => 2
       (count bombs) => 0))
 
@@ -320,9 +320,15 @@
   (fact "a game is over when less than 2 players are alive"
     (let [ts-1 (d/make-timestamp)
           ts-2 (+ (d/make-timestamp) config/bomb-timeout-ms)
-          arena (a/init 3 3 {:player-1 {:glyph \P, :bomb-count 1, :coords {:x 0 :y 0}}
-                             :player-2 {:glyph \Q, :bomb-count 1, :coords {:x 1 :y 0}}})]
-
+          pl1 (d/make-cell-p1)
+          pl2 (d/make-cell-p2)
+          hbl (d/make-cell-hard-block)
+          v [pl1 pl2 nil
+             nil hbl nil
+             nil nil nil]
+          arena {:grid {:width 3, :height 3, :v v}
+                 :players {:player-1 {:x 0, :y 0}, :player-2 {:x 1, :y 0}}
+                 :bombs {}}]
       (fact "last man standing wins"
         (let [arena (-> arena
                         (a/plant-bomb :player-1 ts-1)
