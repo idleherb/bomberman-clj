@@ -61,7 +61,9 @@
                   fire? (contains? cell :fire)
                   player-id (cells/cell-player-id cell)
                   player (cells/cell-player cell)
-                  wall? (grid/wall? grid {:x cell-idx, :y row-idx})]
+                  hard-block? (grid/hard-block? grid {:x cell-idx, :y row-idx})
+                  soft-block? (grid/soft-block? grid {:x cell-idx, :y row-idx})
+                  block? (or hard-block? soft-block?)]
               (when (some? player)
                 (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name player-id))))
                       x (+ h-margin (* 2 cell-idx))
@@ -73,24 +75,27 @@
                 scr  ; screen
                 (+ h-margin (* 2 cell-idx))  ; x
                 (+ v-margin row-idx)  ; y
-                  (cond
-                    (nil? cell) "."
-                    (some? player) (str (:glyph player))
-                    (some? bomb) "X"
-                    wall? (str (:solid (:wall config/glyphs)))
-                    fire? "#"
-                    :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
+                (cond
+                  (nil? cell) "."
+                  (some? player) (str (:glyph player))
+                  (some? bomb) "X"
+                  hard-block? (str (:hard (:block config/glyphs)))
+                  soft-block? (str (:soft (:block config/glyphs)))
+                  fire? "#"
+                  :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
                 {:fg (cond
-                      (nil? cell) :green
-                      (some? player) :black
-                      wall? :green
-                      fire? :black
-                      :else :white)
+                       (nil? cell) :green
+                       (some? player) :black
+                       (and soft-block? fire?) :yellow
+                       block? :green
+                       fire? :black
+                       :else :white)
                  :bg (cond
-                      fire? :yellow
-                      (some? player) :white
-                      (some? bomb) :red
-                      :else :black)}))))  ; options
+                       (and soft-block? fire?) :black
+                       fire? :yellow
+                       (some? player) :white
+                       (some? bomb) :red
+                       :else :black)}))))  ; options
         (s/move-cursor scr 100 100)))
     (s/redraw scr)))
 

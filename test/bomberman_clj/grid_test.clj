@@ -25,7 +25,7 @@
 
   (fact "cells can being identified by their :x and :y coordinates"
     (let [bmb (d/make-cell-bomb-p1)
-          wal (d/make-cell-wall)
+          wal (d/make-cell-hard-block)
           width 2
           height 3
           grid {:width width
@@ -53,7 +53,7 @@
       (< y height) => true))
 
   (fact "an empty cell is being found"
-    (let [wal (d/make-cell-wall)
+    (let [wal (d/make-cell-hard-block)
           grid {:width 3
                 :height 3
                 :v [wal wal wal
