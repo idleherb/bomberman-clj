@@ -41,12 +41,12 @@
                          :type :action
                          :action :move
                          :player-id :player-1
-                         :payload :east})
+                         :payload :right})
       (async/put! ch-in {:timestamp timestamp
                          :type :action
                          :action :move
                          :player-id :player-1
-                         :payload :south})
+                         :payload :down})
       (async/put! ch-in {:timestamp timestamp, :type :refresh})
       (async/<!! ch-out) => {:timestamp timestamp
                              :state {

@@ -1,17 +1,30 @@
 (ns bomberman-clj.util-test
   (:require [midje.sweet :refer [fact facts => throws]]
-            [bomberman-clj.util :refer [navigate]]))
+            [bomberman-clj.util :refer [expired?
+                                        navigate]]
+            [bomberman-clj.test-data :refer [make-timestamp]]))
 
 (facts "about util"
-  (fact "navigating just works as expected"
-    (let [coords {:x 1, :y 1}
-          coords (navigate coords :south)
-          coords (navigate coords :west)
-          coords (navigate coords :north)
-          coords (navigate coords :north)
-          {:keys [x y]} coords]
-      x => 0
-      y => 0))
+  (facts "about navigating"
+    (fact "works as expected when using valid directions"
+      (let [{:keys [x y]} (
+            -> {:x 1, :y 1}
+              (navigate :down)
+              (navigate :left)
+              (navigate :up)
+              (navigate :up)
+              (navigate :right))]
+        x => 1
+        y => 0))
 
-  (fact "navigating into an invalid direction fails"
-    (navigate {:x 0, :y 0} :down) => (throws Exception #"invalid direction:" )))
+    (fact "does nothing when using an invalid direction"
+      (navigate {:x 0, :y 0} :south) => {:x 0, :y 0}))
+      
+  (facts "about expired timetamps"
+    (fact "timestamp expiration"
+      (let [ts-old (make-timestamp)
+            ts-new (+ 200 ts-old)]
+        (expired? ts-old ts-new 200) => true
+        (expired? ts-old ts-new 100) => true
+        (expired? ts-old ts-new 300) => false
+        (expired? ts-new ts-old 200) => false))))

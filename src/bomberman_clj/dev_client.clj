@@ -73,15 +73,15 @@
   [key]
   (let [timestamp (System/currentTimeMillis)]
     (case key
-      :up {:type :action, :player-id :player-1, :action :move, :payload :north, :timestamp timestamp}
-      :right {:type :action, :player-id :player-1, :action :move, :payload :east, :timestamp timestamp}
-      :down {:type :action, :player-id :player-1, :action :move, :payload :south, :timestamp timestamp}
-      :left {:type :action, :player-id :player-1, :action :move, :payload :west, :timestamp timestamp}
+      :up {:type :action, :player-id :player-1, :action :move, :payload :up, :timestamp timestamp}
+      :right {:type :action, :player-id :player-1, :action :move, :payload :right, :timestamp timestamp}
+      :down {:type :action, :player-id :player-1, :action :move, :payload :down, :timestamp timestamp}
+      :left {:type :action, :player-id :player-1, :action :move, :payload :left, :timestamp timestamp}
       \space {:type :action, :player-id :player-1, :action :plant-bomb, :timestamp timestamp}
-      \w {:type :action, :player-id :player-2, :action :move, :payload :north, :timestamp timestamp}
-      \d {:type :action, :player-id :player-2, :action :move, :payload :east, :timestamp timestamp}
-      \s {:type :action, :player-id :player-2, :action :move, :payload :south, :timestamp timestamp}
-      \a {:type :action, :player-id :player-2, :action :move, :payload :west, :timestamp timestamp}
+      \w {:type :action, :player-id :player-2, :action :move, :payload :up, :timestamp timestamp}
+      \d {:type :action, :player-id :player-2, :action :move, :payload :right, :timestamp timestamp}
+      \s {:type :action, :player-id :player-2, :action :move, :payload :down, :timestamp timestamp}
+      \a {:type :action, :player-id :player-2, :action :move, :payload :left, :timestamp timestamp}
       :tab {:type :action, :player-id :player-2, :action :plant-bomb, :timestamp timestamp}
       {:type :dummy})))
 

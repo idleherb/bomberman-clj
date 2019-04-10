@@ -28,15 +28,15 @@
              nil nil nil]
           players {:player-1 {:x 1, :y 1}}
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
-          arena (move arena :player-1 :south)
-          arena (move arena :player-1 :south)  ; hit wall
-          arena (move arena :player-1 :west)
-          arena (move arena :player-1 :west)  ; hit wall
-          arena (move arena :player-1 :west)  ; hit wall
-          arena (move arena :player-1 :north)
-          arena (move arena :player-1 :north)
-          arena (move arena :player-1 :north)  ; hit wall
-          arena (move arena :player-1 :north)  ; hit wall
+          arena (move arena :player-1 :down)
+          arena (move arena :player-1 :down)  ; hit wall
+          arena (move arena :player-1 :left)
+          arena (move arena :player-1 :left)  ; hit wall
+          arena (move arena :player-1 :left)  ; hit wall
+          arena (move arena :player-1 :up)
+          arena (move arena :player-1 :up)
+          arena (move arena :player-1 :up)  ; hit wall
+          arena (move arena :player-1 :up)  ; hit wall
           {players :players {v :v} :grid} arena
           {x :x, y :y, :as coords} (:player-1 players)]
       x => 0
@@ -51,15 +51,15 @@
              nil wal nil]
           players {:player-1 {:x 1, :y 1}}
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
-          arena (move arena :player-1 :south)  ; hit wall
-          arena (move arena :player-1 :south)  ; hit wall
-          arena (move arena :player-1 :west)  ; hit wall
-          arena (move arena :player-1 :west)  ; hit wall
-          arena (move arena :player-1 :west)  ; hit wall
-          arena (move arena :player-1 :north)
-          arena (move arena :player-1 :north)  ; hit wall
-          arena (move arena :player-1 :north)  ; hit wall
-          arena (move arena :player-1 :north)  ; hit wall
+          arena (move arena :player-1 :down)  ; hit wall
+          arena (move arena :player-1 :down)  ; hit wall
+          arena (move arena :player-1 :left)  ; hit wall
+          arena (move arena :player-1 :left)  ; hit wall
+          arena (move arena :player-1 :left)  ; hit wall
+          arena (move arena :player-1 :up)
+          arena (move arena :player-1 :up)  ; hit wall
+          arena (move arena :player-1 :up)  ; hit wall
+          arena (move arena :player-1 :up)  ; hit wall
           {players :players {v :v} :grid} arena
           {x :x, y :y, :as coords} (:player-1 players)]
       x => 1
@@ -105,7 +105,7 @@
                  :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
           arena (plant-bomb arena :player-1 timestamp)
-          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :south)
+          {{v :v, :as grid} :grid, bombs :bombs, :as arena} (move arena :player-1 :down)
           cell (first v)]
       (count bombs) => 1
       (:timestamp (:bomb-x0y0 cell)) => timestamp))
@@ -117,11 +117,11 @@
                  :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
           arena (plant-bomb arena :player-1 timestamp)
-          arena (move arena :player-1 :south)
+          arena (move arena :player-1 :down)
           arena (plant-bomb arena :player-1 timestamp)
-          arena (move arena :player-1 :south)
+          arena (move arena :player-1 :down)
           arena (plant-bomb arena :player-1 timestamp)
-          arena (move arena :player-1 :south)
+          arena (move arena :player-1 :down)
           arena (plant-bomb arena :player-1 timestamp)
           {{v :v, :as grid} :grid, bombs :bombs, :as arena} arena
           cell (nth v 3)
@@ -371,7 +371,7 @@
                  :players {:player-1 {:x 1, :y 1}, :player-2 {:x 2, :y 1}}
                  :bombs {:bomb-x0y0 {:x 0, :y 0}}}
           arena (eval-arena arena 1000000003000)
-          arena (move arena :player-1 :north)
+          arena (move arena :player-1 :up)
           arena (eval-arena arena timestamp)
           {{v :v, :as grid} :grid, :as arena} arena]
       (tabular
@@ -421,8 +421,8 @@
       (fact "last man standing wins"
         (let [arena (-> arena
                         (plant-bomb :player-1 ts-1)
-                        (move :player-1 :south)
-                        (move :player-1 :east)
+                        (move :player-1 :down)
+                        (move :player-1 :right)
                         (eval-arena ts-2))
               players (:players arena)]
           (count players) => 2
@@ -432,7 +432,7 @@
       (fact "no winner on empty arena"
         (let [arena (-> arena
                         (plant-bomb :player-1 ts-1)
-                        (move :player-1 :south)
+                        (move :player-1 :down)
                         (eval-arena ts-2))
               players (:players arena)]
           (count players) => 2
