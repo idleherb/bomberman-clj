@@ -12,7 +12,7 @@
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
   {:post [(specs/valid? ::specs/arena %)]}
-  (loop [grid (grid/init-grid width height)
+  (loop [grid (grid/init width height)
          players players
          player-idx 1]
     (if (> player-idx (count players))

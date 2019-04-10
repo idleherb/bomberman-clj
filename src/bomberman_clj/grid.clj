@@ -4,7 +4,7 @@
             ; [bomberman-clj.specs :as specs]
   ))
 
-(defn init-grid
+(defn init
   [width height]
   ; {:post (specs/valid? ::specs/grid %)}
   {:width width,
