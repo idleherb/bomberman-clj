@@ -4,12 +4,20 @@
             ; [bomberman-clj.specs :as specs]
   ))
 
+(defn- idx-coords
+  [width height idx]
+  {:x (mod idx width), :y (int (/ idx width))})
+
 (defn init
   [width height]
   ; {:post (specs/valid? ::specs/grid %)}
   {:width width,
    :height height,
-   :v (into (vector) (take (* width height) (repeat nil)))})
+   :v (into (vector) (map-indexed (fn [i _]
+    (let [{:keys [x y]} (idx-coords width height i)]
+      (when (and (odd? x) (odd? y)) {:wall :solid})))
+    (take (* width height) (repeat nil))))
+   })
 
 (defn- cell-idx
   "Return grid cell index from coordinates"

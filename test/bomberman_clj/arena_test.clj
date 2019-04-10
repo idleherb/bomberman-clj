@@ -13,7 +13,7 @@
           arena (a/init width height players)
           {{v :v, :as grid} :grid, players :players, bombs :bombs} arena]
       (count v) => (* width height)
-      (count (filter (complement nil?) v)) => 2
+      (count (filter (complement nil?) v)) => (+ 2 (* 8 7))
       (count players) => 2
       (count bombs) => 0))
 
@@ -319,12 +319,13 @@
     (let [ts-1 (d/make-timestamp)
           ts-2 (+ (d/make-timestamp) config/bomb-timeout-ms)
           arena (a/init 3 3 {:player-1 {:glyph \P, :bomb-count 1, :coords {:x 0 :y 0}}
-                                 :player-2 {:glyph \Q, :bomb-count 1, :coords {:x 1 :y 0}}})]
+                             :player-2 {:glyph \Q, :bomb-count 1, :coords {:x 1 :y 0}}})]
 
       (fact "last man standing wins"
         (let [arena (-> arena
                         (a/plant-bomb :player-1 ts-1)
                         (a/move :player-1 :down)
+                        (a/move :player-1 :down)  ; pass wall
                         (a/move :player-1 :right)
                         (a/eval ts-2))
               players (:players arena)]
