@@ -1,5 +1,5 @@
 (ns bomberman-clj.util-test
-  (:require [midje.sweet :refer [fact facts => throws]]
+  (:require [midje.sweet :refer [fact facts =>]]
             [bomberman-clj.util :as u]
             [bomberman-clj.test-data :as d]))
 
