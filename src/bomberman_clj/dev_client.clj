@@ -103,13 +103,11 @@
       {:type :dummy})))
 
 (defn join
-  [arena ch-in ch-out]
-  {:pre [(specs/valid? ::specs/arena arena)
-         (specs/valid? ::specs/chan ch-in)
+  [width height ch-in ch-out]
+  {:pre [(specs/valid? ::specs/chan ch-in)
          (specs/valid? ::specs/chan ch-out)]
    :post [(specs/valid? ::specs/chan %)]}
-  (let [{{:keys [width height] :as grid} :grid} arena
-        scr (s/get-screen :swing {:rows (+ (* 2 v-margin) height)
+  (let [scr (s/get-screen :swing {:rows (+ (* 2 v-margin) height)
                                   :cols (+ (* 2 h-margin) (* 2 width))})]
     (s/in-screen scr
       (async/go-loop []
@@ -120,10 +118,14 @@
           (println "D dev_client::join - 0 fps.")))
       (loop []
         (let [key (s/get-key-blocking scr)]
-          (if (= key :escape)
-            (do
+          (condp = key
+            :escape (do
               (println "D dev_client::join - exit requested...")
               (async/go (async/>! ch-in {:type :exit})))
+            :enter (do
+              (println "D dev_client::join - restart requested...")
+              (async/go (async/>! ch-in {:type :restart}))
+              (recur))
             (do
               (async/go (async/>! ch-in (key-to-event key)))
               (recur))))))))

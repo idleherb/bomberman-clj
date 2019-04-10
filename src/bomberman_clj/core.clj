@@ -22,17 +22,23 @@
         arena))))
 
 (defn game-loop
-  [arena ch-in ch-out]
-  ; {:pre [(specs/valid? ::specs/arena arena)
-  ;        (specs/valid? ::specs/chan ch-in)
+  [width height ch-in ch-out]
+  ; {:pre [(specs/valid? ::specs/chan ch-in)
   ;        (specs/valid? ::specs/chan ch-out)]
   ;  :post [(specs/valid? ::specs/chan %)]}
-  (async/go-loop [arena arena]
+  (async/go-loop [arena (arena/init width height
+                          {:player-1 {:glyph (:player-1 config/glyphs), :name "White Bomberman"}
+                           :player-2 {:glyph (:player-2 config/glyphs), :name "Pretty Bomber"}})]
     (if-let [{timestamp :timestamp, type :type, :as event} (async/<! ch-in)]
-      (if (= type :exit)
-        (do
+      (condp = type
+        :exit (do
           (println "I core::game-loop - exit...")
           event)
+        :restart (do
+          (println "I core::game-loop - another round...")
+          (recur (arena/init width height
+                   {:player-1 {:glyph (:player-1 config/glyphs), :name "White Bomberman"}
+                    :player-2 {:glyph (:player-2 config/glyphs), :name "Pretty Bomber"}})))
         (let [arena (condp = type
                       :refresh (let [arena (arena/eval arena timestamp)]
                                  (async/>! ch-out {:state arena, :timestamp timestamp})
@@ -46,15 +52,10 @@
 
 (defn main
   ([width height]
-    (let [arena (arena/init
-            width
-            height
-            {:player-1 {:glyph (:player-1 config/glyphs), :name "White Bomberman"}
-             :player-2 {:glyph (:player-2 config/glyphs), :name "Pretty Bomber"}})
-          ch-in (async/chan)
+    (let [ch-in (async/chan)
           ch-out (async/chan)
-          ch-game (game-loop arena ch-in ch-out)
-          _ (future (dev-client/join arena ch-in ch-out))
+          ch-game (game-loop width height ch-in ch-out)
+          _ (future (dev-client/join width height ch-in ch-out))
           ch-fps (fps/set ch-in config/fps)]
         (if-let [event (async/<!! ch-game)]
           (if (= (:type event) :exit)
