@@ -76,7 +76,7 @@
         (if (and (not (contains? arena :gameover))
                  (not (contains? player :hit))
                  (players/has-bombs? player)
-                 (not (grid/cell-has-bomb? grid coords)))
+                 (not (grid/bomb? grid coords)))
           (let [bomb-id (keyword (str "bomb-x" x "y" y))
                 bomb {:player-id player-id, :timestamp timestamp}
                 bombs (assoc bombs bomb-id coords)
@@ -199,7 +199,7 @@
         cell (grid/cell-at grid coords)]
     (if-let [player-id (cells/cell-player-id cell)]
       (let [player (player-id cell)]
-        (if (and (grid/cell-on-fire? grid coords)
+        (if (and (grid/fire? grid coords)
                  (nil? (:hit player)))
           (assoc arena :grid
             (grid/assoc-grid-cell grid coords player-id
