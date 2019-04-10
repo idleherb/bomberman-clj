@@ -33,7 +33,7 @@
 (s/def ::coords (s/keys :req-un [::x ::y]))
 
 (s/def ::hit (s/keys :req-un [::timestamp]))
-(s/def ::player (s/keys :req-un [::glyph ::bomb-count] :opt-un [::coords ::hit]))
+(s/def ::player (s/keys :req-un [::glyph ::name ::bomb-count] :opt-un [::coords ::hit]))
 
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
