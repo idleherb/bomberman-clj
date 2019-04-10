@@ -61,7 +61,7 @@
                   fire? (contains? cell :fire)
                   player-id (cells/cell-player-id cell)
                   player (cells/cell-player cell)
-                  wall? (some? (:wall cell))]
+                  wall? (grid/wall? grid {:x cell-idx, :y row-idx})]
               (when (some? player)
                 (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name player-id))))
                       x (+ h-margin (* 2 cell-idx))
@@ -75,7 +75,6 @@
                     (nil? cell) "."
                     (some? player) (str (:glyph player))
                     (some? bomb) "X"
-                    ; (grid/wall? grid {:x row-idx, :y cell-idx}) (str (:solid (:wall config/glyphs)))
                     wall? (str (:solid (:wall config/glyphs)))
                     fire? "#"
                     :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
