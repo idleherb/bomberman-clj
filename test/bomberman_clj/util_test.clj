@@ -27,4 +27,5 @@
         (expired? ts-old ts-new 200) => true
         (expired? ts-old ts-new 100) => true
         (expired? ts-old ts-new 300) => false
-        (expired? ts-new ts-old 200) => false))))
+        (expired? ts-new ts-old 200) => false)))
+)

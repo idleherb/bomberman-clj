@@ -16,4 +16,5 @@
     (make-player-1) => #(specs/valid? ::specs/player %)
     (make-player-2) => #(specs/valid? ::specs/player %)
     (make-player-3) => #(specs/valid? ::specs/player %)
-    (make-timestamp) => #(specs/valid? ::specs/timestamp %)))
+    (make-timestamp) => #(specs/valid? ::specs/timestamp %))
+)

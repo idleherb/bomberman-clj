@@ -1,10 +1,10 @@
 (ns bomberman-clj.frame-rate-test
   (:require [clojure.core.async :as async]
-            [midje.sweet :refer [fact facts =>]]
+            [midje.sweet :refer [fact facts => roughly]]
             [bomberman-clj.frame-rate :as fr]))
 
 (facts "about the frame rate"
-  (fact "it sends a refresh event roughly `fps` times per second"
+  (fact "sends a refresh event roughly `fps` times per second"
     (let [ch (async/chan)
           ch-fr (fr/set ch 30)
           events (loop [events [] i 0]
@@ -15,5 +15,5 @@
       (count events) => 30
       (let [ts-first (:timestamp (first events))
             ts-last (:timestamp (last events))]
-        (- ts-last ts-first) => #(< 3000 % 4000))))
+        (- ts-last ts-first) => (roughly 1000 100))))
 )

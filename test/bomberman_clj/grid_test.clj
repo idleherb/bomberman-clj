@@ -68,4 +68,5 @@
                 :v [wal wal wal
                     wal wal wal
                     wal nil wal]}]
-      (find-empty-cell grid) => {:x 1, :y 2})))
+      (find-empty-cell grid) => {:x 1, :y 2}))
+)
