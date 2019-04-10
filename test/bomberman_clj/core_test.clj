@@ -1,8 +1,8 @@
 (ns bomberman-clj.core-test
   (:require [clojure.core.async :as async]
             [midje.sweet :refer [fact facts => =not=> tabular]]
-            [bomberman-clj.core :refer [game-loop]]
-            [bomberman-clj.test-data :refer [make-timestamp]]))
+            [bomberman-clj.core :as c]
+            [bomberman-clj.test-data :as d]))
 
 (facts "about the game loop"
   (fact "the game state is evaluated when a :refresh event is sent"
@@ -14,8 +14,8 @@
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
           ch-in (async/chan)
           ch-out (async/chan)
-          timestamp (make-timestamp)]
-      (game-loop arena ch-in ch-out)
+          timestamp (d/make-timestamp)]
+      (c/game-loop arena ch-in ch-out)
       (async/put! ch-in {:timestamp timestamp, :type :refresh})
       (async/<!! ch-out) => {:timestamp timestamp
                              :state (assoc arena :gameover {:timestamp timestamp
@@ -31,8 +31,8 @@
           arena {:bombs {} :grid {:width 3 :height 3 :v v} :players players}
           ch-in (async/chan)
           ch-out (async/chan)
-          timestamp (make-timestamp)]
-      (game-loop arena ch-in ch-out)
+          timestamp (d/make-timestamp)]
+      (c/game-loop arena ch-in ch-out)
       (async/put! ch-in {:timestamp timestamp
                          :type :action
                          :action :plant-bomb
@@ -41,12 +41,12 @@
                          :type :action
                          :action :move
                          :player-id :player-1
-                         :payload :east})
+                         :payload :right})
       (async/put! ch-in {:timestamp timestamp
                          :type :action
                          :action :move
                          :player-id :player-1
-                         :payload :south})
+                         :payload :down})
       (async/put! ch-in {:timestamp timestamp, :type :refresh})
       (async/<!! ch-out) => {:timestamp timestamp
                              :state {

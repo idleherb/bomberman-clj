@@ -30,17 +30,21 @@
           (s/put-string scr 0 y mask {:bg :black})
           (recur (inc y)))))))
 
+(defn- draw-centered-text
+  [scr width height text]
+  (let [x (int (/ (- (* 2 width) (count text)) 2))
+        y (int (/ height 2))]
+    (clear-screen scr (* 2 width) height)
+    (s/put-string scr x y text {:fg :white, :bg :black})))
+
 (defn- draw-arena
   [arena scr]
   (if-let [gameover (:gameover arena)]
     (let [{{:keys [width height], :as grid} :grid} arena
           text (if (contains? gameover :winner)
                  (str "*** " (:winner gameover) " won! ***")
-                 "*** No winner! ***")
-          x (int (/ (- (* 2 width) (count text)) 2))
-          y (int (/ height 2))]
-      (clear-screen scr (* 2 width) height)
-      (s/put-string scr x y text {:fg :white, :bg :black}))
+                 "*** No winner! ***")]
+      (draw-centered-text scr width height text))
     ; else
     (do
       (doseq [[row-idx row] (map-indexed vector (arena-rows arena))]
@@ -73,15 +77,15 @@
   [key]
   (let [timestamp (System/currentTimeMillis)]
     (case key
-      :up {:type :action, :player-id :player-1, :action :move, :payload :north, :timestamp timestamp}
-      :right {:type :action, :player-id :player-1, :action :move, :payload :east, :timestamp timestamp}
-      :down {:type :action, :player-id :player-1, :action :move, :payload :south, :timestamp timestamp}
-      :left {:type :action, :player-id :player-1, :action :move, :payload :west, :timestamp timestamp}
+      :up {:type :action, :player-id :player-1, :action :move, :payload :up, :timestamp timestamp}
+      :right {:type :action, :player-id :player-1, :action :move, :payload :right, :timestamp timestamp}
+      :down {:type :action, :player-id :player-1, :action :move, :payload :down, :timestamp timestamp}
+      :left {:type :action, :player-id :player-1, :action :move, :payload :left, :timestamp timestamp}
       \space {:type :action, :player-id :player-1, :action :plant-bomb, :timestamp timestamp}
-      \w {:type :action, :player-id :player-2, :action :move, :payload :north, :timestamp timestamp}
-      \d {:type :action, :player-id :player-2, :action :move, :payload :east, :timestamp timestamp}
-      \s {:type :action, :player-id :player-2, :action :move, :payload :south, :timestamp timestamp}
-      \a {:type :action, :player-id :player-2, :action :move, :payload :west, :timestamp timestamp}
+      \w {:type :action, :player-id :player-2, :action :move, :payload :up, :timestamp timestamp}
+      \d {:type :action, :player-id :player-2, :action :move, :payload :right, :timestamp timestamp}
+      \s {:type :action, :player-id :player-2, :action :move, :payload :down, :timestamp timestamp}
+      \a {:type :action, :player-id :player-2, :action :move, :payload :left, :timestamp timestamp}
       :tab {:type :action, :player-id :player-2, :action :plant-bomb, :timestamp timestamp}
       {:type :dummy})))
 
@@ -91,19 +95,20 @@
          (specs/valid? ::specs/chan ch-in)
          (specs/valid? ::specs/chan ch-out)]
    :post [(specs/valid? ::specs/chan %)]}
-  (let [scr (s/get-screen :swing)]
+  (let [{{:keys [width height] :as grid} :grid} arena
+        scr (s/get-screen :swing {:rows height, :cols (* 2 width)})]
     (s/in-screen scr
       (async/go-loop []
         (if-let [{arena :state, :as event} (async/<! ch-out)]
           (do
             (draw-arena arena scr)
             (recur))
-          (println "D dev_client::join - 0 fps")))
+          (println "D dev_client::join - 0 fps.")))
       (loop []
         (let [key (s/get-key-blocking scr)]
           (if (= key :escape)
             (do
-              (println "D dev_client::join - exit")
+              (println "D dev_client::join - exit requested...")
               (async/go (async/>! ch-in {:type :exit})))
             (do
               (async/go (async/>! ch-in (key-to-event key)))
