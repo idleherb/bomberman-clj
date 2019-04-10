@@ -65,7 +65,9 @@
               (when (some? player)
                 (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name player-id))))
                       x (+ h-margin (* 2 cell-idx))
-                      y (- v-margin 2 (- (count players) player-idx))]
+                      y (if (< row-idx (/ height 2))
+                          (- v-margin 2 (- (count players) player-idx))
+                          (+ v-margin height player-idx))]
                   (s/put-string scr x y (:name player) {:fg :black, :bg :white})))
               (s/put-string
                 scr  ; screen
@@ -80,11 +82,13 @@
                     :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
                 {:fg (cond
                       (nil? cell) :green
+                      (some? player) :black
                       wall? :green
                       fire? :black
                       :else :white)
                  :bg (cond
                       fire? :yellow
+                      (some? player) :white
                       (some? bomb) :red
                       :else :black)}))))  ; options
         (s/move-cursor scr 100 100)))
