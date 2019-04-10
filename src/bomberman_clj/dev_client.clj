@@ -2,6 +2,7 @@
   (:require [clojure.core.async :as async]
             [bomberman-clj.arena :as arena]
             [bomberman-clj.cells :as cells]
+            [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
             [bomberman-clj.specs :as specs]
             [lanterna.screen :as s]))
@@ -59,7 +60,8 @@
             (let [bomb (cells/cell-bomb cell)
                   fire? (contains? cell :fire)
                   player-id (cells/cell-player-id cell)
-                  player (cells/cell-player cell)]
+                  player (cells/cell-player cell)
+                  wall? (some? (:wall cell))]
               (when (some? player)
                 (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name player-id))))
                       x (+ h-margin (* 2 cell-idx))
@@ -73,13 +75,16 @@
                     (nil? cell) "."
                     (some? player) (str (:glyph player))
                     (some? bomb) "X"
+                    ; (grid/wall? grid {:x row-idx, :y cell-idx}) (str (:solid (:wall config/glyphs)))
+                    wall? (str (:solid (:wall config/glyphs)))
                     fire? "#"
                     :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
                 {:fg (cond
                       (nil? cell) :green
+                      wall? :green
                       fire? :black
                       :else :white)
-                :bg (cond
+                 :bg (cond
                       fire? :yellow
                       (some? bomb) :red
                       :else :black)}))))  ; options
