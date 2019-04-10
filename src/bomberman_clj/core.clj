@@ -49,8 +49,8 @@
     (let [arena (arena/init
             width
             height
-            {:player-1 {:glyph (:player-1 config/glyphs)}
-             :player-2 {:glyph (:player-2 config/glyphs)}})
+            {:player-1 {:glyph (:player-1 config/glyphs), :name "White Bomberman"}
+             :player-2 {:glyph (:player-2 config/glyphs), :name "Pretty Bomber"}})
           ch-in (async/chan)
           ch-out (async/chan)
           ch-game (game-loop arena ch-in ch-out)

@@ -5,6 +5,9 @@
             [bomberman-clj.specs :as specs]
             [lanterna.screen :as s]))
 
+(def h-margin 20)
+(def v-margin 10)
+
 (defn- arena-rows
   [arena]
   (let [grid (:grid arena)
@@ -32,9 +35,9 @@
 
 (defn- draw-centered-text
   [scr width height text]
-  (let [x (int (/ (- (* 2 width) (count text)) 2))
-        y (int (/ height 2))]
-    (clear-screen scr (* 2 width) height)
+  (let [x (+ h-margin (int (/ (- (* 2 width) (count text)) 2)))
+        y (+ v-margin (int (/ height 2)))]
+    (clear-screen scr (+ (* 2 h-margin) (* 2 width)) (+ (* 2 v-margin) height))
     (s/put-string scr x y text {:fg :white, :bg :black})))
 
 (defn- draw-arena
@@ -54,8 +57,8 @@
                 player (cells/cell-player cell)]
             (s/put-string
               scr  ; screen
-              (if (= 0 cell-idx) cell-idx (* 2 cell-idx))  ; x
-              row-idx  ; y
+              (+ h-margin (if (= 0 cell-idx) cell-idx (* 2 cell-idx)))  ; x
+              (+ v-margin row-idx)  ; y
                 (cond
                   (nil? cell) "."
                   (some? player) (str (:glyph player))
@@ -96,7 +99,8 @@
          (specs/valid? ::specs/chan ch-out)]
    :post [(specs/valid? ::specs/chan %)]}
   (let [{{:keys [width height] :as grid} :grid} arena
-        scr (s/get-screen :swing {:rows height, :cols (* 2 width)})]
+        scr (s/get-screen :swing {:rows (+ (* 2 v-margin) height)
+                                  :cols (+ (* 2 h-margin) (* 2 width))})]
     (s/in-screen scr
       (async/go-loop []
         (if-let [{arena :state, :as event} (async/<! ch-out)]
