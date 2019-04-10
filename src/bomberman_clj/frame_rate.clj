@@ -1,4 +1,5 @@
 (ns bomberman-clj.frame-rate
+  (:refer-clojure :exclude [set])
   (:require [clojure.core.async :as async]
             ; [bomberman-clj.specs :as specs]
   ))

@@ -17,5 +17,5 @@
     :down {:x x, :y (inc y)}
     :left {:x (dec x), :y y}
     (do
-      (println "W - invalid direction:" direction)
+      (println "W util::navigate - invalid direction:" direction)
       coords)))

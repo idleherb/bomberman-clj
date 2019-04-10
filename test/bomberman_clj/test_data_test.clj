@@ -1,20 +1,14 @@
 (ns bomberman-clj.test-data-test
   (:require [midje.sweet :refer [fact facts =>]]
-            [bomberman-clj.specs :as specs]
-            [bomberman-clj.test-data :refer [make-cell-bomb-p1
-                                             make-cell-p1
-                                             make-cell-wall
-                                             make-player-1
-                                             make-player-2
-                                             make-player-3
-                                             make-timestamp]]))
+            [bomberman-clj.specs :as s]
+            [bomberman-clj.test-data :as d]))
 
 (facts "about test data"
   (fact "all data generation functions are spec compliant"
-    (make-cell-p1) => #(specs/valid? ::specs/cell %)
-    (make-cell-wall) => #(specs/valid? ::specs/cell %)
-    (make-player-1) => #(specs/valid? ::specs/player %)
-    (make-player-2) => #(specs/valid? ::specs/player %)
-    (make-player-3) => #(specs/valid? ::specs/player %)
-    (make-timestamp) => #(specs/valid? ::specs/timestamp %))
+    (d/make-cell-p1) => #(s/valid? ::s/cell %)
+    (d/make-cell-wall) => #(s/valid? ::s/cell %)
+    (d/make-player-1) => #(s/valid? ::s/player %)
+    (d/make-player-2) => #(s/valid? ::s/player %)
+    (d/make-player-3) => #(s/valid? ::s/player %)
+    (d/make-timestamp) => #(s/valid? ::s/timestamp %))
 )

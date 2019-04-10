@@ -1,7 +1,7 @@
 (ns bomberman-clj.players
   (:require [bomberman-clj.config :as config]))
 
-(defn init-player
+(defn init
   "Add default properties to the given player"
   [player]
   (merge player {:bomb-count config/bomb-count}))
