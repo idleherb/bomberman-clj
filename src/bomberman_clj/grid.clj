@@ -4,12 +4,22 @@
             ; [bomberman-clj.specs :as specs]
   ))
 
-(defn init-grid
+(defn- idx-coords
+  [width height idx]
+  {:x (mod idx width), :y (int (/ idx width))})
+
+(defn init
   [width height]
   ; {:post (specs/valid? ::specs/grid %)}
   {:width width,
    :height height,
-   :v (into (vector) (take (* width height) (repeat nil)))})
+   :v (into (vector) (map-indexed (fn [i _]
+    (let [{:keys [x y]} (idx-coords width height i)]
+      (if (and (odd? x) (odd? y))
+        {:block {:type :hard}}
+        (when (< (rand) 4/10) {:block {:type :soft}}))))
+    (take (* width height) (repeat nil))))
+   })
 
 (defn- cell-idx
   "Return grid cell index from coordinates"
@@ -49,9 +59,19 @@
   [grid coords]
   (contains? (cell-at grid coords) :fire))
 
-(defn wall?
+(defn block?
   [grid coords]
-  (contains? (cell-at grid coords) :wall))
+  (contains? (cell-at grid coords) :block))
+
+(defn hard-block?
+  [grid coords]
+  (let [cell (cell-at grid coords)]
+    (= :hard (:type (:block cell)))))
+
+(defn soft-block?
+  [grid coords]
+  (let [cell (cell-at grid coords)]
+    (= :soft (:type (:block cell)))))
 
 (defn assoc-grid-cell
   ([{v :v, :as grid} coords cell]
@@ -93,7 +113,7 @@
     (or (nil? cell)
         (and (nil? (cells/cell-player cell))
              (nil? (cells/cell-bomb cell))
-             (nil? (:wall cell))))))
+             (nil? (:block cell))))))
 
 (defn rand-coords
   [{:keys [width height], :as grid}]
