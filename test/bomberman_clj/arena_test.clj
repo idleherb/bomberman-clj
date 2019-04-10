@@ -142,10 +142,11 @@
 
   (fact "an evaluated arena with an expired bomb contains fire"
     (let [timestamp (d/make-timestamp)
+          wal (d/make-cell-wall)
           bomb-id :bomb-x0y0
           bom {bomb-id {:player-id :player-1, :timestamp 1000000000000}}
           plr {:player-1 {:glyph \P, :bomb-count 3}}
-          v [bom nil nil
+          v [bom wal nil
              nil plr nil
              nil nil nil]
           arena {:grid {:width 3, :height 3, :v v}
@@ -160,14 +161,14 @@
           (:fire ?cell) => {:timestamp timestamp})
           ?cell
           (nth v 0)
-          (nth v 1)
-          (nth v 2)
           (nth v 3)
           (nth v 6))
       (tabular
         (fact "cells without fire"
           (:fire ?cell) => nil?)
           ?cell
+          (nth v 1)
+          (nth v 2)
           (nth v 4)
           (nth v 5)
           (nth v 7)
