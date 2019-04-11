@@ -5,6 +5,7 @@
             [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
             [bomberman-clj.specs :as specs]
+            [bomberman-clj.util :as util]
             [lanterna.screen :as s]))
 
 (def h-margin 20)
@@ -43,9 +44,10 @@
 
 (defn- draw-arena
   [arena scr]
-  (let [{{:keys [width height], :as grid} :grid, players :players} arena]
+  (let [{{:keys [width height], :as grid} :grid, players :players} arena
+        gameover (:gameover arena)]
     (clear-screen scr (+ (* 2 h-margin) (* 2 width)) (+ (* 2 v-margin) height))
-    (if-let [gameover (:gameover arena)]
+    (if (and (some? gameover) (util/expired? (:timestamp gameover) (System/currentTimeMillis) 1500))
       (let [text (if-let [player-id (:winner gameover)]
               (let [coords (player-id players)
                     player (grid/player-at grid player-id coords)
