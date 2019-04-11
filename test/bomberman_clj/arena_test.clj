@@ -72,7 +72,7 @@
           arena (a/plant-bomb arena :player-1 timestamp)
           {{v :v, :as grid} :grid, :as arena} arena
           cell (first v)]
-      (:bomb-x0y0 cell) => {:player-id :player-1, :timestamp timestamp}))
+      (:bomb cell) => {:player-id :player-1, :timestamp timestamp}))
 
   (fact "in one cell, only one bomb can be planted at any moment in time"
     ; (println "005")
@@ -85,7 +85,7 @@
           arena (a/plant-bomb arena :player-1 ts-2nd)
           {{v :v, :as grid} :grid, :as arena} arena
           cell (first v)]
-      (:bomb-x0y0 cell) => {:player-id :player-1, :timestamp ts-1st}))
+      (:bomb cell) => {:player-id :player-1, :timestamp ts-1st}))
 
   (fact "a planted bomb is still there after the player moves away"
     ; (println "006")
@@ -96,7 +96,7 @@
           arena (a/plant-bomb arena :player-1 timestamp)
           {{v :v, :as grid} :grid, :as arena} (a/move arena :player-1 :down (d/make-timestamp))
           cell (first v)]
-          (:bomb-x0y0 cell) => {:player-id :player-1, :timestamp timestamp}))
+          (:bomb cell) => {:player-id :player-1, :timestamp timestamp}))
 
   (fact "a player can't plant more bombs than they have"
     ; (println "007")
@@ -137,8 +137,7 @@
     (let [timestamp (d/make-timestamp)
           hbl (d/make-cell-hard-block)
           sbl (d/make-cell-soft-block)
-          bomb-id :bomb-x0y0
-          bom {bomb-id {:player-id :player-1, :timestamp 1000000000000}}
+          bom {:bomb {:player-id :player-1, :timestamp 1000000000000}}
           plr (d/make-cell-p1)
           v [bom hbl nil
              nil plr nil
@@ -165,7 +164,7 @@
           (nth v 5)
           (nth v 7)
           (nth v 8))
-      (let [bomb (bomb-id (nth v 0))]
+      (let [bomb (:bomb (nth v 0))]
         (:detonated bomb) => {:timestamp timestamp})
       (:hit (:player-1 (nth v 4))) => nil?
       (:hit (:block (nth v 6))) => {:timestamp timestamp}))
@@ -173,13 +172,10 @@
   (fact "an evaluated arena with an expired bomb hits the nearby player"
     ; (println "010")
     (let [timestamp (d/make-timestamp)
-          bomb-id1 :bomb-x0y0
-          bomb-id2 :bomb-x2y1
-          bm1 {bomb-id1 {:player-id :player-1, :timestamp 1000000000000}}
-          bm2 {bomb-id2 {:player-id :player-1, :timestamp 1000000000000}}
+          bmb {:bomb {:player-id :player-1, :timestamp 1000000000000}}
           plr (d/make-cell-p1)
-          v [bm1 nil nil
-             nil nil bm2
+          v [bmb nil nil
+             nil nil bmb
              plr nil nil]
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:x 0, :y 2}}}
@@ -203,21 +199,20 @@
           (:fire ?cell) => nil?)
           ?cell
           (nth v 7))
-      (let [bomb (bomb-id1 (nth v 0))]
+      (let [bomb (:bomb (nth v 0))]
         (:detonated bomb) => {:timestamp timestamp})
-      (let [bomb (bomb-id2 (nth v 5))]
+      (let [bomb (:bomb (nth v 5))]
         (:detonated bomb) => {:timestamp timestamp})
       (:hit (:player-1 (nth v 6))) => {:timestamp timestamp}))
 
   (fact "bomb detonations propagate to nearby bombs, leaving others unchanged"
     ; (println "011")
-    (let [bm1 {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
-          bm2 {:bomb-x2y0 {:player-id :player-1, :timestamp 9999999999999}}
-          bm3 {:bomb-x1y2 {:player-id :player-1, :timestamp 9999999999999}}
+    (let [bm1 {:bomb {:player-id :player-1, :timestamp 1000000000000}}
+          bm2 {:bomb {:player-id :player-1, :timestamp 9999999999999}}
           plr (d/make-cell-p1)
           v [bm1 nil bm2
              nil plr nil
-             nil bm3 nil]
+             nil bm2 nil]
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:x 1, :y 1}}}
           {{v :v, :as grid} :grid
@@ -240,18 +235,18 @@
           ?cell
           (nth v 4)
           (nth v 7))
-      (let [bomb (:bomb-x0y0 (nth v 0))]
+      (let [bomb (:bomb (nth v 0))]
         (:detonated bomb) => {:timestamp 2222222222222})
-      (let [bomb (:bomb-x2y0 (nth v 2))]
+      (let [bomb (:bomb (nth v 2))]
         (:detonated bomb) => {:timestamp 2222222222222})
-      (let [bomb (:bomb-x1y2 (nth v 7))]
+      (let [bomb (:bomb (nth v 7))]
         (:detonated bomb) => nil?)
       (:hit (:player-1 (nth v 4))) => nil?))
 
   (fact "a player walking into a cell with fire gets hit"
     ; (println "012")
     (let [timestamp 1000000003022
-          bom {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
+          bom {:bomb {:player-id :player-1, :timestamp 1000000000000}}
           pl1 (d/make-cell-p1)
           pl2 (d/make-cell-p2)
           v [bom nil nil
@@ -274,7 +269,7 @@
           ?cell
           (nth v 4)
           (nth v 5))
-      (let [bomb (:bomb-x0y0 (nth v 0))]
+      (let [bomb (:bomb (nth v 0))]
         (:detonated bomb) => {:timestamp 1000000003000})
       (:hit (:player-1 (nth v 1))) => {:timestamp timestamp}))
      
@@ -286,7 +281,7 @@
           player {:glyph \P
                   :hit {:timestamp 1000000010000}
                   :bomb-count 0}
-          v [{:bomb-x0y0 bomb
+          v [{:bomb bomb
               :fire {:timestamp 1000000010000}
               :player-1 player}]
           arena {:grid {:width 1, :height 1, :v v}
@@ -294,7 +289,7 @@
           arena (a/eval arena (d/make-timestamp))
           {{v :v, :as grid} :grid, players :players} arena
           cell (first v)]
-      (:bomb-x0y0 cell) => nil?
+      (:bomb cell) => nil?
       (:fire cell) => nil?
       (:player-1 cell) => nil?
       (:player-1 players) => nil?))
@@ -367,7 +362,7 @@
     (let [pl1 (d/make-cell-p1)
           pl2 (d/make-cell-p2)
           itm (d/make-cell-item-bomb)
-          bmb {:bomb-x2y1 {:player-id :player-1, :timestamp 1552767537306}}
+          bmb {:bomb {:player-id :player-1, :timestamp 1552767537306}}
           arena {:players {:player-1 {:x 0, :y 0}
                            :player-2 {:x 1, :y 0}}
                  :grid {:width 3, :height 2

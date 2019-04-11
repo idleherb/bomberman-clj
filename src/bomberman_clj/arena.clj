@@ -121,14 +121,11 @@
                  (not (contains? player :hit))
                  (players/has-bombs? player)
                  (not (grid/bomb? grid coords)))
-          (let [bomb-id (keyword (str "bomb-x" x "y" y))
-                bomb {:player-id player-id, :timestamp timestamp}
-                bombs (assoc bombs bomb-id coords)
+          (let [bomb {:player-id player-id, :timestamp timestamp}
                 player (players/dec-bombs player)
-                grid (grid/assoc-grid-cell grid coords bomb-id bomb)
+                grid (grid/assoc-grid-cell grid coords :bomb bomb)
                 grid (grid/assoc-grid-cell grid coords player-id player)]
-              (assoc arena :bombs bombs
-                          :grid grid))
+              (assoc arena :grid grid))
           arena))
       (do
         (println "D arena::plant-bomb" player-id "can't plant bombs anymore...")
@@ -183,9 +180,8 @@
   ;  :post [(specs/valid? ::specs/arena %)]}
   (let [{grid :grid, bombs :bombs, :as arena} arena
         {x :x, y :y} coords
-        bomb-id (grid/bomb-id-at grid coords)
         bomb (assoc (grid/bomb-at grid coords) :detonated {:timestamp timestamp})
-        grid (grid/assoc-grid-cell grid coords bomb-id bomb)
+        grid (grid/assoc-grid-cell grid coords :bomb bomb)
         player-id (:player-id bomb)
         player-coords (player-id (:players arena))
         player (grid/player-at grid player-id player-coords)
@@ -268,11 +264,11 @@
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/arena %)]}
   (let [grid (:grid arena)
-        cell (grid/cell-at grid coords)]
-    (if-let [bomb-id (cells/cell-bomb-id cell)]
+        bomb (grid/bomb-at grid coords)]
+    (if (some? bomb)
       (assoc arena :grid
-        (if (bombs/bomb-expired? (bomb-id cell) timestamp)
-          (grid/dissoc-grid-cell grid coords bomb-id)
+        (if (bombs/bomb-expired? bomb timestamp)
+          (grid/dissoc-grid-cell grid coords :bomb)
           grid))
       arena)))
 

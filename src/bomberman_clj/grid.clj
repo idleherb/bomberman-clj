@@ -44,14 +44,8 @@
   (object-id (cell-at grid coords)))
 
 (defn bomb-at
-  ([grid coords]
-   (cells/cell-bomb (cell-at grid coords)))
-  ([grid bomb-id coords]
-   (object-at grid bomb-id coords)))
-
-(defn bomb-id-at
   [grid coords]
-  (cells/cell-bomb-id (cell-at grid coords)))
+  (cells/cell-bomb (cell-at grid coords)))
 
 (defn bomb?
   [grid coords]
