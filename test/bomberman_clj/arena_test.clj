@@ -361,6 +361,5 @@
             {{v :v, :as grid} :grid} arena
             player-1 (:player-1 (nth v 2))]
         player-1 => some?
-        (:bomb-count player-1) => 2)
-    ))
+        (:bomb-count player-1) => 2)))
 )
