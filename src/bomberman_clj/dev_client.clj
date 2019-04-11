@@ -70,8 +70,10 @@
                       x (+ h-margin (* 2 cell-idx))
                       y (if (< row-idx (/ height 2))
                           (- v-margin 2 (- (count players) player-idx))
-                          (+ v-margin height player-idx))]
-                  (s/put-string scr x y (:name player) {:fg :black, :bg :white})))
+                          (+ v-margin height player-idx))
+                      text (str (:name player) " "
+                                (:bomb-count player) "/" (:bomb-radius player))]
+                  (s/put-string scr x y text {:fg :black, :bg :white})))
               (s/put-string
                 scr  ; screen
                 (+ h-margin (* 2 cell-idx))  ; x
