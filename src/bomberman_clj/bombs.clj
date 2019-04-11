@@ -9,4 +9,4 @@
   (and (contains? bomb :detonated)
        (util/expired? (:timestamp (:detonated bomb))
                       timestamp
-                      config/bomb-expiration-ms)))
+                      config/expiration-ms)))

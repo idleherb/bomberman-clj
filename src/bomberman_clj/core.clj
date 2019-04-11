@@ -15,7 +15,7 @@
   ;  :post [(specs/valid? ::specs/arena %)]}
   (let [{:keys [timestamp player-id action payload]} event]
     (condp = action
-      :move (arena/move arena player-id payload)
+      :move (arena/move arena player-id payload timestamp)
       :plant-bomb (arena/plant-bomb arena player-id timestamp)
       (do
         (println "W - unknown player action:" action)

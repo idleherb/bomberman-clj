@@ -1,5 +1,5 @@
 (ns bomberman-clj.arena-test
-  (:require [midje.sweet :refer [fact facts => =not=> tabular]]
+  (:require [midje.sweet :refer [fact facts future-fact => =not=> tabular]]
             [bomberman-clj.arena :as a]
             [bomberman-clj.cells :as cells]
             [bomberman-clj.config :as config]
@@ -24,15 +24,15 @@
              nil nil nil]
           players {:player-1 {:x 1, :y 1}}
           arena {:grid {:width 3 :height 3 :v v} :players players}
-          arena (a/move arena :player-1 :down)
-          arena (a/move arena :player-1 :down)  ; hit block
-          arena (a/move arena :player-1 :left)
-          arena (a/move arena :player-1 :left)  ; hit block
-          arena (a/move arena :player-1 :left)  ; hit block
-          arena (a/move arena :player-1 :up)
-          arena (a/move arena :player-1 :up)
-          arena (a/move arena :player-1 :up)  ; hit block
-          arena (a/move arena :player-1 :up)  ; hit block
+          arena (a/move arena :player-1 :down (d/make-timestamp))
+          arena (a/move arena :player-1 :down (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :left (d/make-timestamp))
+          arena (a/move arena :player-1 :left (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :left (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :up (d/make-timestamp))
+          arena (a/move arena :player-1 :up (d/make-timestamp))
+          arena (a/move arena :player-1 :up (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :up (d/make-timestamp))  ; hit block
           {players :players {v :v} :grid} arena
           {x :x, y :y, :as coords} (:player-1 players)]
       x => 0
@@ -48,15 +48,15 @@
              nil hbl nil]
           players {:player-1 {:x 1, :y 1}}
           arena {:grid {:width 3 :height 3 :v v} :players players}
-          arena (a/move arena :player-1 :down)  ; hit block
-          arena (a/move arena :player-1 :down)  ; hit block
-          arena (a/move arena :player-1 :left)  ; hit block
-          arena (a/move arena :player-1 :left)  ; hit block
-          arena (a/move arena :player-1 :left)  ; hit block
-          arena (a/move arena :player-1 :up)
-          arena (a/move arena :player-1 :up)  ; hit block
-          arena (a/move arena :player-1 :up)  ; hit block
-          arena (a/move arena :player-1 :up)  ; hit block
+          arena (a/move arena :player-1 :down (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :down (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :left (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :left (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :left (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :up (d/make-timestamp))
+          arena (a/move arena :player-1 :up (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :up (d/make-timestamp))  ; hit block
+          arena (a/move arena :player-1 :up (d/make-timestamp))  ; hit block
           {players :players {v :v} :grid} arena
           {x :x, y :y, :as coords} (:player-1 players)]
       x => 1
@@ -94,7 +94,7 @@
           arena {:grid {:width 1, :height 2, :v v}
                  :players {:player-1 {:x 0, :y 0}}}
           arena (a/plant-bomb arena :player-1 timestamp)
-          {{v :v, :as grid} :grid, :as arena} (a/move arena :player-1 :down)
+          {{v :v, :as grid} :grid, :as arena} (a/move arena :player-1 :down (d/make-timestamp))
           cell (first v)]
           (:bomb-x0y0 cell) => {:player-id :player-1, :timestamp timestamp}))
 
@@ -105,11 +105,11 @@
           arena {:grid {:width 1, :height 4, :v v}
                  :players {:player-1 {:x 0, :y 0}}}
           arena (a/plant-bomb arena :player-1 timestamp)
-          arena (a/move arena :player-1 :down)
+          arena (a/move arena :player-1 :down (d/make-timestamp))
           arena (a/plant-bomb arena :player-1 timestamp)
-          arena (a/move arena :player-1 :down)
+          arena (a/move arena :player-1 :down (d/make-timestamp))
           arena (a/plant-bomb arena :player-1 timestamp)
-          arena (a/move arena :player-1 :down)
+          arena (a/move arena :player-1 :down (d/make-timestamp))
           arena (a/plant-bomb arena :player-1 timestamp)
           {{v :v, :as grid} :grid, :as arena} arena
           cell (nth v 3)
@@ -248,7 +248,7 @@
         (:detonated bomb) => nil?)
       (:hit (:player-1 (nth v 4))) => nil?))
 
-  (fact "a player hblking into a cell with fire gets hit"
+  (fact "a player walking into a cell with fire gets hit"
     ; (println "012")
     (let [timestamp 1000000003022
           bom {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
@@ -259,8 +259,7 @@
           arena {:grid {:width 3, :height 2, :v v}
                  :players {:player-1 {:x 1, :y 1}, :player-2 {:x 2, :y 1}}}
           arena (a/eval arena 1000000003000)
-          arena (a/move arena :player-1 :up)
-          arena (a/eval arena timestamp)
+          arena (a/move arena :player-1 :up 1000000003022)
           {{v :v, :as grid} :grid, :as arena} arena]
       (tabular
         (fact "cells with fire"
@@ -316,9 +315,9 @@
       ; (println "015")
       (let [arena (-> arena
                       (a/plant-bomb :player-1 ts-1)
-                      (a/move :player-1 :down)
-                      (a/move :player-1 :down)  ; pass block
-                      (a/move :player-1 :right)
+                      (a/move :player-1 :down (d/make-timestamp))
+                      (a/move :player-1 :down (d/make-timestamp))  ; pass block
+                      (a/move :player-1 :right (d/make-timestamp))
                       (a/eval ts-2))
             players (:players arena)]
         (count players) => 2
@@ -329,7 +328,7 @@
       ; (println "016")
       (let [arena (-> arena
                       (a/plant-bomb :player-1 ts-1)
-                      (a/move :player-1 :down)
+                      (a/move :player-1 :down (d/make-timestamp))
                       (a/eval ts-2))
             players (:players arena)]
         (count players) => 2
@@ -356,10 +355,29 @@
                             itm nil]}}]
           arena (a/eval arena (d/make-timestamp))
       (:bomb-count (:player-1 pl1)) => 1
-      (let [arena (a/move arena :player-1 :down)
+      (let [arena (a/move arena :player-1 :down (d/make-timestamp))
             arena (a/eval arena (d/make-timestamp))
             {{v :v, :as grid} :grid} arena
             player-1 (:player-1 (nth v 2))]
         player-1 => some?
         (:bomb-count player-1) => 2)))
+
+  (future-fact "fire hits items, hit items disappear after a while"
+    (println "019")
+    (let [pl1 (d/make-cell-p1)
+          pl2 (d/make-cell-p2)
+          itm (d/make-cell-item-bomb)
+          bmb {:bomb-x2y1 {:player-id :player-1, :timestamp 1552767537306}}
+          arena {:players {:player-1 {:x 0, :y 0}
+                           :player-2 {:x 1, :y 0}}
+                 :grid {:width 3, :height 2
+                        :v [pl1 pl2 nil
+                            itm nil bmb]}}
+          timestamp (+ config/bomb-timeout-ms (d/make-timestamp))
+          arena (a/eval arena timestamp)
+          {{v :v} :grid} arena]
+      (println "!!!" arena)
+      (:hit (:item (nth v 3))) => {:timestamp timestamp}
+      (let [arena (a/eval arena (+ config/expiration-ms timestamp))]
+        (:item (nth v 3)) => nil?)))
 )

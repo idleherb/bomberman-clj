@@ -5,6 +5,7 @@
 
 (facts "about test data"
   (fact "all data generation functions are spec compliant"
+    (d/make-cell-bomb-p1) => #(s/valid? ::s/cell %)
     (d/make-cell-p1) => #(s/valid? ::s/cell %)
     (d/make-cell-p2) => #(s/valid? ::s/cell %)
     (d/make-cell-hard-block) => #(s/valid? ::s/cell %)
