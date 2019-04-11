@@ -8,6 +8,13 @@
             [bomberman-clj.specs :as specs]
             [bomberman-clj.util :as util]))
 
+(defn player-by-id
+  [arena player-id]
+  (let [coords (player-id (:players arena))
+        grid (:grid arena)
+        player (grid/player-at grid coords)]
+    player))
+
 (defn init
   "Initialize a new (width x height) arena with given players placed"
   [width height players]
@@ -171,7 +178,7 @@
         player (players/inc-bombs player)
         grid (grid/assoc-grid-cell grid player-coords player-id player)
         arena (assoc arena :grid grid)
-        spread-fire #(spread-fire %1 coords %2 config/bomb-radius detonate-bomb timestamp)
+        spread-fire #(spread-fire %1 coords %2 (:bomb-radius player) detonate-bomb timestamp)
         arena (spread-fire arena (fn [{x :x, y :y}] {:x (inc x), :y y}))
         arena (spread-fire arena (fn [{x :x, y :y}] {:x (dec x), :y y}))
         arena (spread-fire arena (fn [{x :x, y :y}] {:x x, :y (inc y)}))

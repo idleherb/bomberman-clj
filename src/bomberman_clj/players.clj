@@ -4,7 +4,8 @@
 (defn init
   "Add default properties to the given player"
   [player]
-  (merge player {:bomb-count config/bomb-count}))
+  (merge player {:bomb-count config/bomb-count
+                 :bomb-radius config/bomb-radius}))
 
 (defn has-bombs?
   [player]

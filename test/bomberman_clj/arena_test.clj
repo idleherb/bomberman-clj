@@ -4,7 +4,6 @@
             [bomberman-clj.cells :as cells]
             [bomberman-clj.config :as config]
             [bomberman-clj.test-data :as d]))
-
 (facts "about arenas"
   (fact "initializing an arena of size 17x15 with 2 players and 0 bombs"
     (let [width 17
@@ -18,7 +17,7 @@
       (count bombs) => 0))
 
   (fact "a player can move to NESW empty cells"
-    (let [plr {:player-1 {:glyph \P, :bomb-count 3}}
+    (let [plr (d/make-cell-p1)
           v [nil nil nil
              nil plr nil
              nil nil nil]
@@ -40,7 +39,7 @@
       (nth v 4) => nil?))
 
   (fact "a player can't move through solid blocks"
-    (let [plr {:player-1 {:glyph \P, :bomb-count 3}}
+    (let [plr (d/make-cell-p1)
           hbl {:block :hard}
           v [nil nil nil
              hbl plr nil
@@ -64,7 +63,7 @@
 
   (fact "player-1 places a bomb at their current position"
     (let [timestamp (d/make-timestamp)
-          v [{:player-1 {:glyph \P, :bomb-count 3}}]
+          v [(d/make-cell-p1)]
           arena {:grid {:width 1, :height 1, :v v}
                  :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
@@ -80,7 +79,7 @@
   (fact "in one cell, only one bomb can be planted at any moment in time"
     (let [ts-1st 1000000000000
           ts-2nd 2000000000000
-          v [{:player-1 {:glyph \P, :bomb-count 3}}]
+          v [(d/make-cell-p1)]
           arena {:grid {:width 1, :height 1, :v v}
                  :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
@@ -96,7 +95,7 @@
 
   (fact "a planted bomb is still there after the player moves away"
     (let [timestamp (d/make-timestamp)
-          v [{:player-1 {:glyph \P, :bomb-count 3}} nil]
+          v [(d/make-cell-p1) nil]
           arena {:grid {:width 1, :height 2, :v v}
                  :players {:player-1 {:x 0, :y 0}}
                  :bombs {}}
@@ -130,8 +129,8 @@
       (:bomb-count player) => 0))
 
   (fact "an evaluated arena without any bombs has no changes"
-    (let [pl1 {:player-1 {:glyph \P, :bomb-count 1}}
-          pl2 {:player-2 {:glyph \Q, :bomb-count 1}}
+    (let [pl1 (d/make-cell-p1)
+          pl2 (d/make-cell-p2)
           v [nil nil pl2
              nil pl1 nil
              nil nil nil]
@@ -146,7 +145,7 @@
           sbl (d/make-cell-soft-block)
           bomb-id :bomb-x0y0
           bom {bomb-id {:player-id :player-1, :timestamp 1000000000000}}
-          plr {:player-1 {:glyph \P, :bomb-count 3}}
+          plr (d/make-cell-p1)
           v [bom hbl nil
              nil plr nil
              sbl nil nil]
@@ -159,7 +158,7 @@
       evaluated-arena =not=> arena
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp timestamp})
+          (:fire ?cell) => {:timestamp timestamp}) 
           ?cell
           (nth v 0)
           (nth v 3)
@@ -186,7 +185,7 @@
           bomb-id2 :bomb-x2y1
           bm1 {bomb-id1 {:player-id :player-1, :timestamp 1000000000000}}
           bm2 {bomb-id2 {:player-id :player-1, :timestamp 1000000000000}}
-          plr {:player-1 {:glyph \P, :bomb-count 3}}
+          plr (d/make-cell-p1)
           v [bm1 nil nil
              nil nil bm2
              plr nil nil]
@@ -226,7 +225,7 @@
     (let [bm1 {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
           bm2 {:bomb-x2y0 {:player-id :player-1, :timestamp 9999999999999}}
           bm3 {:bomb-x1y2 {:player-id :player-1, :timestamp 9999999999999}}
-          plr {:player-1 {:glyph \P, :bomb-count 3}}
+          plr (d/make-cell-p1)
           v [bm1 nil bm2
              nil plr nil
              nil bm3 nil]
@@ -268,8 +267,8 @@
   (fact "a player hblking into a cell with fire gets hit"
     (let [timestamp 1000000003022
           bom {:bomb-x0y0 {:player-id :player-1, :timestamp 1000000000000}}
-          pl1 {:player-1 {:glyph \P, :bomb-count 3}}
-          pl2 {:player-2 {:glyph \Q, :bomb-count 3}}
+          pl1 (d/make-cell-p1)
+          pl2 (d/make-cell-p2)
           v [bom nil nil
              nil pl1 pl2]
           arena {:grid {:width 3, :height 2, :v v}
