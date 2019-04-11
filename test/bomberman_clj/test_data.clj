@@ -11,3 +11,4 @@
 (defn make-cell-p2 [] {:player-2 (make-player-2)})
 (defn make-cell-hard-block [] {:block {:type :hard}})
 (defn make-cell-soft-block [] {:block {:type :soft}})
+(defn make-cell-item-bomb [] {:item {:type :bomb}})

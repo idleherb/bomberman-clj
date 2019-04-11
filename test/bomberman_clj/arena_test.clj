@@ -329,33 +329,51 @@
           arena {:grid {:width 3, :height 3, :v v}
                  :players {:player-1 {:x 0, :y 0}, :player-2 {:x 1, :y 0}}
                  :bombs {}}]
-      (fact "last man standing wins"
-        (let [arena (-> arena
-                        (a/plant-bomb :player-1 ts-1)
-                        (a/move :player-1 :down)
-                        (a/move :player-1 :down)  ; pass block
-                        (a/move :player-1 :right)
-                        (a/eval ts-2))
-              players (:players arena)]
-          (count players) => 2
-          (count (filter (comp nil? second) players)) => 1
-          (:gameover arena) => {:winner :player-1, :timestamp ts-2}))
+    (fact "last man standing wins"
+      (let [arena (-> arena
+                      (a/plant-bomb :player-1 ts-1)
+                      (a/move :player-1 :down)
+                      (a/move :player-1 :down)  ; pass block
+                      (a/move :player-1 :right)
+                      (a/eval ts-2))
+            players (:players arena)]
+        (count players) => 2
+        (count (filter (comp nil? second) players)) => 1
+        (:gameover arena) => {:winner :player-1, :timestamp ts-2}))
 
-      (fact "no winner on empty arena"
-        (let [arena (-> arena
-                        (a/plant-bomb :player-1 ts-1)
-                        (a/move :player-1 :down)
-                        (a/eval ts-2))
-              players (:players arena)]
-          (count players) => 2
-          (count (filter (comp nil? second) players)) => 2
-          (:gameover arena) => {:timestamp ts-2}))
+    (fact "no winner on empty arena"
+      (let [arena (-> arena
+                      (a/plant-bomb :player-1 ts-1)
+                      (a/move :player-1 :down)
+                      (a/eval ts-2))
+            players (:players arena)]
+        (count players) => 2
+        (count (filter (comp nil? second) players)) => 2
+        (:gameover arena) => {:timestamp ts-2}))
 
-      (fact "with 2 players, the game is ongoing"
-        (let [arena (a/eval arena ts-2)
-              players (:players arena)]
-          (count players) => 2
-          (count (filter (comp nil? second) players)) => 0
-          (:gameover arena) => nil?))
-  ))
+    (fact "with 2 players, the game is ongoing"
+      (let [arena (a/eval arena ts-2)
+            players (:players arena)]
+        (count players) => 2
+        (count (filter (comp nil? second) players)) => 0
+        (:gameover arena) => nil?))))
+
+  (fact "collecting a bomb item increases a player's bomb count"
+    (let [pl1 (d/make-cell-p1)
+          pl2 (d/make-cell-p2)
+          itm (d/make-cell-item-bomb)
+          arena {:players {:player-1 {:x 0, :y 0}
+                           :player-2 {:x 1, :y 0}}
+                 :grid {:width 2, :height 2
+                        :v [pl1 pl2
+                            itm nil]}}]
+          arena (a/eval arena (d/make-timestamp))
+      (:bomb-count (:player-1 pl1)) => 1
+      (let [arena (a/move arena :player-1 :down)
+            arena (a/eval arena (d/make-timestamp))
+            {{v :v, :as grid} :grid} arena
+            player-1 (:player-1 (nth v 2))]
+        player-1 => some?
+        (:bomb-count player-1) => 2)
+    ))
 )

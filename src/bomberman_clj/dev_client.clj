@@ -63,7 +63,8 @@
                   player (cells/cell-player cell)
                   hard-block? (grid/hard-block? grid {:x cell-idx, :y row-idx})
                   soft-block? (grid/soft-block? grid {:x cell-idx, :y row-idx})
-                  block? (or hard-block? soft-block?)]
+                  block? (or hard-block? soft-block?)
+                  item (:item cell)]
               (when (some? player)
                 (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name player-id))))
                       x (+ h-margin (* 2 cell-idx))
@@ -81,6 +82,7 @@
                   (some? bomb) "X"
                   hard-block? (str (:hard (:block config/glyphs)))
                   soft-block? (str (:soft (:block config/glyphs)))
+                  (some? item) (str ((:type item) (:item config/glyphs)))
                   fire? "#"
                   :else (throw (Exception. (str "invalid cell content: " cell))))  ; string
                 {:fg (cond
@@ -88,12 +90,14 @@
                        (and soft-block? fire?) :yellow
                        block? :green
                        fire? :black
+                       (some? item) :white
                        (some? player) :black
                        :else :white)
                  :bg (cond
                        (and soft-block? fire?) :black
                        fire? :yellow
                        (some? bomb) :red
+                       (some? item) :blue
                        (some? player) :white
                        :else :black)}))))  ; options
         (s/move-cursor scr 100 100)))

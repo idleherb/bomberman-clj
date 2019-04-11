@@ -20,4 +20,8 @@
 (def glyphs {:player-1 \@
              :player-2 \&
              :block {:hard \█
-                     :soft \▒}})
+                     :soft \▒}
+             :item {:bomb \X
+                    :fire \#}})
+
+(def chance-spawn-item 3/10)

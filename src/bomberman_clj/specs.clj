@@ -40,7 +40,7 @@
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
 
-(s/def ::cell (s/nilable (s/keys :opt-un [::block ::bomb ::fire])))
+(s/def ::cell (s/nilable (s/keys :opt-un [::block ::bomb ::fire ::item])))
 (s/def ::v (s/coll-of ::cell
                       :min-count 1
                       :max-count (* max-grid-width max-grid-height)))

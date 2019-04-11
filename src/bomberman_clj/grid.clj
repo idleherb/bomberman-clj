@@ -43,10 +43,6 @@
   [grid object-id coords]
   (object-id (cell-at grid coords)))
 
-(defn player-at
-  [grid player-id coords]
-  (object-at grid player-id coords))
-
 (defn bomb-at
   [grid bomb-id coords]
   (object-at grid bomb-id coords))
@@ -72,6 +68,24 @@
   [grid coords]
   (let [cell (cell-at grid coords)]
     (= :soft (:type (:block cell)))))
+
+(defn player-at
+  ([grid coords]
+   (cells/cell-player (cell-at grid coords)))
+  ([grid player-id coords]
+   (object-at grid player-id coords)))
+
+(defn player-id-at
+  [grid coords]
+  (cells/cell-player-id (cell-at grid coords)))
+
+(defn item-at
+  [grid coords]
+  (:item (cell-at grid coords)))
+
+(defn item?
+  [grid coords]
+  (contains? (cell-at grid coords) :item))
 
 (defn assoc-grid-cell
   ([{v :v, :as grid} coords cell]
@@ -113,7 +127,8 @@
     (or (nil? cell)
         (and (nil? (cells/cell-player cell))
              (nil? (cells/cell-bomb cell))
-             (nil? (:block cell))))))
+             (nil? (:block cell))
+             (nil? (:item cell))))))
 
 (defn rand-coords
   [{:keys [width height], :as grid}]
@@ -138,8 +153,4 @@
   ; {:pre [(specs/valid? ::specs/grid grid)
   ;        (specs/valid? ::specs/coords coords)]
   ;  :post [(specs/valid? ::specs/grid %)]}
-  (if (cell-empty? grid coords)
-    (assoc-grid-cell grid coords object-id object)
-    (do
-      (println "W grid::spawn - can only spawn in empty cell")
-      grid)))
+  (assoc-grid-cell grid coords object-id object))
