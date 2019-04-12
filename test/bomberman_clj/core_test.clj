@@ -38,14 +38,13 @@
       (async/put! ch-in {:timestamp timestamp, :type :refresh})
       (async/<!! ch-out) => {:timestamp timestamp
                              :state {
-        :bombs {:bomb-x1y1 {:x 1 :y 1}}
         :gameover {:timestamp 1552767537306 :winner :player-1}
         :grid {:height 3
                :v [nil nil nil
-                   nil {:bomb-x1y1 {:player-id :player-1, :timestamp timestamp}} nil
-                   nil nil (assoc plr :player-1
-                             (assoc (:player-1 plr) :bomb-count
-                               (dec (:bomb-count (:player-1 plr)))))]
+                   nil {:bomb {:player-id :player-1, :timestamp timestamp}} nil
+                   nil nil (assoc plr :player
+                             (assoc (:player plr) :bomb-count
+                               (dec (:bomb-count (:player plr)))))]
                :width 3}
         :players {:player-1 {:x 2 :y 2}}}}
       (async/close! ch-in)))
