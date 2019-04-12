@@ -1,12 +1,21 @@
 (ns bomberman-clj.grid
-  (:require [bomberman-clj.cells :as cells]
-            [bomberman-clj.config :as config]
+  (:require [bomberman-clj.config :as config]
             ; [bomberman-clj.specs :as specs]
   ))
 
 (defn- idx-coords
   [width height idx]
   {:x (mod idx width), :y (int (/ idx width))})
+
+(defn- coords-idx
+  "Return grid cell index from coordinates"
+  [{:keys [width height], :as grid}
+   {:keys [x y], :as coords}]
+  ; {:pre [(specs/valid? ::specs/grid grid)
+  ;        (specs/valid? ::specs/coords coords)]}
+  (when (and (<= 0 x (dec width))
+             (<= 0 y (dec height)))
+    (+ (* y width) x)))
 
 (defn init
   [width height]
@@ -21,71 +30,85 @@
     (take (* width height) (repeat nil))))
    })
 
-(defn- cell-idx
-  "Return grid cell index from coordinates"
-  [{:keys [width height], :as grid}
-   {:keys [x y], :as coords}]
-  ; {:pre [(specs/valid? ::specs/grid grid)
-  ;        (specs/valid? ::specs/coords coords)]}
-  (when (and (<= 0 x (dec width))
-             (<= 0 y (dec height)))
-    (+ (* y width) x)))
-
 (defn cell-at
   "Return the grid cell at the given coordinates"
   [{v :v, :as grid} coords]
   ; {:pre [(specs/valid? ::specs/grid grid)
   ;        (specs/valid? ::specs/coords coords)]
   ;  :post [(specs/valid? ::specs/cell %)]}
-  (nth v (cell-idx grid coords)))
+  (nth v (coords-idx grid coords)))
 
-(defn- object-at
-  [grid object-id coords]
-  (object-id (cell-at grid coords)))
-
-(defn bomb-at
-  [grid coords]
-  (cells/cell-bomb (cell-at grid coords)))
+(defn cell-bomb
+  ([cell]
+   (:bomb cell))
+  ([grid coords]
+   (cell-bomb (cell-at grid coords))))
 
 (defn bomb?
-  [grid coords]
-  (some? (cells/cell-bomb (cell-at grid coords))))
+  ([cell]
+   (some? (cell-bomb cell)))
+  ([grid coords]
+   (bomb? (cell-at grid coords))))
+
+(defn cell-fire
+  ([cell]
+  (:fire cell))
+  ([grid coords]
+  (cell-fire (cell-at grid coords))))
 
 (defn fire?
-  [grid coords]
-  (contains? (cell-at grid coords) :fire))
+  ([cell]
+    (some? (cell-fire cell)))
+  ([grid coords]
+    (fire? (cell-at grid coords))))
+
+(defn cell-block
+  ([cell]
+    (:block cell))
+  ([grid coords]
+    (cell-block (cell-at grid coords))))
 
 (defn block?
-  [grid coords]
-  (contains? (cell-at grid coords) :block))
+  ([cell]
+    (some? (cell-block cell)))
+  ([grid coords]
+    (block? (cell-at grid coords))))
 
 (defn hard-block?
-  [grid coords]
-  (let [cell (cell-at grid coords)]
-    (= :hard (:type (:block cell)))))
+  ([cell]
+    (= :hard (:type (:block cell))))
+  ([grid coords]
+    (hard-block? (cell-at grid coords))))
 
 (defn soft-block?
-  [grid coords]
-  (let [cell (cell-at grid coords)]
-    (= :soft (:type (:block cell)))))
-
-(defn player-at
+  ([cell]
+    (= :soft (:type (:block cell))))
   ([grid coords]
-   (cells/cell-player (cell-at grid coords)))
-  ([grid player-id coords]
-   (object-at grid player-id coords)))
+    (soft-block? (cell-at grid coords))))
 
-(defn player-id-at
-  [grid coords]
-  (cells/cell-player-id (cell-at grid coords)))
+(defn cell-player
+  ([cell]
+    (:player cell))
+  ([grid coords]
+    (cell-player (cell-at grid coords))))
 
-(defn item-at
-  [grid coords]
-  (:item (cell-at grid coords)))
+(defn player?
+  ([cell]
+    (some? (cell-player cell)))
+  ([grid coords]
+    (player? (cell-at grid coords))))
+
+(defn cell-item
+  ([cell]
+    (:item cell))
+  ([grid coords]
+    (cell-item (cell-at grid coords))))
 
 (defn item?
-  [grid coords]
-  (contains? (cell-at grid coords) :item))
+  ([cell]
+    (some? (cell-item cell)))
+  ([grid coords]
+    (item? (cell-at grid coords))))
 
 (defn assoc-grid-cell
   ([{v :v, :as grid} coords cell]
@@ -93,7 +116,7 @@
     ;        (specs/valid? ::specs/coords coords)]
     ;  :post [(specs/valid? ::specs/grid %)]}
     (assoc grid :v
-      (assoc v (cell-idx grid coords) cell)))
+      (assoc v (coords-idx grid coords) cell)))
   ([{v :v, :as grid} coords key val]
     ; {:pre [(specs/valid? ::specs/grid grid)
     ;        (specs/valid? ::specs/coords coords)]
@@ -116,21 +139,22 @@
   [grid coords]
   ; {:pre [(specs/valid? ::specs/grid grid)
   ;        (specs/valid? ::specs/coords coords)]}
-  (some? (cell-idx grid coords)))
+  (some? (coords-idx grid coords)))
 
 (defn cell-empty?
   "Check if a given cell is empty"
-  [grid coords]
-  ; {:pre [(specs/valid? ::specs/grid grid)
-  ;        (specs/valid? ::specs/coords coords)]}
-  (let [cell (cell-at grid coords)]
+  ([cell]
     (or (nil? cell)
-        (and (nil? (cells/cell-player cell))
-             (nil? (cells/cell-bomb cell))
-             (nil? (:block cell))
-             (nil? (:item cell))))))
+      (and (not (block? cell))
+        (not (bomb? cell))
+        (not (item? cell))
+        (not (player? cell)))))
+  ([grid coords]
+    ; {:pre [(specs/valid? ::specs/grid grid)
+    ;        (specs/valid? ::specs/coords coords)]}
+    (cell-empty? (cell-at grid coords))))
 
-(defn rand-coords
+(defn- rand-coords
   [{:keys [width height], :as grid}]
   ; {:pre [(specs/valid? ::specs/grid grid)]
   ;  :post [(specs/valid? ::specs/coords %)]}
@@ -147,10 +171,3 @@
         (if (= num-tries config/spawn-max-tries)
           (println "W grid::find-empty-cell - failed to find empty cell")
           (recur (inc num-tries)))))))
-
-(defn spawn
-  [grid object-id object coords]
-  ; {:pre [(specs/valid? ::specs/grid grid)
-  ;        (specs/valid? ::specs/coords coords)]
-  ;  :post [(specs/valid? ::specs/grid %)]}
-  (assoc-grid-cell grid coords object-id object))

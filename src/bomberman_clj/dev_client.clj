@@ -1,7 +1,6 @@
 (ns bomberman-clj.dev-client
   (:require [clojure.core.async :as async]
             [bomberman-clj.arena :as arena]
-            [bomberman-clj.cells :as cells]
             [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
             [bomberman-clj.specs :as specs]
@@ -47,10 +46,10 @@
   (let [{{:keys [width height], :as grid} :grid, players :players} arena
         gameover (:gameover arena)]
     (clear-screen scr (+ (* 2 h-margin) (* 2 width)) (+ (* 2 v-margin) height))
-    (if (and (some? gameover) (util/expired? (:timestamp gameover) (System/currentTimeMillis) 1500))
+    (if (and (some? gameover))
       (let [text (if-let [player-id (:winner gameover)]
               (let [coords (player-id players)
-                    player (grid/player-at grid player-id coords)
+                    player (grid/cell-player grid coords)
                     name (:name player)]
                 (str "*** " name " wins! ***"))
               "*** No winner! ***")]
@@ -59,16 +58,15 @@
       (do
         (doseq [[row-idx row] (map-indexed vector (arena-rows arena))]
           (doseq [[cell-idx cell] (map-indexed vector row)]
-            (let [bomb (cells/cell-bomb cell)
-                  fire? (contains? cell :fire)
-                  player-id (cells/cell-player-id cell)
-                  player (cells/cell-player cell)
-                  hard-block? (grid/hard-block? grid {:x cell-idx, :y row-idx})
-                  soft-block? (grid/soft-block? grid {:x cell-idx, :y row-idx})
-                  block? (or hard-block? soft-block?)
-                  item (:item cell)]
+            (let [item (grid/cell-item cell)
+                  player (grid/cell-player cell)
+                  block? (grid/block? cell)
+                  hard-block? (grid/hard-block? cell)
+                  soft-block? (grid/soft-block? cell)
+                  bomb? (grid/bomb? cell)
+                  fire? (grid/fire? cell)]
               (when (some? player)
-                (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name player-id))))
+                (let [player-idx (Integer/parseInt (second (re-matches #".*?(\d+)" (name (:player-id player)))))
                       x (+ h-margin (* 2 cell-idx))
                       y (if (< row-idx (/ height 2))
                           (- v-margin 2 (- (count players) player-idx))
@@ -83,7 +81,7 @@
                 (cond
                   (nil? cell) "."
                   (some? player) (str (:glyph player))
-                  (some? bomb) "X"
+                  bomb? "X"
                   hard-block? (str (:hard (:block config/glyphs)))
                   soft-block? (str (:soft (:block config/glyphs)))
                   (some? item) (str ((:type item) (:item config/glyphs)))
@@ -100,7 +98,7 @@
                  :bg (cond
                        (and soft-block? fire?) :black
                        fire? :yellow
-                       (some? bomb) :red
+                       bomb? :red
                        (some? item) :blue
                        (some? player) :white
                        :else :black)}))))  ; options
