@@ -1,6 +1,6 @@
-(defproject bomberman-clj "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject bomberman-clj "0.1.0"
+  :description "A basic Bomberman game written in Clojure."
+  :url "https://github.com/idleherb/bomberman-clj"
   :license {:name "The Unlicense"
             :url "https://unlicense.org/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
