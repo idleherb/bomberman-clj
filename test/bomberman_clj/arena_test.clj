@@ -136,9 +136,9 @@
   (fact "an evaluated arena with an expired bomb contains fire"
     ; (println "009")
     (let [timestamp (d/make-timestamp)
+          bom {:bomb {:player-id :player-1, :timestamp 1000000000000}}
           hbl (d/make-cell-hard-block)
           sbl (d/make-cell-soft-block)
-          bom {:bomb {:player-id :player-1, :timestamp 1000000000000}}
           plr (d/make-cell-p1)
           v [bom hbl nil
              nil plr nil
@@ -361,21 +361,24 @@
         player-1 => some?
         (:bomb-count player-1) => 2)))
 
-  (future-fact "fire hits items, hit items disappear after a while"
+  (fact "fire hits items, hit items disappear after a while"
     ; (println "019")
     (let [pl1 (d/make-cell-p1)
           pl2 (d/make-cell-p2)
           itm (d/make-cell-item-bomb)
-          bmb {:bomb {:player-id :player-1, :timestamp 1552767537306}}
+          ts-1 (d/make-timestamp)
+          ts-2 (+ config/bomb-timeout-ms (d/make-timestamp))
+          ts-3 (+ config/expiration-ms ts-2)
+          bmb {:bomb {:player-id :player-1, :timestamp ts-1}}
           arena {:players {:player-1 {:x 0, :y 0}
                            :player-2 {:x 1, :y 0}}
                  :grid {:width 3, :height 2
                         :v [pl1 pl2 nil
                             itm nil bmb]}}
-          timestamp (+ config/bomb-timeout-ms (d/make-timestamp))
-          arena (a/eval arena timestamp)
+          arena (a/eval arena ts-2)
           {{v :v} :grid} arena]
-      (:hit (:item (nth v 3))) => {:timestamp timestamp}
-      (let [arena (a/eval arena (+ config/expiration-ms timestamp))]
+      (:hit (:item (nth v 3))) => {:timestamp ts-2}
+      (let [arena (a/eval arena ts-3)
+            {{v :v} :grid} arena]
         (:item (nth v 3)) => nil?)))
 )

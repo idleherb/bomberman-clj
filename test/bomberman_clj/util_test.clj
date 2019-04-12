@@ -18,13 +18,4 @@
 
     (fact "does nothing when using an invalid direction"
       (u/navigate {:x 0, :y 0} :south) => {:x 0, :y 0}))
-      
-  (facts "about expired timetamps"
-    (fact "timestamp expiration"
-      (let [ts-old (d/make-timestamp)
-            ts-new (+ 200 ts-old)]
-        (u/expired? ts-old ts-new 200) => true
-        (u/expired? ts-old ts-new 100) => true
-        (u/expired? ts-old ts-new 300) => false
-        (u/expired? ts-new ts-old 200) => false)))
 )

@@ -74,15 +74,29 @@
   ([grid coords]
     (block? (cell-at grid coords))))
 
+(defn cell-hard-block
+  ([cell]
+    (let [block (cell-block cell)]
+      (when (= :hard (:type block)) block)))
+  ([grid coords]
+    (cell-hard-block (cell-at grid coords))))
+
 (defn hard-block?
   ([cell]
-    (= :hard (:type (:block cell))))
+    (some? (cell-hard-block cell)))
   ([grid coords]
     (hard-block? (cell-at grid coords))))
 
+(defn cell-soft-block
+  ([cell]
+    (let [block (cell-block cell)]
+      (when (= :soft (:type block)) block)))
+  ([grid coords]
+    (cell-soft-block (cell-at grid coords))))
+
 (defn soft-block?
   ([cell]
-    (= :soft (:type (:block cell))))
+    (some? (cell-soft-block cell)))
   ([grid coords]
     (soft-block? (cell-at grid coords))))
 
