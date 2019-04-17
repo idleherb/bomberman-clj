@@ -1,6 +1,6 @@
 (ns bomberman-clj.dev-client
   (:require [clojure.core.async :as async]
-            [bomberman-clj.arena :as arena]
+            [bomberman-clj.game :as game]
             [bomberman-clj.config :as config]
             [bomberman-clj.grid :as grid]
             [bomberman-clj.specs :as specs]
@@ -10,9 +10,9 @@
 (def h-margin 20)
 (def v-margin 10)
 
-(defn- arena-rows
-  [arena]
-  (let [grid (:grid arena)
+(defn- grid-rows
+  [game]
+  (let [grid (:grid game)
         {v :v, width :width, height :height} grid]
     (loop [row-idx 0
            rows []]
@@ -41,25 +41,23 @@
         y (+ v-margin (int (/ height 2)))]
     (s/put-string scr x y text {:fg :white, :bg :black})))
 
-(defn- draw-arena
-  [arena scr]
-  (let [{{:keys [width height], :as grid} :grid, players :players} arena
-        gameover (:gameover arena)]
+(defn- draw-game
+  [game scr]
+  (let [{{:keys [width height], :as grid} :grid, players :players} game
+        gameover (:gameover game)]
     (clear-screen scr (+ (* 2 h-margin) (* 2 width)) (+ (* 2 v-margin) height))
     (if (and (some? gameover))
       (let [text (if-let [player-id (:winner gameover)]
-              (let [coords (player-id players)
-                    player (grid/cell-player grid coords)
-                    name (:name player)]
-                (str "*** " name " wins! ***"))
+              (let [player (get players player-id)]
+                (str "*** " (:name player) " wins! ***"))
               "*** No winner! ***")]
         (draw-centered-text scr width height text))
       ; else
       (do
-        (doseq [[row-idx row] (map-indexed vector (arena-rows arena))]
+        (doseq [[row-idx row] (map-indexed vector (grid-rows game))]
           (doseq [[cell-idx cell] (map-indexed vector row)]
             (let [item (grid/cell-item cell)
-                  player (grid/cell-player cell)
+                  player (game/cell-player game cell)
                   block? (grid/block? cell)
                   hard-block? (grid/hard-block? cell)
                   soft-block? (grid/soft-block? cell)
@@ -109,21 +107,21 @@
   [key]
   (let [timestamp (System/currentTimeMillis)]
     (case key
-      :up {:type :action, :player-id :player-1, :action :move, :payload :up, :timestamp timestamp}
-      :right {:type :action, :player-id :player-1, :action :move, :payload :right, :timestamp timestamp}
-      :down {:type :action, :player-id :player-1, :action :move, :payload :down, :timestamp timestamp}
-      :left {:type :action, :player-id :player-1, :action :move, :payload :left, :timestamp timestamp}
-      \space {:type :action, :player-id :player-1, :action :plant-bomb, :timestamp timestamp}
-      \w {:type :action, :player-id :player-2, :action :move, :payload :up, :timestamp timestamp}
-      \d {:type :action, :player-id :player-2, :action :move, :payload :right, :timestamp timestamp}
-      \s {:type :action, :player-id :player-2, :action :move, :payload :down, :timestamp timestamp}
-      \a {:type :action, :player-id :player-2, :action :move, :payload :left, :timestamp timestamp}
-      :tab {:type :action, :player-id :player-2, :action :plant-bomb, :timestamp timestamp}
-      :enter {:type :restart}
+      :up {:type :action, :payload {:player-id :player-1, :action :move, :direction :up}, :timestamp timestamp}
+      :right {:type :action, :payload {:player-id :player-1, :action :move, :direction :right}, :timestamp timestamp}
+      :down {:type :action, :payload {:player-id :player-1, :action :move, :direction :down}, :timestamp timestamp}
+      :left {:type :action, :payload {:player-id :player-1, :action :move, :direction :left}, :timestamp timestamp}
+      \space {:type :action, :payload {:player-id :player-1, :action :plant-bomb}, :timestamp timestamp}
+      \w {:type :action, :payload {:player-id :player-2, :action :move, :direction :up}, :timestamp timestamp}
+      \d {:type :action, :payload {:player-id :player-2, :action :move, :direction :right}, :timestamp timestamp}
+      \s {:type :action, :payload {:player-id :player-2, :action :move, :direction :down}, :timestamp timestamp}
+      \a {:type :action, :payload {:player-id :player-2, :action :move, :direction :left}, :timestamp timestamp}
+      :tab {:type :action, :payload {:player-id :player-2, :action :plant-bomb}, :timestamp timestamp}
+      :enter {:type :restart, :timestamp timestamp}
       {:type :dummy})))
 
 (defn join
-  [width height ch-in ch-out]
+  [ch-in ch-out player-1-name player-2-name width height]
   {:pre [(specs/valid? ::specs/chan ch-in)
          (specs/valid? ::specs/chan ch-out)]
    :post [(specs/valid? ::specs/chan %)]}
@@ -131,17 +129,19 @@
                                   :cols (+ (* 2 h-margin) (* 2 width))})]
     (s/in-screen scr
       (async/go-loop []
-        (if-let [{arena :state, :as event} (async/<! ch-out)]
+        (if-let [{game :payload, :as event} (async/<! ch-out)]
           (do
-            (draw-arena arena scr)
+            (draw-game game scr)
             (recur))
           (println "D dev_client::join - 0 fps.")))
+      (async/>!! ch-in {:type :join, :payload {:name player-1-name}})
+      (async/>!! ch-in {:type :join, :payload {:name player-2-name}})
       (loop []
         (let [key (s/get-key-blocking scr)]
           (condp = key
             :escape (do
               (println "D dev_client::join - exit requested...")
-              (async/go (async/>! ch-in {:type :exit})))
+              (async/go (async/>! ch-in {:type :exit, :timestamp (System/currentTimeMillis)})))
             (do
               (async/go (async/>! ch-in (key-to-event key)))
               (recur))))))))

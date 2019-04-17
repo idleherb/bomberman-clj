@@ -100,15 +100,15 @@
   ([grid coords]
     (soft-block? (cell-at grid coords))))
 
-(defn cell-player
+(defn cell-player-id
   ([cell]
-    (:player cell))
+    (:player-id cell))
   ([grid coords]
-    (cell-player (cell-at grid coords))))
+    (cell-player-id (cell-at grid coords))))
 
 (defn player?
   ([cell]
-    (some? (cell-player cell)))
+    (some? (cell-player-id cell)))
   ([grid coords]
     (player? (cell-at grid coords))))
 
