@@ -16,6 +16,7 @@
 
 (def max-grid-width 999)
 (def max-grid-height 999)
+(def max-players 999)
 
 (s/def ::hit (s/keys :req-un [::timestamp]))
 (s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
@@ -31,25 +32,43 @@
 
 (s/def ::x int?)
 (s/def ::y int?)
-(s/def ::coords (s/keys :req-un [::x ::y]))
+(s/def ::coords (s/nilable (s/keys :req-un [::x ::y])))
 
 (s/def ::block (s/keys :req-un [::type] :opt-un [::hit]))
 
-(s/def ::player (s/keys :req-un [::glyph ::name ::player-id ::bomb-count ::bomb-radius] :opt-un [::coords ::hit]))
+(s/def ::player (s/keys :req-un [::bomb-count
+                                 ::bomb-radius
+                                 ::coords
+                                 ::glyph
+                                 ::name
+                                 ::player-id]
+                        :opt-un [::hit]))
 
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
 
-(s/def ::cell (s/nilable (s/keys :opt-un [::block ::bomb ::fire ::item ::player])))
+(s/def ::cell (s/nilable (s/keys :opt-un [::block
+                                          ::bomb
+                                          ::fire
+                                          ::item
+                                          ::player-id])))
 (s/def ::v (s/coll-of ::cell
                       :min-count 1
                       :max-count (* max-grid-width max-grid-height)))
 (s/def ::width (s/and int? #(>= max-grid-width % 1)))
 (s/def ::height (s/and int? #(>= max-grid-height % 1)))
-(s/def ::grid (s/keys :req-un [::v ::width ::height]))
+(s/def ::grid (s/nilable (s/keys :req-un [::v ::width ::height])))
 
 (s/def ::bombs map?)
 (s/def ::players map?)
 (s/def ::winner (s/and keyword? #(re-matches #"player-\d+" (name %))))
+(s/def ::num-players (s/and int? #(<= 1 % max-players)))
+(s/def ::in-progress? boolean?)
 (s/def ::gameover (s/keys :req-un [::timestamp] opt-un [::winner]))
-(s/def ::arena (s/keys :req-un [::grid ::players] :opt-un [::gameover]))
+(s/def ::game (s/keys :req-un [::grid
+                               ::in-progress?
+                               ::num-players
+                               ::players
+                               ::width
+                               ::height]
+                      :opt-un [::gameover]))

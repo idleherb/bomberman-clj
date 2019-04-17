@@ -1,61 +1,17 @@
 (ns bomberman-clj.core
   (:require [clojure.core.async :as async]
-            [bomberman-clj.arena :as arena]
             [bomberman-clj.config :as config]
-            [bomberman-clj.dev-client :as dev-client]
+            [bomberman-clj.dev-client :as dc]
             [bomberman-clj.frame-rate :as fps]
-            ; [bomberman-clj.specs :as specs]
-  )
+            [bomberman-clj.game-loop :as gl])
   (:gen-class))
 
-(defn- player-action
-  [arena event]
-  ; {:pre [(specs/valid? ::specs/arena arena)
-  ;        (specs/valid? ::specs/event event)]
-  ;  :post [(specs/valid? ::specs/arena %)]}
-  (let [{:keys [timestamp player-id action payload]} event]
-    (condp = action
-      :move (arena/move arena player-id payload timestamp)
-      :plant-bomb (arena/plant-bomb arena player-id timestamp)
-      (do
-        (println "W - unknown player action:" action)
-        arena))))
-
-(defn game-loop
-  [width height ch-in ch-out]
-  ; {:pre [(specs/valid? ::specs/chan ch-in)
-  ;        (specs/valid? ::specs/chan ch-out)]
-  ;  :post [(specs/valid? ::specs/chan %)]}
-  (async/go-loop [arena (arena/init width height
-                          {:player-1 {:glyph (:player-1 config/glyphs), :name "White Bomberman"}
-                           :player-2 {:glyph (:player-2 config/glyphs), :name "Pretty Bomber"}})]
-    (if-let [{timestamp :timestamp, type :type, :as event} (async/<! ch-in)]
-      (condp = type
-        :exit (do
-          (println "I core::game-loop - exit...")
-          event)
-        :restart (do
-          (println "I core::game-loop - another round...")
-          (recur (arena/init width height
-                   {:player-1 {:glyph (:player-1 config/glyphs), :name "White Bomberman"}
-                    :player-2 {:glyph (:player-2 config/glyphs), :name "Pretty Bomber"}})))
-        (let [arena (condp = type
-                      :refresh (let [arena (arena/eval arena timestamp)]
-                                 (async/>! ch-out {:state arena, :timestamp timestamp})
-                                 arena)
-                      :action (player-action arena event)
-                      (do
-                        (println "W core::game-loop - unexpected event:" event)
-                        arena))]
-          (recur arena)))
-      (println "W core::game-loop - game aborted..."))))
-
 (defn main
-  ([width height]
+  ([width height player-1-name player-2-name]
     (let [ch-in (async/chan)
           ch-out (async/chan)
-          ch-game (game-loop width height ch-in ch-out)
-          _ (future (dev-client/join width height ch-in ch-out))
+          ch-game (gl/game-loop ch-in ch-out 2 width height)
+          _ (future (dc/join ch-in ch-out player-1-name player-2-name width height))
           ch-fps (fps/set ch-in config/fps)]
         (if-let [event (async/<!! ch-game)]
           (if (= (:type event) :exit)
@@ -70,9 +26,8 @@
           (println "W core::main - aborted."))))
   ([] (main config/arena-width config/arena-height)))
 
-(defn -main [& args]
-  (if (= 2 (count args))
-    (main (Integer/parseInt (first args))
-          (Integer/parseInt (second args)))
-    (main))
+(defn -main
+  [width height player-1-name player-2-name]
+  (main (Integer/parseInt width) (Integer/parseInt height) player-1-name player-2-name)
   (System/exit 0))
+

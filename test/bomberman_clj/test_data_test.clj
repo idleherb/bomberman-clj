@@ -11,6 +11,7 @@
     (d/make-cell-hard-block) => #(s/valid? ::s/cell %)
     (d/make-cell-soft-block) => #(s/valid? ::s/cell %)
     (d/make-cell-item-bomb) => #(s/valid? ::s/cell %)
+    (d/make-empty-game) => #(s/valid? ::s/game %)
     (d/make-player-1) => #(s/valid? ::s/player %)
     (d/make-player-2) => #(s/valid? ::s/player %)
     (d/make-player-3) => #(s/valid? ::s/player %)
