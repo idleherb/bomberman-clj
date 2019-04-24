@@ -1,0 +1,225 @@
+* {
+  box-sizing: border-box;
+}
+
+button {
+  background: none;
+  border: 1px solid gray;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: Raleway, sans-serif;
+  font-size: 14;
+  font-weight: medium;
+  height: 32px;
+  margin: 8px;
+  padding: 0 16px;
+  text-transform: uppercase;
+}
+
+button:focus {
+  outline: none;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: Raleway, sans-serif;
+  font-size: 14;
+}
+
+input,
+select,
+textarea {
+  outline: 0;
+}
+
+#game {
+  background: repeating-linear-gradient(
+    45deg,
+    #091113,
+    #091113 8.5px,
+    #192123 0,
+    #192123 17px
+  );
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 36px;
+}
+
+#gameover {
+  background-color: rgba(0, 0, 0, .8);
+  color: #ffffff;
+  display: flex;
+  font-family: Raleway, sans-serif;
+  text-transform: uppercase;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#game.in-progress {
+  padding: 48px;
+}
+
+#name {
+  margin: 8px;
+}
+
+#in-name {
+  border: none;
+  border-bottom: 1px solid gray;
+  font-family: Raleway, sans-serif;
+  font-size: 14;
+  line-height: 32px;
+  height: 32px;
+  padding: 0 4px;
+}
+
+#players {
+  margin: 8px;
+}
+
+.block.hard {
+  border-radius: 19px;
+  background-color: lightgray;
+  width: 38px;
+  height: 38px;
+  margin: 5px;
+  opacity: 0;
+}
+
+.block.soft::after {
+  content: "🏚️"
+}
+
+.bomb {
+  background: repeating-linear-gradient(
+    45deg,
+    red,
+    red 8.5px,
+    orangered 0,
+    orangered 17px
+  ) !important;
+}
+
+.bomb::after {
+  content: "💣"
+}
+
+.cell {
+  margin: 0;
+  padding: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: repeating-linear-gradient(
+    45deg,
+    lightgray,
+    lightgray 8.5px,
+    whitesmoke 0,
+    whitesmoke 17px
+  );
+}
+
+.empty {
+  padding: 24px;
+}
+
+.fire {
+  background: repeating-linear-gradient(
+    45deg,
+    orange,
+    orange 8.5px,
+    gold 0,
+    gold 17px
+  ) !important;
+}
+
+.fire::after {
+  content: "🔥"
+}
+
+.hit {
+  opacity: 0.4;
+}
+
+.item {
+  background: repeating-linear-gradient(
+    45deg,
+    dodgerblue ,
+    dodgerblue 8.5px,
+    deepskyblue 0,
+    deepskyblue 17px
+  );
+}
+
+.item-bomb::after {
+  content: "💣"
+}
+
+.item-fire::after {
+  content: "🔥"
+}
+
+.no-select {
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+
+
+.player-1::after {
+  content: "🐈"
+}
+
+.player-2::after {
+  content: "🦔"
+}
+
+.player-3::after {
+  content: "🐇"
+}
+
+.player-4::after {
+  content: "🐿"
+}
+
+.player-5::after {
+  content: "🦏"
+}
+
+.player-6::after {
+  content: "🦉"
+}
+
+.player-7::after {
+  content: "🐬"
+}
+
+.player-8::after {
+  content: "🦖"
+}
+
+.row {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+}

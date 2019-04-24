@@ -38,6 +38,13 @@
       timestamp
       config/expiration-ms)))
 
+(defn gameover-expired?
+  [gameover timestamp]
+  (and (contains? gameover :timestamp)
+    (expired? (:timestamp gameover)
+      timestamp
+      config/gameover-expiration-ms)))
+
 (defn- hit-object-expired?
   [hit-object timestamp]
   ; {:pre (specs/valid? ::specs/timestamp timestamp)}
@@ -46,6 +53,10 @@
       timestamp
       config/expiration-ms)))
 
+(defn block-expired?
+  [block timestamp]
+  (hit-object-expired? block timestamp))
+
 (defn item-expired?
   [item timestamp]
   (hit-object-expired? item timestamp))
@@ -53,10 +64,6 @@
 (defn player-expired?
   [player timestamp]
   (hit-object-expired? player timestamp))
-
-(defn block-expired?
-  [block timestamp]
-  (hit-object-expired? block timestamp))
 
 (defn navigate
   [{:keys [x y], :as coords} direction]

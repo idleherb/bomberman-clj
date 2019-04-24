@@ -26,33 +26,37 @@
         cur-num-players (count players)]
     (if (= num-players cur-num-players)
       (do
-        (println "W game::join - no free player slot left for player" player)
+        (println "E game::join - no free player slot left for player" player)
         game)
-      (let [player-id (keyword (str "player-" (inc cur-num-players)))
-            player (assoc player :player-id player-id
-                                 :coords nil)
-            players (assoc players player-id player)
+      (let [player (assoc player :coords nil)
+            players (assoc players (:player-id player) player)
             game (assoc game :players players)]
         game))))
 
 (defn- reset-players
   [game]
-  (let [players (into {} (map (fn [[id player]] [id (dissoc player :hit)])
-                              (:players game)))]
+  (let [players (into {}
+    (->> (:players game)
+         (filter #(not (contains? (second %) :left)))
+         (map (fn [[id player]] [id (dissoc player :hit)]))))]
     (assoc game :players players)))
+
+(defn- reset
+  [game]
+  (-> game
+      (reset-players)
+      (assoc :grid nil)
+      (dissoc :gameover)))
 
 (defn next-round
   [game timestamp]
   {:pre [(specs/valid? ::specs/game game)]
    :post [(specs/valid? ::specs/game %)]}
-  (let [game (-> game
-                 (reset-players)
-                 (dissoc game :gameover))
-        {:keys [num-players players width height]} game]
+  (let [{:keys [num-players players width height], :as game} (reset game)]
     (if (< (count players) num-players)
       (do
         (println "W game::next-round - not enough players to start new round...")
-        game)
+        (assoc game :in-progress? false))
       (loop [grid (grid/init width height)
              players players
              i 1]
@@ -220,9 +224,21 @@
 
 (defn leave
   [game player-id timestamp]
-  (let [{:keys [players]} game
-        coords (:coords (get players player-id))]
-    (hit-player game coords timestamp true)))
+  {:pre [(specs/valid? ::specs/game game)
+         (specs/valid? ::specs/player-id player-id)
+         (specs/valid? ::specs/timestamp timestamp)]
+   :post [(specs/valid? ::specs/game %)]}
+  (println "D game::leave" player-id timestamp)
+  (let [{:keys [in-progress? players]} game]
+    (if in-progress?
+      (let [{:keys [coords left], :as player} (get players player-id)
+            player (if (nil? left)
+                     (assoc player :left {:timestamp timestamp})
+                     player)]
+        (-> game
+            (update-player player)
+            (hit-player coords timestamp true)))
+      (assoc game :players (dissoc players player-id)))))
 
 (defn- spread-fire
   "Spread fire along x or y axis"

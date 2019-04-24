@@ -5,19 +5,16 @@
 (defn make-player-1 [] {:bomb-count 1
                         :bomb-radius 3
                         :coords nil
-                        :glyph \@
                         :name "White Bomberman"
                         :player-id :player-1})
 (defn make-player-2 [] {:bomb-count 1
                         :bomb-radius 3
                         :coords nil
-                        :glyph \&
                         :name "Pretty Bomber"
                         :player-id :player-2})
 (defn make-player-3 [] {:bomb-count 1
                         :bomb-radius 3
                         :coords nil
-                        :glyph \^
                         :name "Black Bomberman"
                         :player-id :player-3})
 
