@@ -49,6 +49,23 @@
         grid => some?
         in-progress? => true)))
 
+  (fact "no new round can be started if a player has left in the previous round"
+    ; (println "003.1")
+    (let [timestamp (d/make-timestamp)
+          game (-> (d/make-empty-game)
+                   (g/join (d/make-player-1) timestamp)
+                   (g/join (d/make-player-2) timestamp))
+          players (:players game)
+          player-1 (:player-1 players)
+          player-1 (assoc player-1 :left {:timestamp timestamp})
+          game (assoc game :players
+                 (assoc players :player-1 player-1))
+          game (g/next-round game timestamp)
+          {:keys [in-progress? players]} game
+          player-1 (:player-1 players)]
+      in-progress? => false
+      player-1 => nil?))
+
   (fact "a player can move to NESW empty cells if a game is in progress"
     ; (println "004")
     (let [pl1 (d/make-cell-p1)
@@ -367,7 +384,6 @@
           player {:player-id :player-1
                   :bomb-count 0
                   :bomb-radius 3
-                  :glyph \P
                   :hit {:timestamp 1000000010000}
                   :name "foo"}
           v [{:bomb bomb
@@ -488,7 +504,7 @@
             {{v :v} :grid} game]
         (:item (nth v 3)) => nil?)))
 
-  (fact "players who leave the game, die"
+  (fact "players who leave the game, die and are marked as :left"
     ; (println "022")
     (let [pl1 (d/make-cell-p1)
           pl2 (d/make-cell-p2)
@@ -508,5 +524,15 @@
           player-1 (:player-1 players)
           player-2 (:player-2 players)]
       (:hit player-1) => {:timestamp timestamp}
+      (:left player-1) => {:timestamp timestamp}
       (:hit player-2) => nil?))
+
+  (fact "players can leave a non-running game"
+    ; (println "023")
+    (let [game (-> (d/make-empty-game)
+                   (assoc :players {:player-1 {:name "player-1"
+                                               :player-id :player-1}})
+                   (g/leave :player-1 (d/make-timestamp)))
+          players (:players game)]
+      players => empty?))
 )

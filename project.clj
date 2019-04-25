@@ -5,7 +5,12 @@
             :url "https://unlicense.org/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/core.async "0.4.490"]
-                 [clojure-lanterna "0.9.7"]]
+                 [org.immutant/web "2.1.10"]
+                 [cheshire "5.8.1"]
+                 [clojure-lanterna "0.9.7"]
+                 [compojure "1.6.1"]
+                 [environ "1.1.0"]
+                 [ring/ring-core "1.7.1"]]
   :managed-dependencies [[org.clojure/core.rrb-vector "0.0.13"]
                          [org.flatland/ordered "1.5.7"]]
   :main ^:skip-aot bomberman-clj.core

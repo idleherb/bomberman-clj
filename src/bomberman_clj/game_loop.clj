@@ -1,6 +1,7 @@
 (ns bomberman-clj.game-loop
   (:require [clojure.core.async :as async]
-            [bomberman-clj.game :as game]))
+            [bomberman-clj.game :as game]
+            [bomberman-clj.util :as util]))
 
 (defn- key-set
   [map]
@@ -55,23 +56,33 @@
 (defn- on-refresh!
   [event game ch]
   ; (println "D game-loop::on-refresh! - client requests update...")
-  (let [{:keys [payload timestamp]} event]
+  (let [timestamp (:timestamp event)]
     (if (:in-progress? game)
       (let [game (game/eval game timestamp)]
-        ;(if (game/game-over? game)
-        ;  (do
-        ;    ; TODO: count-down to next round
-        ;    (println "D game-loop::on-refresh! - starting next round...")
-        ;    (game/next-round game timestamp))
-        ;  (do
-            (async/go (async/>! ch {:broadcast true, :type :refresh, :payload game, :timestamp timestamp}))
-            game)
-            ;))
-      game)))
+        (if (and (game/game-over? game) (util/gameover-expired? (:gameover game) timestamp))
+          (let [game (game/next-round game (:timestamp event))]
+            (do
+              (async/go (async/>! ch {:broadcast true
+                                      :type :refresh
+                                      :payload game
+                                      :timestamp timestamp}))
+              game))
+          (do
+            (async/go (async/>! ch {:broadcast true
+                                    :type :refresh
+                                    :payload game
+                                    :timestamp timestamp}))
+            game)))
+      (do
+        (async/go (async/>! ch {:broadcast true
+                                :type :refresh
+                                :payload game
+                                :timestamp timestamp}))
+        game))))
 
-(defn- on-restart
+(defn- on-dev-restart
   [event game ch]
-  ; (println "D game-loop::on-restart - event:" event)
+  ; (println "D game-loop::on-dev-restart - event:" event)
   (game/next-round game (:timestamp event)))
 
 (defn- abort-game!
@@ -84,12 +95,12 @@
   (async/go-loop [game (game/init num-players width height)]
     (if-let [event (async/<! ch-in)]
       (let [game (condp = (:type event)
-                   :join    (on-join!    event game ch-out)
-                   :action  (on-action   event game ch-out)
-                   :leave   (on-leave!   event game ch-out)
-                   :refresh (on-refresh! event game ch-out)
-                   :restart (on-restart  event game ch-out)
-                   :exit    nil
+                   :join        (on-join!       event game ch-out)
+                   :action      (on-action      event game ch-out)
+                   :leave       (on-leave!      event game ch-out)
+                   :refresh     (on-refresh!    event game ch-out)
+                   :dev-restart (on-dev-restart event game ch-out)
+                   :dev-exit    nil
                    game)]
         (when (some? game) (recur game)))
       (abort-game! ch-out))))

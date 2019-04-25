@@ -18,8 +18,9 @@
 (def max-grid-height 999)
 (def max-players 999)
 
-(s/def ::hit (s/keys :req-un [::timestamp]))
 (s/def ::timestamp (s/and int? #(> % 0) #(= 13 (count (str %)))))
+(s/def ::hit (s/keys :req-un [::timestamp]))
+(s/def ::left (s/keys :req-un [::timestamp]))
 (s/def ::type keyword?)
 (s/def ::action keyword?)
 (s/def ::player-id (s/and keyword? #(re-matches #"player-\d+" (name %))))
@@ -27,7 +28,6 @@
 (s/def ::chan #(satisfies? clojure.core.async.impl.protocols/Channel %))
 (s/def ::event (s/keys :req-un [::type ::timestamp] ::opt-un [::action ::payload ::player-id]))
 
-(s/def ::glyph char?)
 (s/def ::bomb-count (s/and int? #(>= % 0 )))
 
 (s/def ::x int?)
@@ -39,10 +39,10 @@
 (s/def ::player (s/keys :req-un [::bomb-count
                                  ::bomb-radius
                                  ::coords
-                                 ::glyph
                                  ::name
                                  ::player-id]
-                        :opt-un [::hit]))
+                        :opt-un [::hit
+                                 ::left]))
 
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))
