@@ -13,6 +13,7 @@
   :managed-dependencies [[org.clojure/core.rrb-vector "0.0.13"]
                          [org.flatland/ordered "1.5.7"]]
   :main ^:skip-aot bomberman-clj.core
+  :min-lein-version "2.0.0"
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[midje "1.9.7" :exclusions [org.clojure/clojure]]]
