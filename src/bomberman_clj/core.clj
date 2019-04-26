@@ -8,11 +8,15 @@
   (:gen-class))
 
 (defn main
-  ([width height num-players]
+  ([width height num-players host port]
     (let [ch-in (async/chan)
           ch-out (async/chan)
           ch-game (gl/game-loop ch-in ch-out num-players width height)
-          _ (future (server/run ch-in ch-out num-players))
+          _ (future (server/run ch-in
+                                ch-out
+                                num-players
+                                host
+                                port))
           ch-fps (fps/set ch-in config/fps)]
         (if-let [event (async/<!! ch-game)]
           (if (= (:type event) :exit)
@@ -28,10 +32,12 @@
   ([] (main config/arena-width config/arena-height)))
 
 (defn -main
-  ([width height num-players]
+  ([width height num-players host port]
     (main (Integer/parseInt width)
           (Integer/parseInt height)
-          (Integer/parseInt num-players))
+          (Integer/parseInt num-players)
+          host
+          port)
     (System/exit 0))
   ([]
-    (-main "17" "15" "2")))
+    (-main "17" "15" "2" "0.0.0.0" "8080")))
