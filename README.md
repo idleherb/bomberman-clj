@@ -1,5 +1,7 @@
 # bomberman-clj
 
+[![CircleCI](https://circleci.com/gh/idleherb/bomberman-clj.svg?style=svg)](https://circleci.com/gh/idleherb/bomberman-clj)
+
 A basic Bomberman game written in Clojure.
 
 ## Installation
