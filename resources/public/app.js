@@ -73,7 +73,7 @@ window.onload = () => {
       return;
     }
   
-    let uri = 'ws://' + location.host + location.pathname;
+    let uri = 'wss://' + location.host + location.pathname;
     uri = uri.substring(0, uri.lastIndexOf('/'));
     socket = new WebSocket(uri);
   
