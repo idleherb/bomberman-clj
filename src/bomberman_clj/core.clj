@@ -28,8 +28,10 @@
   ([] (main config/arena-width config/arena-height)))
 
 (defn -main
-  [width height num-players]
-  (main (Integer/parseInt width)
-        (Integer/parseInt height)
-        (Integer/parseInt num-players))
-  (System/exit 0))
+  ([width height num-players]
+    (main (Integer/parseInt width)
+          (Integer/parseInt height)
+          (Integer/parseInt num-players))
+    (System/exit 0))
+  ([]
+    (-main "17" "15" "2")))
