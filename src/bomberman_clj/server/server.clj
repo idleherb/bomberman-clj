@@ -21,13 +21,11 @@
       (println "D server::game-update-listener! - aborted..."))))
 
 (defn run
-  [ch-game-in ch-game-out num-players
-   ; host port & {:as args}
+  [ch-game-in ch-game-out num-players host port]
    ]
   (web/run
     (-> routes
         (web-middleware/wrap-session {:timeout 20})
         (web-middleware/wrap-websocket (ws/ws-callbacks ch-game-in num-players)))
-    ;(merge {"host" host, "port" port} args)
-  )
+    {"host" host, "port" port})
   (game-update-listener! ch-game-out))
