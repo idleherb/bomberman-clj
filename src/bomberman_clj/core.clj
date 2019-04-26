@@ -16,7 +16,7 @@
                                 ch-out
                                 num-players
                                 host
-                                port)
+                                port))
           ch-fps (fps/set ch-in config/fps)]
         (if-let [event (async/<!! ch-game)]
           (if (= (:type event) :exit)

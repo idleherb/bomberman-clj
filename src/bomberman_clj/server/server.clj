@@ -22,7 +22,6 @@
 
 (defn run
   [ch-game-in ch-game-out num-players host port]
-   ]
   (web/run
     (-> routes
         (web-middleware/wrap-session {:timeout 20})

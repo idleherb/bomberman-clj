@@ -9,7 +9,6 @@
                  [cheshire "5.8.1"]
                  [clojure-lanterna "0.9.7"]
                  [compojure "1.6.1"]
-                 [environ "1.1.0"]
                  [ring/ring-core "1.7.1"]]
   :managed-dependencies [[org.clojure/core.rrb-vector "0.0.13"]
                          [org.flatland/ordered "1.5.7"]]
