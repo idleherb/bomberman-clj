@@ -21,6 +21,8 @@ button:focus {
 }
 
 html, body {
+  margin: 0;
+  padding: 0;
   width: 100%;
   height: 100%;
   display: flex;
@@ -37,7 +39,15 @@ textarea {
   outline: 0;
 }
 
-#game {
+#app, .app {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+.game {
   background: repeating-linear-gradient(
     45deg,
     #091113,
@@ -54,11 +64,12 @@ textarea {
   font-size: 36px;
 }
 
-#gameover {
+.gameover {
   background-color: rgba(0, 0, 0, .8);
   color: #ffffff;
   display: flex;
   font-family: Raleway, sans-serif;
+  font-size: 36px;
   text-transform: uppercase;
   justify-content: center;
   align-items: center;
@@ -69,15 +80,11 @@ textarea {
   height: 100%;
 }
 
-#game.in-progress {
-  padding: 48px;
-}
-
-#name {
+.name {
   margin: 8px;
 }
 
-#in-name {
+.in-name {
   border: none;
   border-bottom: 1px solid gray;
   font-family: Raleway, sans-serif;
@@ -87,7 +94,7 @@ textarea {
   padding: 0 4px;
 }
 
-#players {
+.num-players {
   margin: 8px;
 }
 

@@ -1,8 +1,8 @@
 (ns bomberman-clj.server.ws
-(:require [bomberman-clj.specs :as specs]
-          [clojure.core.async :as async]
-          [cheshire.core :refer [generate-string parse-string]]
-          [immutant.web.async :as ws-async]))
+  (:require [bomberman-clj.specs :as specs]
+            [clojure.core.async :as async]
+            [clojure.edn :as edn]
+            [immutant.web.async :as ws-async]))
 
 (def ws-chans (atom {}))  ; ch -> player-id
 
@@ -54,15 +54,15 @@
 
 (defn broadcast
   [event]
-  (doseq [ch (keys @ws-chans)] (ws-async/send! ch (generate-string event))))
+  (doseq [ch (keys @ws-chans)] (ws-async/send! ch (pr-str event))))
 
 (defn- send-message!
   [ws-ch message]
-  (ws-async/send! ws-ch (generate-string {:type :message, :payload message})))
+  (ws-async/send! ws-ch (pr-str {:type :message, :payload message})))
 
 (defn- send-error!
   [ws-ch error]
-  (ws-async/send! ws-ch (generate-string {:type :error, :payload error})))
+  (ws-async/send! ws-ch (pr-str {:type :error, :payload error})))
 
 (defn- on-join!!
   [event ch ws-ch num-players]
@@ -101,22 +101,9 @@
       (println "W ws::on-leave!! -" error)
       (send-error! ws-ch {:error error}))))
 
-(defn- parse-event
-  [message]
-  (let [{:keys [type payload], :as event} (parse-string message true)
-        type (keyword type)
-        payload (if (= type :action)
-          (assoc payload :action (keyword (:action payload)))
-          payload)
-        payload (if (contains? payload :direction)
-          (assoc payload :direction (keyword (:direction payload)))
-          payload)]
-    (assoc event :type type
-                 :payload payload)))
-
 (defn- ws-on-message!
   [ch num-players ws-ch message]
-  (let [{:keys [type payload timestamp], :as event} (parse-event message)
+  (let [{:keys [type payload timestamp], :as event} (edn/read-string message)
         player-id (get-chan-player-id ws-ch)]
     (condp = type
       :join   (on-join!!  event ch ws-ch num-players)
@@ -135,7 +122,7 @@
 
 (defn broadcast
   [event]
-  (doseq [ch (keys @ws-chans)] (ws-async/send! ch (generate-string event))))
+  (doseq [ch (keys @ws-chans)] (ws-async/send! ch (pr-str event))))
 
 (defn ws-callbacks
   [ch-game-in num-players]
