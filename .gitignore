@@ -13,3 +13,9 @@ pom.xml.asc
 .nrepl-port
 .cpcache/
 .DS_Store
+
+\.rebel_readline_history
+
+figwheel_server\.log
+
+resources/public/js/compiled
