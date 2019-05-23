@@ -40,9 +40,9 @@
                           [{:id "min"
                             :source-paths ["src" "prod"]
                             :compiler {:main bomberman_clj.client.core
-                                        :output-to "resources/public/js/compiled/app.js"
-                                        :optimizations :advanced
-                                        :pretty-print false}}]}}}
+                                       :output-to "resources/public/js/compiled/app.js"
+                                       :optimizations :advanced
+                                       :pretty-print false}}]}}}
   :target-path "target/%s"
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   :figwheel {:css-dirs ["resources/public/css"]}
