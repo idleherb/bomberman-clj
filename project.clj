@@ -43,7 +43,7 @@
                                        :output-to "resources/public/js/compiled/app.js"
                                        :optimizations :advanced
                                        :pretty-print false}}]}}}
-  :target-path "target/%s"
+  :uberjar-name "bomberman-clj-standalone.jar"
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   :figwheel {:css-dirs ["resources/public/css"]}
   :source-paths ["src"])
