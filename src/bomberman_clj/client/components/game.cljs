@@ -25,15 +25,14 @@
               [el-cell cell players]))])]))
 
 (defn game [state]
-  (let [{:keys [gameover in-progress?]} (:game state)]
-    (when in-progress?
-      [:div
-        (if gameover
-          [el-gameover state]
-          [el-game state])
-        (when-not gameover
-          [:div {:style {:font-size "20px"
-                         :margin "10px"
-                         :display "flex"
-                         :justify-content "center"}}
-            [el-num-players state]])])))
+  (let [gameover (get-in state [:game :gameover])]
+    [:div
+      (if gameover
+        [el-gameover state]
+        [el-game state])
+      (when-not gameover
+        [:div {:style {:font-size "20px"
+                        :margin "10px"
+                        :display "flex"
+                        :justify-content "center"}}
+          [el-num-players state]])]))
