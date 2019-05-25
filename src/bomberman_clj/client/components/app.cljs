@@ -4,8 +4,6 @@
             [bomberman-clj.client.components.player-form :refer [player-form]]
             [bomberman-clj.client.state :as s]))
 
-(defonce actions-ch (get-in @s/state [:app :actions-ch]))
-
 (defn on-key-down [code]
   (let [state @s/state
         in-progress? (get-in state [:game :in-progress?])]
