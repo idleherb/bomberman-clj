@@ -1,7 +1,6 @@
 (ns bomberman-clj.core
   (:require [clojure.core.async :as async]
             [bomberman-clj.config :as config]
-            [bomberman-clj.dev-client :as dc]
             [bomberman-clj.frame-rate :as fps]
             [bomberman-clj.game-loop :as gl]
             [bomberman-clj.server.server :as server])
