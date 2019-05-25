@@ -6,10 +6,7 @@
             [bomberman-clj.client.state :as s]))
 
 (def ws-protocol (clojure.string/replace js/window.location.protocol "http" "ws"))
-(def ws-url (let [url (str ws-protocol "//" js/window.location.host js/window.location.pathname)]
-              (subs url 0 (- (count url) 1))
-              "ws://0.0.0.0:8080"))
-(println "D ws - ws-url:" ws-url)
+(def ws-url (str ws-protocol "//0.0.0.0:8080"))
 
 (defn- forward-actions
   [ws-ch]
