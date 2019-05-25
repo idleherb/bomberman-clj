@@ -5,8 +5,9 @@
             [haslett.format :as fmt]
             [bomberman-clj.client.state :as s]))
 
+(def ws-port 8080)
 (def ws-protocol (clojure.string/replace js/window.location.protocol "http" "ws"))
-(def ws-url (str ws-protocol "//0.0.0.0:8080"))
+(def ws-url (str ws-protocol "//" js/window.location.hostname ":" ws-port))
 
 (defn- forward-actions
   [ws-ch]
