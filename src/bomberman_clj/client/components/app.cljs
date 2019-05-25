@@ -4,18 +4,19 @@
             [bomberman-clj.client.components.player-form :refer [player-form]]
             [bomberman-clj.client.state :as s]))
 
+(defonce actions-ch (get-in @s/state [:app :actions-ch]))
+
 (defn on-key-down [code]
   (let [state @s/state
         in-progress? (get-in state [:game :in-progress?])]
     (when in-progress?
-      (let [actions-ch (get-in state [:app :actions-ch])]
-        (condp = code
-          38 (actions/action {:action :move, :direction :up})
-          40 (actions/action {:action :move, :direction :down})
-          37 (actions/action {:action :move, :direction :left})
-          39 (actions/action {:action :move, :direction :right})
-          32 (actions/action {:action :plant-bomb})
-          nil)))))
+      (condp = code
+        38 (actions/action {:action :move, :direction :up})
+        40 (actions/action {:action :move, :direction :down})
+        37 (actions/action {:action :move, :direction :left})
+        39 (actions/action {:action :move, :direction :right})
+        32 (actions/action {:action :plant-bomb})
+        nil))))
 
 (defn app []
   (let [state @s/state
