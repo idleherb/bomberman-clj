@@ -24,8 +24,6 @@
         (println "E ws::ws-event-loop - invalid event:" event))
       (recur))))
 
-(swap! s/state assoc-in [:app :actions-ch] (async/chan))
-
 (async/go
   (when-let [ws-ch (async/<! (ws/connect ws-url {:format fmt/edn}))]
     (println "D ws - connected to" ws-url)
