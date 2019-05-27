@@ -4,6 +4,7 @@
             [bomberman-clj.grid :as grid]
             [bomberman-clj.players :as players]
             [bomberman-clj.specs :as specs]
+            [bomberman-clj.stats :as stats]
             [bomberman-clj.util :as util]))
 
 (defn init 
@@ -11,6 +12,10 @@
   {:post [(specs/valid? ::specs/game %)]}
   {:num-players num-players
    :players {}
+   :stats {:round {:started-at nil
+                   :duration 0
+                   :players {}}
+           :all {:players {}}}
    :grid nil
    :in-progress? false
    :width width
@@ -28,9 +33,11 @@
       (do
         (println "E game::join - no free player slot left for player" player)
         game)
-      (let [player (assoc player :coords nil)
-            players (assoc players (:player-id player) player)
-            game (assoc game :players players)]
+      (let [player-id (:player-id player)
+            player (assoc player :coords nil)
+            players (assoc players player-id player)
+            game (assoc game :players players
+                             :stats (stats/init-player-stats (:stats game) player-id timestamp))]
         game))))
 
 (defn- reset-players
@@ -185,7 +192,8 @@
                           (grid/assoc-grid-cell new-coords :player-id player-id))
                   game (-> game
                            (update-player player)
-                           (assoc :grid grid)
+                           (assoc :grid grid
+                                  :stats (stats/inc-player-moves (:stats game) player-id))
                            (hit-player new-coords timestamp)
                            (update-item new-coords))]
               game)

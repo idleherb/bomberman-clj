@@ -12,6 +12,8 @@
     (d/make-cell-soft-block) => #(s/valid? ::s/cell %)
     (d/make-cell-item-bomb) => #(s/valid? ::s/cell %)
     (d/make-empty-game) => #(s/valid? ::s/game %)
+    (d/make-player-round-stats) => #(s/valid? ::s/player-round-stats %)
+    (d/make-player-all-stats nil) => #(s/valid? ::s/player-all-stats %)
     (d/make-player-1) => #(s/valid? ::s/player %)
     (d/make-player-2) => #(s/valid? ::s/player %)
     (d/make-player-3) => #(s/valid? ::s/player %)
