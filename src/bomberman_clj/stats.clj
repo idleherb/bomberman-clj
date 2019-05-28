@@ -31,3 +31,21 @@
     (-> stats
         (assoc-in [:round player-id] player-round-stats)
         (assoc-in [:all player-id] player-all-stats))))
+
+(defn- update-playing-time
+  [playing-time old-duration new-duration]
+  (+ new-duration (- playing-time old-duration)))
+
+(defn update-time
+  [stats timestamp]
+  (let [old-duration (get-in stats [:round :duration])
+        new-duration (- timestamp (get-in stats [:round :started-at]))
+        new-stats (assoc-in stats [:round :duration] new-duration)
+        new-stats (update-in new-stats [:all :players]
+          (fn [players]
+            (into {} (map (fn [[id stats]]
+                            [id (update-in stats
+                                           [:playing-time]
+                                           #(update-playing-time % old-duration new-duration))])
+                          players))))]
+    new-stats))
