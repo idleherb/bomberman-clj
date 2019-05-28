@@ -1,7 +1,7 @@
 (ns bomberman-clj.test-data)
 
 (def config-bomb-count 1)
-(def config-bomb-radius 3)
+(def config-bomb-radius 2)
 
 (defn make-timestamp [] 1552767537306)
 

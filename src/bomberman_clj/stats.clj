@@ -1,6 +1,22 @@
 (ns bomberman-clj.stats
   (:require [bomberman-clj.specs :as specs]))
 
+(defn add-kill
+  [stats killer-id corpse-id]
+  (-> stats
+      (assoc-in [:round :players corpse-id :death?] true)
+      (update-in [:round :players killer-id :kills] inc)
+      (update-in [:all :players corpse-id :deaths] inc)
+      (update-in [:all :players killer-id :kills] inc)))
+
+(defn add-suicide
+  [stats player-id]
+  (-> stats
+      (assoc-in [:round :players player-id :death?] true)
+      (assoc-in [:round :players player-id :suicide?] true)
+      (update-in [:all :players player-id :deaths] inc)
+      (update-in [:all :players player-id :suicides] inc)))
+
 (defn inc-player-moves
   [stats player-id]
   (-> stats

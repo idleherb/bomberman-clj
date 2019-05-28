@@ -162,7 +162,7 @@
       (:detonated bomb) => {:timestamp ts-2}
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts-2})
+          (:fire ?cell) => {:timestamp ts-2, :player-id :player-1})
           ?cell
           (nth v 6)
           (nth v bomb-idx)
@@ -194,9 +194,10 @@
       (:hit (:player-1 players)) => nil?
       hit => some?
       (:timestamp hit) => ts-2
+      (:player-id hit) => :player-1
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts-2})
+          (:fire ?cell) => {:timestamp ts-2, :player-id :player-1})
           ?cell
           (nth v 1)
           (nth v 3)
@@ -223,6 +224,7 @@
           bomb-ts-2-idx 8
           bomb-ts-2-iso-idx 4
           game (-> (d/make-game ts-1)
+                   (assoc-in [:players :player-1 :bomb-radius] 3)
                    (assoc-in [:grid :v bomb-ts-1-idx] {:bomb bomb-ts-1})
                    (assoc-in [:grid :v bomb-ts-2-idx] {:bomb bomb-ts-2})
                    (assoc-in [:grid :v bomb-ts-2-iso-idx] {:bomb bomb-ts-2}))
@@ -235,11 +237,12 @@
       (:detonated bomb-ts-2) => {:timestamp ts-3}
       (:detonated bomb-ts-2-iso) => nil?
       (:hit (:player-1 players)) => some?
+      (get-in players [:player-1 :hit :player-id]) => :player-1
       (:hit (:player-2 players)) => nil?
       (:hit (:block (nth v 2))) => some?
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts-3})
+          (:fire ?cell) => {:timestamp ts-3, :player-id :player-1})
           ?cell
           (nth v 0)
           (nth v 2)
@@ -272,8 +275,10 @@
           hit-player-2 (:hit (:player-2 players))]
       hit-player-1 => some?
       (:timestamp hit-player-1) => ts-2
+      (:player-id hit-player-1) => :player-1
       hit-player-2 => some?
-      (:timestamp hit-player-2) => ts-3))
+      (:timestamp hit-player-2) => ts-3
+      (:player-id hit-player-2) => :player-1))
      
   (fact "at game evaluation, expired detonated bombs, fire and hit players get removed"
     (println "T015")
@@ -283,6 +288,7 @@
           bomb {:player-id :player-1, :timestamp ts-1}
           bomb-idx 0
           game (-> (d/make-game ts-1)
+                   (assoc-in [:players :player-1 :bomb-radius] 3)
                    (assoc-in [:grid :v bomb-idx] {:bomb bomb})
                    (g/eval ts-2)
                    (g/eval ts-3))
@@ -384,7 +390,8 @@
           players (:players game)
           player-1 (:player-1 players)
           player-2 (:player-2 players)]
-      (:hit player-1) => {:timestamp ts}
+      (:hit player-1) => {:timestamp ts
+                          :player-id :player-1}
       (:left player-1) => {:timestamp ts}
       (:hit player-2) => nil?
       (:left player-2) => nil?))
@@ -404,17 +411,20 @@
     (println "T021")
     (let [ts-1 (d/make-timestamp)
           ts-2 (+ ts-1 config/bomb-timeout-ms)
+          ts-3 (+ ts-2 config/expiration-ms)
           game (d/make-game ts-1)
           scenario-1 (-> game
                          (g/plant-bomb :player-1 ts-1)
                          (g/move :player-1 :down ts-1)
                          (g/move :player-1 :down ts-1)
                          (g/move :player-1 :down ts-1)  ; hits wall, shouldn't increase :moves
-                         (g/eval ts-2))
+                         (g/eval ts-2)
+                         (g/eval ts-3))
           scenario-2 (-> game
                          (g/plant-bomb :player-1 ts-1)
                          (g/move :player-1 :down ts-1)
-                         (g/eval ts-2))
+                         (g/eval ts-2)
+                         (g/eval ts-3))
           stats-1 (:stats scenario-1)
           s1-r1 (get-in stats-1 [:round])
           s1-r-p1 (get-in stats-1 [:round :players :player-1])
@@ -430,7 +440,7 @@
       ; scenario-1
       ; :round
       (:started-at s1-r1) => ts-1
-      (:duration s1-r1) => (- ts-2 ts-1)
+      (:duration s1-r1) => (- ts-3 ts-1)
       s1-r-p1 => {:kills 1
                   :death? false
                   :suicide? false
@@ -445,7 +455,7 @@
                           :fire 0}}
       ; :all
       s1-a-p1 => {:joined-at ts-1
-                  :playing-time (- ts-2 ts-1)
+                  :playing-time (- ts-3 ts-1)
                   :kills 1
                   :deaths 0
                   :suicides 0
@@ -454,7 +464,7 @@
                   :items {:bomb 0
                           :fire 0}}
       s1-a-p2 => {:joined-at ts-1
-                  :playing-time (- ts-2 ts-1)
+                  :playing-time (- ts-3 ts-1)
                   :kills 0
                   :deaths 1
                   :suicides 0
@@ -465,7 +475,7 @@
       ; scenario-2
       ; :round
       (:started-at s2-r1) => ts-1
-      (:duration s2-r1) => (- ts-2 ts-1)
+      (:duration s2-r1) => (- ts-3 ts-1)
       s2-r-p1 => {:kills 1
                   :death? true
                   :suicide? true
@@ -480,16 +490,16 @@
                           :fire 0}}
       ; :all
       s2-a-p1 => {:joined-at ts-1
-                  :playing-time (- ts-2 ts-1)
+                  :playing-time (- ts-3 ts-1)
                   :kills 1
                   :deaths 1
                   :suicides 1
                   :wins 0
-                  :moves 0
+                  :moves 1
                   :items {:bomb 0
                           :fire 0}}
       s2-a-p2 => {:joined-at ts-1
-                  :playing-time (- ts-2 ts-1)
+                  :playing-time (- ts-3 ts-1)
                   :kills 0
                   :deaths 1
                   :suicides 0
