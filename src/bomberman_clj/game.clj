@@ -40,26 +40,28 @@
                              :stats (stats/init-player-stats (:stats game) player-id timestamp))]
         game))))
 
-(defn- reset-players
+(defn- active-players
   [game]
-  (let [players (into {}
-    (->> (:players game)
-         (filter #(not (contains? (second %) :left)))
-         (map (fn [[id player]] [id (dissoc player :hit)]))))]
-    (assoc game :players players)))
+  (filter #(not (contains? (second %) :left))
+          (:players game)))
 
 (defn- reset
-  [game]
-  (-> game
-      (reset-players)
-      (assoc :grid nil)
-      (dissoc :gameover)))
+  [game timestamp]
+  (let [players (->> (active-players game)
+                     (map (fn [[id player]] [id (dissoc player :hit)])))]
+    (-> game
+        (assoc :players (into {} players)
+               :grid nil
+               :stats (-> (:stats game)
+                          (stats/filter-players (map (fn [[id _]] id) players))
+                          (stats/reset-round timestamp)))
+        (dissoc :gameover))))
 
 (defn next-round
   [game timestamp]
   {:pre [(specs/valid? ::specs/game game)]
    :post [(specs/valid? ::specs/game %)]}
-  (let [{:keys [num-players players width height], :as game} (reset game)]
+  (let [{:keys [num-players players width height], :as game} (reset game timestamp)]
     (if (< (count players) num-players)
       (do
         (println "W game::next-round - not enough players to start new round...")
@@ -446,17 +448,13 @@
           (assoc game :stats (stats/add-kill stats killer-id corpse-id))))
       game)
     game))
-  
 
 (defn- update-stats
   [game timestamp]
-  (let [stats (:stats game)
-        stats (stats/update-time stats timestamp)
-        winner (get-in game [:gameover :winner])
-        stats (if (some? winner)
-                (update-in stats [:all :players winner :wins] inc)
-                stats)]
-    ; (println "D game::update-stats - ###" game)
+  (let [winner (get-in game [:gameover :winner])
+        stats (cond-> (:stats game)
+                true (stats/update-time timestamp)
+                (some? winner) (update-in [:all :players winner :wins] inc))]
     (assoc game :stats stats)))
 
 (defn eval

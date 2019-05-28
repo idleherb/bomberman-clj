@@ -412,7 +412,10 @@
     (let [ts-1 (d/make-timestamp)
           ts-2 (+ ts-1 config/bomb-timeout-ms)
           ts-3 (+ ts-2 config/expiration-ms)
+          ts-4 (+ ts-3 3000)
+          ts-5 (+ ts-4 config/expiration-ms)
           game (d/make-game ts-1)
+
           scenario-1 (-> game
                          (g/plant-bomb :player-1 ts-1)
                          (g/move :player-1 :down ts-1)
@@ -420,25 +423,59 @@
                          (g/move :player-1 :down ts-1)  ; hits wall, shouldn't increase :moves
                          (g/eval ts-2)
                          (g/eval ts-3))
+
+          scenario-1-1 (-> scenario-1
+                           (g/next-round ts-4)
+                           (g/eval ts-4))
+
+          scenario-1-2 (-> scenario-1-1
+                           (g/leave :player-2 ts-4)
+                           (g/eval ts-4)
+                           (g/eval ts-5))
+
+          scenario-1-3 (-> scenario-1-2
+                           (g/next-round ts-5)
+                           (g/eval ts-5))
+
           scenario-2 (-> game
                          (g/plant-bomb :player-1 ts-1)
                          (g/move :player-1 :down ts-1)
                          (g/eval ts-2)
                          (g/eval ts-3))
+
           stats-1 (:stats scenario-1)
           s1-r1 (get-in stats-1 [:round])
           s1-r-p1 (get-in stats-1 [:round :players :player-1])
           s1-r-p2 (get-in stats-1 [:round :players :player-2])
           s1-a-p1 (get-in stats-1 [:all :players :player-1])
           s1-a-p2 (get-in stats-1 [:all :players :player-2])
+
+          stats-1-1 (:stats scenario-1-1)
+          s11-r1 (get-in stats-1-1 [:round])
+          s11-r-p1 (get-in stats-1-1 [:round :players :player-1])
+          s11-r-p2 (get-in stats-1-1 [:round :players :player-2])
+          s11-a-p1 (get-in stats-1-1 [:all :players :player-1])
+          s11-a-p2 (get-in stats-1-1 [:all :players :player-2])
+
+          stats-1-2 (:stats scenario-1-2)
+          s12-r1 (get-in stats-1-2 [:round])
+          s12-r-p1 (get-in stats-1-2 [:round :players :player-1])
+          s12-r-p2 (get-in stats-1-2 [:round :players :player-2])
+          s12-a-p1 (get-in stats-1-2 [:all :players :player-1])
+          s12-a-p2 (get-in stats-1-2 [:all :players :player-2])
+
+          stats-1-3 (:stats scenario-1-3)
+          s13-r-p2 (get-in stats-1-3 [:round :players :player-2])
+          s13-a-p2 (get-in stats-1-3 [:all :players :player-2])
+
           stats-2 (:stats scenario-2)
           s2-r1 (get-in stats-2 [:round])
           s2-r-p1 (get-in stats-2 [:round :players :player-1])
           s2-r-p2 (get-in stats-2 [:round :players :player-2])
           s2-a-p1 (get-in stats-2 [:all :players :player-1])
           s2-a-p2 (get-in stats-2 [:all :players :player-2])]
-      ; scenario-1
-      ; :round
+
+      (println "s1-r")
       (:started-at s1-r1) => ts-1
       (:duration s1-r1) => (- ts-3 ts-1)
       s1-r-p1 => {:kills 1
@@ -453,7 +490,7 @@
                   :moves 0
                   :items {:bomb 0
                           :fire 0}}
-      ; :all
+      (println "s1-a")
       s1-a-p1 => {:joined-at ts-1
                   :playing-time (- ts-3 ts-1)
                   :kills 1
@@ -472,8 +509,82 @@
                   :moves 0
                   :items {:bomb 0
                           :fire 0}}
-      ; scenario-2
-      ; :round
+
+      (println "s11-r")
+      (:started-at s11-r1) => ts-4
+      (:duration s11-r1) => 0
+      s11-r-p1 => {:kills 0
+                   :death? false
+                   :suicide? false
+                   :moves 0
+                   :items {:bomb 0
+                           :fire 0}}
+      s11-r-p2 => {:kills 0
+                   :death? false
+                   :suicide? false
+                   :moves 0
+                   :items {:bomb 0
+                           :fire 0}}
+      (println "s11-a")
+      s11-a-p1 => {:joined-at ts-1
+                   :playing-time (- ts-3 ts-1)
+                   :kills 1
+                   :deaths 0
+                   :suicides 0
+                   :wins 1
+                   :moves 2
+                   :items {:bomb 0
+                           :fire 0}}
+      s11-a-p2 => {:joined-at ts-1
+                   :playing-time (- ts-3 ts-1)
+                   :kills 0
+                   :deaths 1
+                   :suicides 0
+                   :wins 0
+                   :moves 0
+                   :items {:bomb 0
+                           :fire 0}}
+
+      (println "s12-r")
+      (:started-at s12-r1) => ts-4
+      (:duration s12-r1) => (- ts-5 ts-4)
+      s12-r-p1 => {:kills 0
+                   :death? false
+                   :suicide? false
+                   :moves 0
+                   :items {:bomb 0
+                           :fire 0}}
+      s12-r-p2 => {:kills 0
+                   :death? true
+                   :suicide? true
+                   :moves 0
+                   :items {:bomb 0
+                           :fire 0}}
+      (println "s12-a")
+      s12-a-p1 => {:joined-at ts-1
+                   :playing-time (+ (- ts-3 ts-1) (- ts-5 ts-4))
+                   :kills 1
+                   :deaths 0
+                   :suicides 0
+                   :wins 2
+                   :moves 2
+                   :items {:bomb 0
+                           :fire 0}}
+      s12-a-p2 => {:joined-at ts-1
+                   :playing-time(+ (- ts-3 ts-1) (- ts-5 ts-4))
+                   :kills 0
+                   :deaths 2
+                   :suicides 1
+                   :wins 0
+                   :moves 0
+                   :items {:bomb 0
+                           :fire 0}}
+      
+      (println "s13-a")
+      s13-r-p2 => nil?
+      s13-a-p2 => nil?
+
+      (println "s2-r")
       (:started-at s2-r1) => ts-1
       (:duration s2-r1) => (- ts-3 ts-1)
       s2-r-p1 => {:kills 1
@@ -488,7 +599,7 @@
                   :moves 0
                   :items {:bomb 0
                           :fire 0}}
-      ; :all
+      (println "s2-a")
       s2-a-p1 => {:joined-at ts-1
                   :playing-time (- ts-3 ts-1)
                   :kills 1
