@@ -82,7 +82,7 @@
 
 (defn cell-player
   [game cell]
-  (let [{:keys [grid players]} game
+  (let [players (:players game)
         player-id (grid/cell-player-id cell)]
     (get players player-id)))
 
@@ -104,7 +104,7 @@
 
 (defn- update-item
   [game coords]
-  (let [{{v :v, :as grid} :grid, players :players} game
+  (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         player (cell-player game cell)
         item (grid/cell-item cell)]
@@ -154,10 +154,9 @@
     ;        (specs/valid? ::specs/coords coords)
     ;        (specs/valid? ::specs/timestamp timestamp)]
     ;  :post [(specs/valid? ::specs/game %)]}
-    (let [{:keys [grid players]} game
+    (let [grid (:grid game)
           cell (grid/cell-at grid coords)
-          player (cell-player game cell)
-          player-id (:player-id player)]
+          player (cell-player game cell)]
       (if (and (some? player) (or force? (grid/fire? cell)) (not (util/hit? player)))
         (let [player (assoc player :hit {:timestamp timestamp})]
           (update-player game player))
@@ -250,7 +249,7 @@
 
 (defn- spread-fire
   "Spread fire along x or y axis"
-  [{grid :grid, :as game}
+  [game
    {x :x, y :y, :as coords}
    transform-coords
    radius
@@ -293,7 +292,6 @@
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
   (let [{grid :grid, players :players, :as game} game
-        {x :x, y :y} coords
         bomb (grid/cell-bomb grid coords)]
     (if (and (some? bomb) (not (contains? bomb :detonated)))
       (let [bomb (assoc bomb :detonated {:timestamp timestamp})
@@ -408,7 +406,7 @@
   ;        (specs/valid? ::specs/coords coords)
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
-  (let [{grid :grid, players :players} game
+  (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         player (cell-player game cell)]
     (if (util/player-expired? player timestamp)
@@ -439,7 +437,7 @@
   ;  :post [(specs/valid? ::specs/game %)]}
   (if (or (not (:in-progress? game)) (contains? game :gameover))
     game
-    (let [{{:keys [width height], :as grid} :grid} game
+    (let [{{:keys [width height]} :grid} game
           game (loop [game game y 0]
                   (if (= height y)
                     game
@@ -455,4 +453,6 @@
                                     (remove-expired-player {:x x, :y y} timestamp))
                                 (inc x))))
                         (inc y))))]
-          (update-gameover game timestamp))))
+          (-> game
+              (update-gameover timestamp)
+              (assoc :stats (stats/update-time (:stats game) timestamp))))))

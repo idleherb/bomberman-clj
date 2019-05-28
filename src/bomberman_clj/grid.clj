@@ -9,13 +9,14 @@
 
 (defn- coords-idx
   "Return grid cell index from coordinates"
-  [{:keys [width height], :as grid}
-   {:keys [x y], :as coords}]
+  [grid coords]
   ; {:pre [(specs/valid? ::specs/grid grid)
   ;        (specs/valid? ::specs/coords coords)]}
-  (when (and (<= 0 x (dec width))
-             (<= 0 y (dec height)))
-    (+ (* y width) x)))
+  (let [{:keys [width height]} grid
+        {:keys [x y]} coords]
+    (when (and (<= 0 x (dec width))
+               (<= 0 y (dec height)))
+      (+ (* y width) x))))
 
 (defn init
   [width height]
@@ -125,13 +126,13 @@
     (item? (cell-at grid coords))))
 
 (defn assoc-grid-cell
-  ([{v :v, :as grid} coords cell]
+  ([grid coords cell]
     ; {:pre [(specs/valid? ::specs/grid grid)
     ;        (specs/valid? ::specs/coords coords)]
     ;  :post [(specs/valid? ::specs/grid %)]}
     (assoc grid :v
-      (assoc v (coords-idx grid coords) cell)))
-  ([{v :v, :as grid} coords key val]
+      (assoc (:v grid) (coords-idx grid coords) cell)))
+  ([grid coords key val]
     ; {:pre [(specs/valid? ::specs/grid grid)
     ;        (specs/valid? ::specs/coords coords)]
     ;  :post [(specs/valid? ::specs/grid %)]}
@@ -140,7 +141,7 @@
 
 (defn dissoc-grid-cell
   "Like dissoc, but returns nil if the cell is empty afterwards."
-  [{v :v, :as grid} coords k]
+  [grid coords k]
   ; {:pre [(specs/valid? ::specs/grid grid)
   ;        (specs/valid? ::specs/coords coords)]
   ;  :post [(specs/valid? ::specs/grid %)]}
@@ -169,10 +170,11 @@
     (cell-empty? (cell-at grid coords))))
 
 (defn- rand-coords
-  [{:keys [width height], :as grid}]
+  [grid]
   ; {:pre [(specs/valid? ::specs/grid grid)]
   ;  :post [(specs/valid? ::specs/coords %)]}
-  {:x (rand-int width), :y (rand-int height)})
+  (let [{:keys [width height]} grid]
+    {:x (rand-int width), :y (rand-int height)}))
 
 (defn find-empty-cell
   [grid]

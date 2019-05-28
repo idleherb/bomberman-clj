@@ -2,8 +2,7 @@
   (:require [bomberman-clj.client.components.cell :refer [cell]
                                                   :rename {cell el-cell}]
             [bomberman-clj.client.components.num-players :refer [num-players]
-                                                         :rename {num-players el-num-players}]
-            [bomberman-clj.client.state :as s]))
+                                                         :rename {num-players el-num-players}]))
 
 (defn- el-gameover [state]
   [:div {:class "gameover"}
