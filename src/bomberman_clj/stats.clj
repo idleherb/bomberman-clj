@@ -55,8 +55,8 @@
                           :items {:bomb 0
                                   :fire 0}}]
     (-> stats
-        (assoc-in [:round player-id] round-player-stats)
-        (assoc-in [:all player-id] all-player-stats))))
+        (assoc-in [:round :players player-id] round-player-stats)
+        (assoc-in [:all :players player-id] all-player-stats))))
 
 (defn filter-players
   [stats player-ids]
