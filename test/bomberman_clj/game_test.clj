@@ -4,15 +4,10 @@
             [bomberman-clj.config :as config]
             [bomberman-clj.test-data :as d]))
 
-(defn- player-with-coords
-  [player coords]
-  (assoc player :coords coords))
-
 (facts "about games"
   (fact "a game is initialized from given width, height, without any players and grid"
-    ; (println "001")
-    (let [timestamp (d/make-timestamp)
-          w 17
+    (println "T001")
+    (let [w 17
           h 15
           game (g/init 2 w h)
           {:keys [grid in-progress? num-players players width height]} game]
@@ -24,553 +19,356 @@
       height => h))
 
   (fact "at max `num-players` can join a game"
-    ; (println "002")
-    (let [timestamp (d/make-timestamp)
+    (println "T002")
+    (let [ts (d/make-timestamp)
           game (-> (d/make-empty-game)
-                   (g/join (d/make-player-1) timestamp)
-                   (g/join (d/make-player-2) timestamp)
-                   (g/join (d/make-player-3) timestamp))
-          players (:players game)]
+                   (g/join (d/make-player :player-1) ts)
+                   (g/join (d/make-player :player-2) ts)
+                   (g/join (d/make-player :player-3) ts))
+          {:keys [players]} game]
       (count players) => 2))
 
   (fact "a new round can only be started after all players have joined"
-    ; (println "003")
-    (let [timestamp (d/make-timestamp)
+    (println "T003")
+    (let [ts (d/make-timestamp)
           game (-> (d/make-empty-game)
-                   (g/join (d/make-player-1) timestamp)
-                   (g/next-round timestamp))
+                   (g/join (d/make-player :player-1) ts)
+                   (g/next-round ts))
           {:keys [grid in-progress?]} game]
       grid => nil?
       in-progress? => false
       (let [game (-> game
-                     (g/join (d/make-player-2) timestamp)
-                     (g/next-round timestamp))
-                     {:keys [grid in-progress?]} game]
+                     (g/join (d/make-player :player-2) ts)
+                     (g/next-round ts))
+            {:keys [grid in-progress?]} game]
         grid => some?
         in-progress? => true)))
 
   (fact "no new round can be started if a player has left in the previous round"
-    ; (println "003.1")
-    (let [timestamp (d/make-timestamp)
+    (println "T004")
+    (let [ts (d/make-timestamp)
           game (-> (d/make-empty-game)
-                   (g/join (d/make-player-1) timestamp)
-                   (g/join (d/make-player-2) timestamp))
+                   (g/join (d/make-player :player-1) ts)
+                   (g/join (d/make-player :player-2) ts))
           players (:players game)
-          player-1 (:player-1 players)
-          player-1 (assoc player-1 :left {:timestamp timestamp})
-          game (assoc game :players
-                 (assoc players :player-1 player-1))
-          game (g/next-round game timestamp)
+          player-1 (-> (:player-1 players)
+                       (assoc :left {:timestamp ts}))  ; TODO: replace with g/leave
+          game (-> game
+                   (assoc-in [:players :player-1] player-1)
+                   (g/next-round ts))
           {:keys [in-progress? players]} game
           player-1 (:player-1 players)]
       in-progress? => false
       player-1 => nil?))
 
   (fact "a player can move to NESW empty cells if a game is in progress"
-    ; (println "004")
+    (println "T005")
     (let [ts (d/make-timestamp)
-          pl1 (d/make-cell-p1)
-          v [nil nil nil
-             nil pl1 nil
-             nil nil nil]
-          players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})}
-          game (-> {:in-progress? false
-                    :width 3
-                    :height 3
-                    :num-players 1
-                    :grid {:width 3, :height 3, :v v}
-                    :players players
-                    :stats {:round {:started-at ts
-                                    :duration 0
-                                    :players {:player-1 (d/make-player-round-stats)}}
-                            :all {:players {:player-1 (d/make-player-all-stats ts)}}}}
-                    (g/move :player-1 :down ts))
+          game (-> (d/make-game ts)
+                   (assoc :in-progress? false)
+                   (g/move :player-1 :down ts))
           {players :players, {v :v} :grid} game
           coords (:coords (:player-1 players))]
-      coords => {:x 1, :y 1}
-      (nth v 4) => {:player-id :player-1}
+      coords => {:x 0, :y 0}
+      (nth v 0) => {:player-id :player-1}
       (let [game (-> (assoc game :in-progress? true)
-                     (g/move :player-1 :down ts)  ; hit block
-                     (g/move :player-1 :left ts)
-                     (g/move :player-1 :left ts)  ; hit block
-                     (g/move :player-1 :left ts)  ; hit block
+                     (g/move :player-1 :right ts)  ; blocked by :player-2
+                     (g/move :player-1 :left ts)  ; blocked by block
+                     (g/move :player-1 :down ts)
+                     (g/move :player-1 :down ts)
+                     (g/move :player-1 :down ts)  ; blocked by world boundary
+                     (g/move :player-1 :right ts)
+                     (g/move :player-1 :up ts)  ; blocked by block
+                     (g/move :player-1 :right ts)
                      (g/move :player-1 :up ts)
-                     (g/move :player-1 :up ts)
-                     (g/move :player-1 :up ts)  ; hit block
-                     (g/move :player-1 :up ts))  ; hit block
+                     (g/move :player-1 :up ts))
             {players :players, {v :v} :grid} game
-            coords (:coords (:player-1 players))]
-            coords => {:x 0, :y 0}
-        (first v) => {:player-id :player-1}
-        (nth v 4) => nil?)))
-
-  (fact "a player can't move through solid blocks"
-    ; (println "005")
-    (let [ts (d/make-timestamp)
-          plr (d/make-cell-p1)
-          hbl {:block :hard}
-          v [nil nil nil
-             hbl plr nil
-             nil hbl nil]
-          players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})}
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 1
-                :grid {:width 3 :height 3 :v v}
-                :players players
-                :stats {:round {:started-at ts
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts)}}}}
-          game (g/move game :player-1 :down ts)  ; hit block
-          game (g/move game :player-1 :down ts)  ; hit block
-          game (g/move game :player-1 :left ts)  ; hit block
-          game (g/move game :player-1 :left ts)  ; hit block
-          game (g/move game :player-1 :left ts)  ; hit block
-          game (g/move game :player-1 :up ts)
-          game (g/move game :player-1 :up ts)  ; hit block
-          game (g/move game :player-1 :up ts)  ; hit block
-          game (g/move game :player-1 :up ts)  ; hit block
-          {players :players, {v :v} :grid} game
-          coords (:coords (:player-1 players))]
-      coords => {:x 1, :y 0}
-      (nth v 4) => nil?))
+            coords (:coords (:player-1 players))
+            cell (nth v 5)]
+        coords => {:x 2, :y 1}
+        cell => some?
+        (:player-id cell) => :player-1
+        (first v) => nil?)))
 
   (fact "player-1 places a bomb at their current position"
-    ; (println "006")
-    (let [timestamp (d/make-timestamp)
-          v [(d/make-cell-p1)]
-          game {:in-progress? true
-                :width 1
-                :height 1
-                :num-players 1
-                :grid {:width 1, :height 1, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})}}
-          game (g/plant-bomb game :player-1 timestamp)
+    (println "T006")
+    (let [ts (d/make-timestamp)
+          game (-> (d/make-game ts)
+                   (g/plant-bomb :player-1 ts))
           {{v :v} :grid} game
-          cell (first v)]
-      (:bomb cell) => {:player-id :player-1, :timestamp timestamp}))
+          bomb (:bomb (first v))]
+      bomb => some?
+      (:player-id bomb) => :player-1
+      (:timestamp bomb) => ts))
 
-  (fact "in one cell, only 1 bomb can be planted at any moment in time"
-    ; (println "007")
-    (let [ts-1st 1000000000000
+  (fact "only 1 bomb can be placed within a cell"
+    (println "T007")
+    (let [ts-1st (d/make-timestamp)
           ts-2nd 2000000000000
-          v [(d/make-cell-p1)]
-          game {:in-progress? true
-                :width 1
-                :height 1
-                :num-players 1
-                :grid {:width 1, :height 1, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})}}
-          game (g/plant-bomb game :player-1 ts-1st)
-          game (g/plant-bomb game :player-1 ts-2nd)
+          game (-> (d/make-game ts-1st)
+                   (assoc-in [:players :player-1 :bomb-count] 2)
+                   (g/plant-bomb :player-1 ts-1st)
+                   (g/plant-bomb :player-1 ts-2nd))
           {{v :v} :grid} game
-          cell (first v)]
-      (:bomb cell) => {:player-id :player-1, :timestamp ts-1st}))
+          bomb (:bomb (first v))]
+      (:timestamp bomb) => ts-1st))
 
   (fact "a planted bomb is still there after the player moves away"
-    ; (println "008")
+    (println "T008")
     (let [ts (d/make-timestamp)
-          v [(d/make-cell-p1) nil]
-          game (-> {:in-progress? true
-                    :width 1
-                    :height 2
-                    :num-players 1
-                    :grid {:width 1, :height 2, :v v}
-                    :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})}
-                    :stats {:round {:started-at ts
-                                    :duration 0
-                                    :players {:player-1 (d/make-player-round-stats)}}
-                            :all {:players {:player-1 (d/make-player-all-stats ts)}}}}
+          game (-> (d/make-game ts)
                    (g/plant-bomb :player-1 ts)
                    (g/move :player-1 :down ts))
           {{v :v} :grid} game
-          cell (first v)]
-      (:bomb cell) => {:player-id :player-1, :timestamp ts}))
+          bomb (:bomb (first v))]
+      bomb => some?
+      (:player-id bomb) => :player-1
+      (:timestamp bomb) => ts))
 
   (fact "a player can't plant more bombs than they have"
-    ; (println "009")
+    (println "T009")
     (let [ts (d/make-timestamp)
-          plr (d/make-cell-p1)
-          v [plr
-             nil
-             nil]
-          game (-> {:in-progress? true
-                    :width 1
-                    :height 3
-                    :num-players 1
-                    :grid {:width 1, :height 3, :v v}
-                    :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})}
-                    :stats {:round {:started-at ts
-                                    :duration 0
-                                    :players {:player-1 (d/make-player-round-stats)}}
-                            :all {:players {:player-1 (d/make-player-all-stats ts)}}}}
+          game (-> (d/make-game ts)
+                   (assoc-in [:players :player-1 :bomb-count] 2)
                    (g/plant-bomb :player-1 ts)
                    (g/move :player-1 :down ts)
                    (g/plant-bomb :player-1 ts)
                    (g/move :player-1 :down ts)
                    (g/plant-bomb :player-1 ts))
           {{v :v} :grid, players :players} game
-          player (:player-1 players)
-          bomb {:player-id :player-1, :timestamp ts}]
-      (:bomb (first v)) => bomb
-      (:bomb (second v)) => nil?
-      (:bomb (nth v 2)) => nil?
+          player (:player-1 players)]
+      (:bomb (first v)) => some?
+      (:bomb (nth v 3)) => some?
+      (:bomb (nth v 6)) => nil?
       (:bomb-count player) => 0))
 
   (fact "an evaluated game without any bombs has no changes"
-    ; (println "010")
+    (println "T010")
     (let [ts (d/make-timestamp)
-          pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          v [nil nil pl2
-             nil pl1 nil
-             nil nil nil]
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 2
-                :grid {:width 3, :height 3, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})
-                          :player-2 (player-with-coords (d/make-player-2) {:x 0, :y 2})}
-                :stats {:round {:started-at ts
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)
-                                          :player-2 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts)
-                                        :player-2 (d/make-player-all-stats ts)}}}}]
+          game (d/make-game ts)]
       (g/eval game ts) => game))
 
   (fact "an evaluated game with an expired bomb contains fire"
-    ; (println "011")
-    (let [ts (d/make-timestamp)
-          bom {:bomb {:player-id :player-1, :timestamp 1000000000000}}
-          hbl (d/make-cell-hard-block)
-          sbl (d/make-cell-soft-block)
-          plr (d/make-cell-p1)
-          v [bom hbl nil
-             nil plr nil
-             sbl nil nil]
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 1
-                :grid {:width 3, :height 3, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})}
-                :stats {:round {:started-at ts
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts)}}}}
-          {{v :v} :grid, players :players, :as evaluated-game} (g/eval game ts)
-          player (:player-1 players)]
+    (println "T011")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 config/bomb-timeout-ms)
+          bomb {:player-id :player-1, :timestamp ts-1}
+          bomb-idx 7
+          game (-> (d/make-game ts-1)
+                   (assoc-in [:grid :v bomb-idx :bomb] bomb))
+          {{v :v} :grid, :as evaluated-game} (g/eval game ts-2)
+          bomb (:bomb (nth v bomb-idx))]
       evaluated-game =not=> game
+      (:detonated bomb) => {:timestamp ts-2}
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts}) 
+          (:fire ?cell) => {:timestamp ts-2})
           ?cell
-          (nth v 0)
-          (nth v 3)
-          (nth v 6))
+          (nth v 6)
+          (nth v bomb-idx)
+          (nth v 8))
       (tabular
         (fact "cells without fire"
           (:fire ?cell) => nil?)
           ?cell
+          (nth v 0)
           (nth v 1)
           (nth v 2)
+          (nth v 3)
           (nth v 4)
-          (nth v 5)
-          (nth v 7)
-          (nth v 8))
-      (let [bomb (:bomb (nth v 0))]
-        (:detonated bomb) => {:timestamp ts})
-      (:hit player) => nil?
-      (:hit (:block (nth v 6))) => {:timestamp ts}))
+          (nth v 5))))
 
   (fact "an evaluated game with an expired bomb hits the nearby player"
-    ; (println "012")
-    (let [ts (d/make-timestamp)
-          bmb {:bomb {:player-id :player-1, :timestamp 1000000000000}}
-          plr (d/make-cell-p1)
-          v [bmb nil nil
-             nil nil bmb
-             plr nil nil]
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 1
-                :grid {:width 3, :height 3, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 2})}
-                :stats {:round {:started-at ts
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts)}}}}
-          {{v :v} :grid, players :players, :as evaluated-game} (g/eval game ts)
-          player (:player-1 players)]
+    (println "T012")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 config/bomb-timeout-ms)
+          bomb {:player-id :player-1, :timestamp ts-1}
+          bomb-idx 4
+          game (-> (d/make-game ts-1)
+                   (assoc-in [:grid :v bomb-idx] {:bomb bomb}))
+          {{v :v} :grid, players :players, :as evaluated-game} (g/eval game ts-2)
+          bomb (:bomb (nth v bomb-idx))
+          hit (:hit (:player-2 players))]
       evaluated-game =not=> game
+      (:detonated bomb) => {:timestamp ts-2}
+      (:hit (:player-1 players)) => nil?
+      hit => some?
+      (:timestamp hit) => ts-2
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts})
+          (:fire ?cell) => {:timestamp ts-2})
           ?cell
-          (nth v 0)
           (nth v 1)
-          (nth v 2)
           (nth v 3)
           (nth v 4)
-          (nth v 6)
           (nth v 5)
-          (nth v 8))
+          (nth v 7))
       (tabular
         (fact "cells without fire"
           (:fire ?cell) => nil?)
           ?cell
-          (nth v 7))
-      (let [bomb (:bomb (nth v 0))]
-        (:detonated bomb) => {:timestamp ts})
-      (let [bomb (:bomb (nth v 5))]
-        (:detonated bomb) => {:timestamp ts})
-      (:hit player) => {:timestamp ts}))
+          (nth v 0)
+          (nth v 2)
+          (nth v 6)
+          (nth v 8))))
 
   (fact "bomb detonations propagate to nearby bombs, leaving others unchanged"
-    ; (println "013")
-    (let [ts-1 1000000000000
-          ts-2 2222222222222
-          ts-3 9999999999999
-          bm1 {:bomb {:player-id :player-1, :timestamp ts-1}}
-          bm2 {:bomb {:player-id :player-1, :timestamp ts-3}}
-          plr (d/make-cell-p1)
-          v [bm1 nil bm2
-             nil plr nil
-             nil bm2 nil]
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 1
-                :grid {:width 3, :height 3, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})}
-                :stats {:round {:started-at ts-1
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts-1)}}}}
-          {{v :v, :as grid} :grid, players :players, :as evaluated-game} (g/eval game ts-2)
-          player (:player-1 players)]
+    (println "T013")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 (/ config/bomb-timeout-ms 2))
+          ts-3 (+ ts-1 config/bomb-timeout-ms)
+          bomb-ts-1 {:player-id :player-1, :timestamp ts-1}
+          bomb-ts-1-idx 6
+          bomb-ts-2 {:player-id :player-1, :timestamp ts-2}
+          bomb-ts-2-idx 8
+          bomb-ts-2-iso-idx 4
+          game (-> (d/make-game ts-1)
+                   (assoc-in [:grid :v bomb-ts-1-idx] {:bomb bomb-ts-1})
+                   (assoc-in [:grid :v bomb-ts-2-idx] {:bomb bomb-ts-2})
+                   (assoc-in [:grid :v bomb-ts-2-iso-idx] {:bomb bomb-ts-2}))
+          {{v :v} :grid, players :players, :as evaluated-game} (g/eval game ts-3)
+          bomb-ts-1 (:bomb (nth v bomb-ts-1-idx))
+          bomb-ts-2 (:bomb (nth v bomb-ts-2-idx))
+          bomb-ts-2-iso (:bomb (nth v bomb-ts-2-iso-idx))]
       evaluated-game =not=> game
+      (:detonated bomb-ts-1) => {:timestamp ts-3}
+      (:detonated bomb-ts-2) => {:timestamp ts-3}
+      (:detonated bomb-ts-2-iso) => nil?
+      (:hit (:player-1 players)) => some?
+      (:hit (:player-2 players)) => nil?
+      (:hit (:block (nth v 2))) => some?
       (tabular
         (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts-2})
+          (:fire ?cell) => {:timestamp ts-3})
           ?cell
           (nth v 0)
-          (nth v 1)
           (nth v 2)
           (nth v 3)
           (nth v 5)
-          (nth v 6)
-          (nth v 8))
+          (nth v bomb-ts-1-idx)
+          (nth v 7)
+          (nth v bomb-ts-2-idx))
       (tabular
         (fact "cells without fire"
           (:fire ?cell) => nil?)
           ?cell
-          (nth v 4)
-          (nth v 7))
-      (let [bomb (:bomb (nth v 0))]
-        (:detonated bomb) => {:timestamp ts-2})
-      (let [bomb (:bomb (nth v 2))]
-        (:detonated bomb) => {:timestamp ts-2})
-      (let [bomb (:bomb (nth v 7))]
-        (:detonated bomb) => nil?)
-      (:hit player) => nil?))
+          (nth v 1)
+          (nth v bomb-ts-2-iso-idx))))
 
   (fact "a player walking into a cell with fire gets hit"
-    ; (println "014")
-    (let [ts-1 1000000000000
-          ts-2 1000000003000
-          ts-3 1000000003022
-          bom {:bomb {:player-id :player-1, :timestamp ts-1}}
-          pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          v [bom nil nil
-             nil pl1 pl2]
-          game {:in-progress? true
-                :width 3
-                :height 2
-                :num-players 2
-                :grid {:width 3, :height 2, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})
-                          :player-2 (player-with-coords (d/make-player-2) {:x 2, :y 1})}
-                :stats {:round {:started-at ts-1
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)
-                                          :player-2 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts-1)
-                                        :player-2 (d/make-player-all-stats ts-1)}}}}
-          game (g/eval game ts-2)
-          game (g/move game :player-1 :up ts-3)
-          {{v :v} :grid, players :players, :as game} game
-          player-1 (:player-1 players)]
-      (tabular
-        (fact "cells with fire"
-          (:fire ?cell) => {:timestamp ts-2})
-          ?cell
-          (nth v 0)
-          (nth v 1)
-          (nth v 2))
-      (tabular
-        (fact "cells without fire"
-          (:fire ?cell) => nil?)
-          ?cell
-          (nth v 4)
-          (nth v 5))
-      (let [bomb (:bomb (nth v 0))]
-        (:detonated bomb) => {:timestamp ts-2})
-      (:hit player-1) => {:timestamp ts-3}))
+    (println "T014")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 config/bomb-timeout-ms)
+          ts-3 (+ ts-2 (/ config/expiration-ms 2))
+          bomb {:player-id :player-1, :timestamp ts-1}
+          bomb-idx 3
+          game (-> (d/make-game ts-1)
+                   (assoc-in [:grid :v 4] nil)
+                   (assoc-in [:grid :v bomb-idx] {:bomb bomb})
+                   (g/eval ts-2)
+                   (g/move :player-2 :down ts-3))
+          players (:players game)
+          hit-player-1 (:hit (:player-1 players))
+          hit-player-2 (:hit (:player-2 players))]
+      hit-player-1 => some?
+      (:timestamp hit-player-1) => ts-2
+      hit-player-2 => some?
+      (:timestamp hit-player-2) => ts-3))
      
   (fact "at game evaluation, expired detonated bombs, fire and hit players get removed"
-    ; (println "015")
-    (let [ts-1 1000000000000
-          ts-2 1000000010000
-          ts-3 (d/make-timestamp)
-          bomb {:detonated {:timestamp ts-2}
-                :player-id :player-1
-                :timestamp ts-1}
-          player {:player-id :player-1
-                  :bomb-count 0
-                  :bomb-radius 3
-                  :hit {:timestamp ts-2}
-                  :name "foo"}
-          v [{:bomb bomb
-              :fire {:timestamp ts-2}
-              :player-id :player-1}]
-          game {:in-progress? true
-                :width 1
-                :height 1
-                :num-players 1
-                :grid {:width 1, :height 1, :v v}
-                :players {:player-1 (player-with-coords player {:x 0, :y 0})}
-                :stats {:round {:started-at ts-1
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts-1)}}}}
-          game (g/eval game ts-3)
-          {{v :v, :as grid} :grid, players :players} game
-          cell (first v)]
-      (:bomb cell) => nil?
-      (:fire cell) => nil?
-      (:player-id cell) => nil?
-      (:coords (:player-1 players)) => nil?))
+    (println "T015")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 config/bomb-timeout-ms)
+          ts-3 (+ ts-2 config/expiration-ms 2)
+          bomb {:player-id :player-1, :timestamp ts-1}
+          bomb-idx 0
+          game (-> (d/make-game ts-1)
+                   (assoc-in [:grid :v bomb-idx] {:bomb bomb})
+                   (g/eval ts-2)
+                   (g/eval ts-3))
+          {{v :v} :grid, players :players} game
+          cell-0 (nth v bomb-idx)
+          cell-1 (second v)
+          cell-2 (nth v 2)]
+      (:bomb cell-0) => nil?
+      (:fire cell-0) => nil?
+      (:player-id cell-0) => nil?
+      (:player-id cell-1) => nil?
+      (:block cell-2) => nil?
+      (:coords (:player-1 players)) => nil?
+      (:coords (:player-2 players)) => nil?))
 
   (fact "a game is over when less than 2 players are alive"
-    (println "016")
+    (println "T016")
     (let [ts-1 (d/make-timestamp)
-          ts-2 (+ (d/make-timestamp) config/bomb-timeout-ms)
+          ts-2 (+ ts-1 config/bomb-timeout-ms)
           ts-3 (+ ts-2 config/expiration-ms)
-          pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          hbl (d/make-cell-hard-block)
-          v [pl1 pl2 nil
-             nil hbl nil
-             nil nil nil]
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 2
-                :grid {:width 3, :height 3, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})
-                          :player-2 (player-with-coords (d/make-player-2) {:x 1, :y 0})}
-                :stats {:round {:started-at ts-1
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)
-                                          :player-2 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts-1)
-                                        :player-2 (d/make-player-all-stats ts-1)}}}}]
-    (fact "last man standing wins"
-      (println "017")
-      (let [game (-> game
-                      (g/plant-bomb :player-1 ts-1)
-                      (g/move :player-1 :down ts-1)
-                      (g/move :player-1 :down ts-1)  ; pass block
-                      (g/move :player-1 :right ts-1)
-                      (g/eval ts-2)
-                      (g/eval ts-3))
-            players (:players game)]
-        (count players) => 2
-        (count (filter (comp nil? :coords second) players)) => 1
-        (:gameover game) => {:winner :player-1, :timestamp ts-3}))
+          game (d/make-game ts-1)]
+      (fact "last man standing wins"
+        (println "T016.1")
+        (let [game (-> game
+                       (g/plant-bomb :player-1 ts-1)
+                       (g/move :player-1 :down ts-1)
+                       (g/move :player-1 :down ts-1)  ; pass block
+                       (g/move :player-1 :right ts-1)
+                       (g/eval ts-2)
+                       (g/eval ts-3))
+              {:keys [gameover players]} game]
+          (count players) => 2
+          (count (filter (comp nil? :coords second) players)) => 1
+          (:winner gameover) => :player-1
+          (:timestamp gameover) => ts-3))
 
-    (fact "no winner on empty game"
-      (println "018")
-      (let [game (-> game
-                      (g/plant-bomb :player-1 ts-1)
-                      (g/move :player-1 :down (d/make-timestamp))
-                      (g/eval ts-2)
-                      (g/eval ts-3))
-            players (:players game)]
-        (count players) => 2
-        (count (filter (comp nil? :coords second) players)) => 2
-        (:gameover game) => {:timestamp ts-3}))
+      (fact "no winner on empty game"
+        (println "T016.2")
+        (let [game (-> game
+                       (g/plant-bomb :player-1 ts-1)
+                       (g/move :player-1 :down (d/make-timestamp))
+                       (g/eval ts-2)
+                       (g/eval ts-3))
+              {:keys [gameover players]} game]
+          (count players) => 2
+          (count (filter (comp nil? :coords second) players)) => 2
+          (:winner gameover) => nil?
+          (:timestamp gameover) => ts-3))
 
-    (fact "with 2 players, the game is ongoing"
-      (println "019")
-      (let [game (g/eval game ts-2)
-            players (:players game)]
-        (count players) => 2
-        (count (filter (comp nil? :coords second) players)) => 0
-        (:gameover game) => nil?))))
+      (fact "with 2 players, the game is ongoing"
+        (println "T016.3")
+        (let [game (g/eval game ts-2)
+              {:keys [gameover players]} game]
+          (count players) => 2
+          (count (filter (comp nil? :coords second) players)) => 0
+          gameover => nil?))))
 
   (fact "collecting a bomb item increases a player's bomb count"
-    (println "020")
+    (println "T017")
     (let [ts (d/make-timestamp)
-          pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          itm (d/make-cell-item-bomb)
-          game {:in-progress? true
-                :width 2
-                :height 2
-                :num-players 2
-                :grid {:width 2, :height 2
-                       :v [pl1 pl2
-                           itm nil]}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})
-                          :player-2 (player-with-coords (d/make-player-2) {:x 1, :y 0})}
-                :stats {:round {:started-at ts
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)
-                                          :player-2 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts)
-                                        :player-2 (d/make-player-all-stats ts)}}}}
-            player-1 (:player-1 (:players game))]
-          game (g/eval game ts)
+          bomb-item-cell (d/make-cell-item-bomb)
+          bomb-item-cell-idx 3
+          game (-> (d/make-game ts)
+                   (assoc-in [:grid :v bomb-item-cell-idx] bomb-item-cell)
+                   (g/eval ts))
+          player-1 (get-in game [:players :player-1])]
       (:bomb-count player-1) => 1
-      (let [game (g/move game :player-1 :down ts)
-            game (g/eval game ts)
-            {{v :v, :as grid} :grid, players :players} game
-            player-1 (:player-1 players)]
-        player-1 => some?
+      (let [game (-> game
+                     (g/move :player-1 :down ts)
+                     (g/eval ts))
+            player-1 (get-in game [:players :player-1])]
         (:bomb-count player-1) => 2)))
 
   (fact "fire hits items, hit items disappear after a while"
-    (println "021")
-    (let [pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          itm (d/make-cell-item-bomb)
-          ts-1 (d/make-timestamp)
-          ts-2 (+ config/bomb-timeout-ms (d/make-timestamp))
-          ts-3 (+ config/expiration-ms ts-2)
-          bmb {:bomb {:player-id :player-1, :timestamp ts-1}}
-          game {:in-progress? true
-                :width 3
-                :height 2
-                :num-players 2
-                :grid {:width 3, :height 2
-                       :v [pl1 pl2 nil
-                           itm nil bmb]}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})
-                          :player-2 (player-with-coords (d/make-player-2) {:x 1, :y 0})}
-                :stats {:round {:started-at ts-1
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)
-                                          :player-2 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts-1)
-                                        :player-2 (d/make-player-all-stats ts-1)}}}}
+    (println "T018")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 config/bomb-timeout-ms)
+          ts-3 (+ ts-2 config/expiration-ms)
+          bomb-item-cell (d/make-cell-item-bomb)
+          bomb-item-cell-idx 3
+          bomb {:player-id :player-1, :timestamp ts-1}
+          bomb-idx 6
+          game (-> (d/make-game ts-1)
+                   (assoc-in [:grid :v bomb-item-cell-idx] bomb-item-cell)
+                   (assoc-in [:grid :v bomb-idx :bomb] bomb)
+                   (g/eval ts-2))
           game (g/eval game ts-2)
           {{v :v} :grid} game]
       (:hit (:item (nth v 3))) => {:timestamp ts-2}
@@ -579,63 +377,34 @@
         (:item (nth v 3)) => nil?)))
 
   (fact "players who leave the game, die and are marked as :left"
-    (println "022")
-    (let [pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          v [nil nil pl2
-             nil pl1 nil
-             nil nil nil]
-          timestamp (d/make-timestamp)
-          game (-> {:in-progress? true
-                    :width 3
-                    :height 3
-                    :num-players 2
-                    :grid {:width 3, :height 3, :v v}
-                    :players {:player-1 (player-with-coords (d/make-player-1) {:x 1, :y 1})
-                              :player-2 (player-with-coords (d/make-player-2) {:x 2, :y 1})}
-                    :stats {:round {:started-at timestamp
-                                    :duration 0
-                                    :players {}}
-                            :all {:players {}}}}
-                   (g/leave :player-1 timestamp))
-          {{v :v} :grid, players :players} game
+    (println "T019")
+    (let [ts (d/make-timestamp)
+          game (-> (d/make-game ts)
+                   (g/leave :player-1 ts))
+          players (:players game)
           player-1 (:player-1 players)
           player-2 (:player-2 players)]
-      (:hit player-1) => {:timestamp timestamp}
-      (:left player-1) => {:timestamp timestamp}
-      (:hit player-2) => nil?))
+      (:hit player-1) => {:timestamp ts}
+      (:left player-1) => {:timestamp ts}
+      (:hit player-2) => nil?
+      (:left player-2) => nil?))
 
   (fact "players can leave a non-running game"
-    (println "023")
-    (let [game (-> (d/make-empty-game)
-                   (assoc :players {:player-1 {:name "player-1"
-                                               :player-id :player-1}})
-                   (g/leave :player-1 (d/make-timestamp)))
+    (println "T020")
+    (let [ts-1 (d/make-timestamp)
+          ts-2 (+ ts-1 1000)
+          player (d/make-player :player-1)
+          game (-> (d/make-empty-game)
+                   (g/join player ts-1)
+                   (g/leave :player-1 ts-2))
           players (:players game)]
       players => empty?))
 
   (fact "various player stats are collected"
-    (println "024")
-    (let [pl1 (d/make-cell-p1)
-          pl2 (d/make-cell-p2)
-          v [pl1 pl2 nil
-             nil nil nil
-             nil nil nil]
-          ts-1 (d/make-timestamp)
+    (println "T021")
+    (let [ts-1 (d/make-timestamp)
           ts-2 (+ ts-1 config/bomb-timeout-ms)
-          game {:in-progress? true
-                :width 3
-                :height 3
-                :num-players 2
-                :grid {:width 3, :height 3, :v v}
-                :players {:player-1 (player-with-coords (d/make-player-1) {:x 0, :y 0})
-                          :player-2 (player-with-coords (d/make-player-2) {:x 1, :y 0})}
-                :stats {:round {:started-at ts-1
-                                :duration 0
-                                :players {:player-1 (d/make-player-round-stats)
-                                          :player-2 (d/make-player-round-stats)}}
-                        :all {:players {:player-1 (d/make-player-all-stats ts-1)
-                                        :player-2 (d/make-player-all-stats ts-1)}}}}
+          game (d/make-game ts-1)
           scenario-1 (-> game
                          (g/plant-bomb :player-1 ts-1)
                          (g/move :player-1 :down ts-1)
@@ -644,70 +413,88 @@
                          (g/eval ts-2))
           scenario-2 (-> game
                          (g/plant-bomb :player-1 ts-1)
-                         (g/eval ts-2))]
-        (:stats scenario-1) => {:round {:started-at ts-1
-                                        :duration (- ts-2 ts-1)
-                                        :players {:player-1 {:kills 1
-                                                             :death? false
-                                                             :suicide? false
-                                                             :moves 2
-                                                             :items {:bomb 0
-                                                                     :fire 0}}
-                                                  :player-2 {:kills 0
-                                                             :death? true
-                                                             :suicide? false
-                                                             :moves 0
-                                                             :items {:bomb 0
-                                                                     :fire 0}}}}
-                                :all {:players {:player-1 {:joined-at ts-1
-                                                           :playing-time (- ts-2 ts-1)
-                                                           :kills 1
-                                                           :deaths 0
-                                                           :suicides 0
-                                                           :wins 1
-                                                           :moves 2
-                                                           :items {:bomb 0
-                                                                   :fire 0}}
-                                                :player-2 {:joined-at ts-1
-                                                           :playing-time (- ts-2 ts-1)
-                                                           :kills 0
-                                                           :deaths 1
-                                                           :suicides 0
-                                                           :wins 0
-                                                           :moves 0
-                                                           :items {:bomb 0
-                                                                   :fire 0}}}}}
-        (:stats scenario-2) => {:round {:started-at ts-1
-                                        :duration (- ts-2 ts-1)
-                                        :players {:player-1 {:kills 1
-                                                             :death? true
-                                                             :suicide? true
-                                                             :moves 0
-                                                             :items {:bomb 0
-                                                                     :fire 0}}
-                                                  :player-2 {:kills 0
-                                                             :death? true
-                                                             :suicide? false
-                                                             :moves 0
-                                                             :items {:bomb 0
-                                                                     :fire 0}}}}
-                                :all {:players {:player-1 {:joined-at ts-1
-                                                           :playing-time (- ts-2 ts-1)
-                                                           :kills 1
-                                                           :deaths 1
-                                                           :suicides 1
-                                                           :wins 0
-                                                           :moves 0
-                                                           :items {:bomb 0
-                                                                   :fire 0}}
-                                                :player-2 {:joined-at ts-1
-                                                           :playing-time (- ts-2 ts-1)
-                                                           :kills 0
-                                                           :deaths 1
-                                                           :suicides 0
-                                                           :wins 0
-                                                           :moves 0
-                                                           :items {:bomb 0
-                                                                   :fire 0}}}}}
-      ))
+                         (g/move :player-1 :down ts-1)
+                         (g/eval ts-2))
+          stats-1 (:stats scenario-1)
+          s1-r1 (get-in stats-1 [:round])
+          s1-r-p1 (get-in stats-1 [:round :players :player-1])
+          s1-r-p2 (get-in stats-1 [:round :players :player-2])
+          s1-a-p1 (get-in stats-1 [:all :players :player-1])
+          s1-a-p2 (get-in stats-1 [:all :players :player-2])
+          stats-2 (:stats scenario-2)
+          s2-r1 (get-in stats-2 [:round])
+          s2-r-p1 (get-in stats-2 [:round :players :player-1])
+          s2-r-p2 (get-in stats-2 [:round :players :player-2])
+          s2-a-p1 (get-in stats-2 [:all :players :player-1])
+          s2-a-p2 (get-in stats-2 [:all :players :player-2])]
+      ; scenario-1
+      ; :round
+      (:started-at s1-r1) => ts-1
+      (:duration s1-r1) => (- ts-2 ts-1)
+      s1-r-p1 => {:kills 1
+                  :death? false
+                  :suicide? false
+                  :moves 2
+                  :items {:bomb 0
+                          :fire 0}}
+      s1-r-p2 => {:kills 0
+                  :death? true
+                  :suicide? false
+                  :moves 0
+                  :items {:bomb 0
+                          :fire 0}}
+      ; :all
+      s1-a-p1 => {:joined-at ts-1
+                  :playing-time (- ts-2 ts-1)
+                  :kills 1
+                  :deaths 0
+                  :suicides 0
+                  :wins 1
+                  :moves 2
+                  :items {:bomb 0
+                          :fire 0}}
+      s1-a-p2 => {:joined-at ts-1
+                  :playing-time (- ts-2 ts-1)
+                  :kills 0
+                  :deaths 1
+                  :suicides 0
+                  :wins 0
+                  :moves 0
+                  :items {:bomb 0
+                          :fire 0}}
+      ; scenario-2
+      ; :round
+      (:started-at s2-r1) => ts-1
+      (:duration s2-r1) => (- ts-2 ts-1)
+      s2-r-p1 => {:kills 1
+                  :death? true
+                  :suicide? true
+                  :moves 1
+                  :items {:bomb 0
+                          :fire 0}}
+      s2-r-p2 => {:kills 0
+                  :death? true
+                  :suicide? false
+                  :moves 0
+                  :items {:bomb 0
+                          :fire 0}}
+      ; :all
+      s2-a-p1 => {:joined-at ts-1
+                  :playing-time (- ts-2 ts-1)
+                  :kills 1
+                  :deaths 1
+                  :suicides 1
+                  :wins 0
+                  :moves 0
+                  :items {:bomb 0
+                          :fire 0}}
+      s2-a-p2 => {:joined-at ts-1
+                  :playing-time (- ts-2 ts-1)
+                  :kills 0
+                  :deaths 1
+                  :suicides 0
+                  :wins 0
+                  :moves 0
+                  :items {:bomb 0
+                          :fire 0}}))
 )
