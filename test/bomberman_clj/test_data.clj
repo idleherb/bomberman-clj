@@ -17,10 +17,11 @@
 
 (defn- make-player-round-stats
   []
-  {:kills 0
-   :death? false
+  {:won? false
+   :dead? false
    :suicide? false
    :moves 0
+   :kills 0
    :items {:bomb 0
            :fire 0}})
 

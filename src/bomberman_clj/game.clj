@@ -197,7 +197,7 @@
                   game (-> game
                            (update-player player)
                            (assoc :grid grid
-                                  :stats (stats/inc-player-moves (:stats game) player-id))
+                                  :stats (stats/add-move (:stats game) player-id))
                            (hit-player new-coords timestamp)
                            (update-item new-coords))]
               game)
@@ -439,23 +439,27 @@
 (defn- update-stats-from-coords
   [game coords timestamp]
   (if-let [player (cell-player game (grid/cell-at (:grid game) coords))]
-    (if-let [hit (:hit player)]
-      (let [stats (:stats game)
-            corpse-id (:player-id player)
-            killer-id (:player-id hit)]
-        (if (= corpse-id killer-id)
-          (assoc game :stats (stats/add-suicide stats corpse-id))
-          (assoc game :stats (stats/add-kill stats killer-id corpse-id))))
-      game)
-    game))
+    (let [hit (:hit player)
+          stats-collected (:stats-collected hit)]
+      (if (and (some? hit) (nil? stats-collected))
+        (let [corpse-id (:player-id player)
+              killer-id (:player-id hit)
+              stats (:stats game)
+              player (assoc-in player [:hit :stats-collected] timestamp)
+              game (assoc-in game [:players corpse-id] player)]
+          (if (= corpse-id killer-id)
+            (assoc game :stats (stats/add-suicide stats corpse-id))
+            (assoc game :stats (stats/add-kill stats killer-id corpse-id))))
+        game))
+      game))
 
 (defn- update-stats
   [game timestamp]
-  (let [winner (get-in game [:gameover :winner])
-        stats (cond-> (:stats game)
-                true (stats/update-time timestamp)
-                (some? winner) (update-in [:all :players winner :wins] inc))]
-    (assoc game :stats stats)))
+  (let [duration (- timestamp (get-in game [:stats :round :started-at]))
+        winner (get-in game [:gameover :winner])]
+    (cond-> game
+      true (assoc-in [:stats :round :duration] duration)
+      (some? winner) (update-in [:stats] stats/add-win winner))))
 
 (defn eval
   "Check if any bombs should detonate (and detonate in case). Remove expired bombs and fire."

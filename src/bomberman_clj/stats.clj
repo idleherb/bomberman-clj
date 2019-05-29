@@ -1,43 +1,61 @@
 (ns bomberman-clj.stats
   (:require [bomberman-clj.specs :as specs]))
 
-(def round-player-stats {:kills 0
-                         :death? false
+(def round-player-stats {:won? false
+                         :dead? false
                          :suicide? false
                          :moves 0
+                         :kills 0
                          :items {:bomb 0
                                  :fire 0}})
+
+(defn add-move
+  [stats player-id]
+  (-> stats
+      (update-in [:round :players player-id :moves] inc)))
 
 (defn add-kill
   [stats killer-id corpse-id]
   (-> stats
-      (assoc-in [:round :players corpse-id :death?] true)
-      (update-in [:round :players killer-id :kills] inc)
-      (update-in [:all :players corpse-id :deaths] inc)
-      (update-in [:all :players killer-id :kills] inc)))
+      (assoc-in [:round :players corpse-id :dead?] true)
+      (update-in [:round :players killer-id :kills] inc)))
 
 (defn add-suicide
   [stats player-id]
   (-> stats
-      (assoc-in [:round :players player-id :death?] true)
-      (assoc-in [:round :players player-id :suicide?] true)
-      (update-in [:all :players player-id :deaths] inc)
-      (update-in [:all :players player-id :suicides] inc)))
+      (assoc-in [:round :players player-id :dead?] true)
+      (assoc-in [:round :players player-id :suicide?] true)))
 
-(defn inc-player-moves
+(defn add-win
   [stats player-id]
   (-> stats
-      (update-in [:round :players player-id :moves] inc)
-      (update-in [:all :players player-id :moves] inc)))
+      (assoc-in [:round :players player-id :won?] true)))
+
+(defn- update-player-history
+  [stats player-id]
+  (println "stats::update-player-history - ###" stats)
+  (let [duration (get-in stats [:round :duration])
+        round (get-in stats [:round :players player-id])
+        history (get-in stats [:all :players player-id])]
+    (cond-> history
+      true (update-in [:playing-time] + duration)
+      true (update-in [:moves] + (:moves round))
+      true (update-in [:kills] + (:kills round))
+      (:won? round) (update-in [:wins] inc)
+      (:dead? round) (update-in [:deaths] inc)
+      (:suicide? round) (update-in [:suicides] inc))))
 
 (defn reset-round
   [stats timestamp]
   (-> stats
+      (update-in [:all :players]
+                 #(into {} (map (fn [[k _]] [k (update-player-history stats k)])
+                                %)))
       (assoc-in [:round :started-at] timestamp)
       (assoc-in [:round :duration] 0)
-      (assoc-in [:round :players]
-                (into {} (map (fn [[k _]] [k round-player-stats])
-                              (get-in stats [:round :players]))))))
+      (update-in [:round :players]
+                 #(into {} (map (fn [[k _]] [k round-player-stats])
+                                %)))))
 
 (defn init-player-stats
   [stats player-id timestamp]
@@ -45,7 +63,7 @@
          (specs/valid? ::specs/player-id player-id)
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/stats %)]}
-  (let [all-player-stats {:joined-at nil
+  (let [all-player-stats {:joined-at timestamp
                           :playing-time 0
                           :kills 0
                           :deaths 0
@@ -63,21 +81,3 @@
   (-> stats
       (update-in [:round :players] #(select-keys % player-ids))
       (update-in [:all :players] #(select-keys % player-ids))))
-
-(defn- update-playing-time
-  [playing-time old-duration new-duration]
-  (+ new-duration (- playing-time old-duration)))
-
-(defn update-time
-  [stats timestamp]
-  (let [old-duration (get-in stats [:round :duration])
-        new-duration (- timestamp (get-in stats [:round :started-at]))
-        new-stats (assoc-in stats [:round :duration] new-duration)
-        new-stats (update-in new-stats [:all :players]
-          (fn [players]
-            (into {} (map (fn [[id stats]]
-                            [id (update-in stats
-                                           [:playing-time]
-                                           #(update-playing-time % old-duration new-duration))])
-                          players))))]
-    new-stats))

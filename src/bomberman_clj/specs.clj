@@ -61,7 +61,7 @@
 
 (s/def ::bombs map?)  ; TODO: Remove
 (s/def :stats.player/kills int?)
-(s/def :stats.player.round/death? boolean?)
+(s/def :stats.player.round/dead? boolean?)
 (s/def :stats.player.round/suicide? boolean?)
 (s/def :stats.player/moves int?)
 (s/def :stats.player.items/bomb int?)
@@ -69,7 +69,7 @@
 (s/def :stats.player/items (s/keys :req-un [:stats.player.items/bomb :stats.player.items/fire]))
 
 (def stats-player-round-spec (s/keys :req-un [:stats.player/kills
-                                              :stats.player.round/death?
+                                              :stats.player.round/dead?
                                               :stats.player.round/suicide?
                                               :stats.player/moves
                                               :stats.player/items]))

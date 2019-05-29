@@ -422,6 +422,7 @@
                          (g/move :player-1 :down ts-1)
                          (g/move :player-1 :down ts-1)  ; hits wall, shouldn't increase :moves
                          (g/eval ts-2)
+                         (g/eval ts-2)  ; shouldn't increase :kills again
                          (g/eval ts-3))
 
           scenario-1-1 (-> scenario-1
@@ -478,32 +479,34 @@
       (println "s1-r")
       (:started-at s1-r1) => ts-1
       (:duration s1-r1) => (- ts-3 ts-1)
-      s1-r-p1 => {:kills 1
-                  :death? false
+      s1-r-p1 => {:won? true
+                  :dead? false
                   :suicide? false
                   :moves 2
+                  :kills 1
                   :items {:bomb 0
                           :fire 0}}
-      s1-r-p2 => {:kills 0
-                  :death? true
+      s1-r-p2 => {:won? false
+                  :dead? true
                   :suicide? false
                   :moves 0
+                  :kills 0
                   :items {:bomb 0
                           :fire 0}}
       (println "s1-a")
       s1-a-p1 => {:joined-at ts-1
-                  :playing-time (- ts-3 ts-1)
-                  :kills 1
+                  :playing-time 0
+                  :kills 0
                   :deaths 0
                   :suicides 0
-                  :wins 1
-                  :moves 2
+                  :wins 0
+                  :moves 0
                   :items {:bomb 0
                           :fire 0}}
       s1-a-p2 => {:joined-at ts-1
-                  :playing-time (- ts-3 ts-1)
+                  :playing-time 0
                   :kills 0
-                  :deaths 1
+                  :deaths 0
                   :suicides 0
                   :wins 0
                   :moves 0
@@ -513,16 +516,18 @@
       (println "s11-r")
       (:started-at s11-r1) => ts-4
       (:duration s11-r1) => 0
-      s11-r-p1 => {:kills 0
-                   :death? false
+      s11-r-p1 => {:won? false
+                   :dead? false
                    :suicide? false
                    :moves 0
+                   :kills 0
                    :items {:bomb 0
                            :fire 0}}
-      s11-r-p2 => {:kills 0
-                   :death? false
+      s11-r-p2 => {:won? false
+                   :dead? false
                    :suicide? false
                    :moves 0
+                   :kills 0
                    :items {:bomb 0
                            :fire 0}}
       (println "s11-a")
@@ -547,39 +552,41 @@
 
       (println "s12-r")
       (:started-at s12-r1) => ts-4
-      (:duration s12-r1) => (- ts-5 ts-4)
-      s12-r-p1 => {:kills 0
-                   :death? false
+      (:duration s12-r1) => config/expiration-ms
+      s12-r-p1 => {:won? true
+                   :dead? false
                    :suicide? false
                    :moves 0
+                   :kills 0
                    :items {:bomb 0
                            :fire 0}}
-      s12-r-p2 => {:kills 0
-                   :death? true
+      s12-r-p2 => {:won? false
+                   :dead? true
                    :suicide? true
                    :moves 0
+                   :kills 0
                    :items {:bomb 0
                            :fire 0}}
       (println "s12-a")
       s12-a-p1 => {:joined-at ts-1
-                   :playing-time (+ (- ts-3 ts-1) (- ts-5 ts-4))
+                   :playing-time (- ts-3 ts-1)
                    :kills 1
                    :deaths 0
                    :suicides 0
-                   :wins 2
+                   :wins 1
                    :moves 2
                    :items {:bomb 0
                            :fire 0}}
       s12-a-p2 => {:joined-at ts-1
-                   :playing-time(+ (- ts-3 ts-1) (- ts-5 ts-4))
+                   :playing-time (- ts-3 ts-1)
                    :kills 0
-                   :deaths 2
-                   :suicides 1
+                   :deaths 1
+                   :suicides 0
                    :wins 0
                    :moves 0
                    :items {:bomb 0
                            :fire 0}}
-      
+
       (println "s13-a")
       s13-r-p2 => nil?
       s13-a-p2 => nil?
@@ -587,32 +594,34 @@
       (println "s2-r")
       (:started-at s2-r1) => ts-1
       (:duration s2-r1) => (- ts-3 ts-1)
-      s2-r-p1 => {:kills 1
-                  :death? true
+      s2-r-p1 => {:won? false
+                  :dead? true
                   :suicide? true
                   :moves 1
+                  :kills 1
                   :items {:bomb 0
                           :fire 0}}
-      s2-r-p2 => {:kills 0
-                  :death? true
+      s2-r-p2 => {:won? false
+                  :dead? true
                   :suicide? false
                   :moves 0
+                  :kills 0
                   :items {:bomb 0
                           :fire 0}}
       (println "s2-a")
       s2-a-p1 => {:joined-at ts-1
-                  :playing-time (- ts-3 ts-1)
-                  :kills 1
-                  :deaths 1
-                  :suicides 1
+                  :playing-time 0
+                  :kills 0
+                  :deaths 0
+                  :suicides 0
                   :wins 0
-                  :moves 1
+                  :moves 0
                   :items {:bomb 0
                           :fire 0}}
       s2-a-p2 => {:joined-at ts-1
-                  :playing-time (- ts-3 ts-1)
+                  :playing-time 0
                   :kills 0
-                  :deaths 1
+                  :deaths 0
                   :suicides 0
                   :wins 0
                   :moves 0
