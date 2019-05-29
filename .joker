@@ -1,2 +1,3 @@
 {:known-macros [compojure.core/defroutes]
- :ignored-unused-namespaces [bomberman-clj.client.ws]}
+ :ignored-unused-namespaces [bomberman-clj.client.ws
+                             goog.string.format]}

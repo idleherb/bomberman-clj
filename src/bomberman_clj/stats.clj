@@ -33,7 +33,6 @@
 
 (defn- update-player-history
   [stats player-id]
-  (println "stats::update-player-history - ###" stats)
   (let [duration (get-in stats [:round :duration])
         round (get-in stats [:round :players player-id])
         history (get-in stats [:all :players player-id])]
