@@ -4,6 +4,7 @@
             [bomberman-clj.grid :as grid]
             [bomberman-clj.players :as players]
             [bomberman-clj.specs :as specs]
+            [bomberman-clj.stats :as stats]
             [bomberman-clj.util :as util]))
 
 (defn init 
@@ -11,6 +12,10 @@
   {:post [(specs/valid? ::specs/game %)]}
   {:num-players num-players
    :players {}
+   :stats {:round {:started-at nil
+                   :duration 0
+                   :players {}}
+           :all {:players {}}}
    :grid nil
    :in-progress? false
    :width width
@@ -28,31 +33,35 @@
       (do
         (println "E game::join - no free player slot left for player" player)
         game)
-      (let [player (assoc player :coords nil)
-            players (assoc players (:player-id player) player)
-            game (assoc game :players players)]
+      (let [player-id (:player-id player)
+            player (assoc player :coords nil)
+            players (assoc players player-id player)
+            game (assoc game :players players
+                             :stats (stats/init-player-stats (:stats game) player-id timestamp))]
         game))))
 
-(defn- reset-players
+(defn- active-players
   [game]
-  (let [players (into {}
-    (->> (:players game)
-         (filter #(not (contains? (second %) :left)))
-         (map (fn [[id player]] [id (dissoc player :hit)]))))]
-    (assoc game :players players)))
+  (filter #(not (contains? (second %) :left))
+          (:players game)))
 
 (defn- reset
-  [game]
-  (-> game
-      (reset-players)
-      (assoc :grid nil)
-      (dissoc :gameover)))
+  [game timestamp]
+  (let [players (->> (active-players game)
+                     (map (fn [[id player]] [id (dissoc player :hit)])))]
+    (-> game
+        (assoc :players (into {} players)
+               :grid nil
+               :stats (-> (:stats game)
+                          (stats/filter-players (map (fn [[id _]] id) players))
+                          (stats/reset-round timestamp)))
+        (dissoc :gameover))))
 
 (defn next-round
   [game timestamp]
   {:pre [(specs/valid? ::specs/game game)]
    :post [(specs/valid? ::specs/game %)]}
-  (let [{:keys [num-players players width height], :as game} (reset game)]
+  (let [{:keys [num-players players width height], :as game} (reset game timestamp)]
     (if (< (count players) num-players)
       (do
         (println "W game::next-round - not enough players to start new round...")
@@ -75,7 +84,7 @@
 
 (defn cell-player
   [game cell]
-  (let [{:keys [grid players]} game
+  (let [players (:players game)
         player-id (grid/cell-player-id cell)]
     (get players player-id)))
 
@@ -97,7 +106,7 @@
 
 (defn- update-item
   [game coords]
-  (let [{{v :v, :as grid} :grid, players :players} game
+  (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         player (cell-player game cell)
         item (grid/cell-item cell)]
@@ -147,12 +156,14 @@
     ;        (specs/valid? ::specs/coords coords)
     ;        (specs/valid? ::specs/timestamp timestamp)]
     ;  :post [(specs/valid? ::specs/game %)]}
-    (let [{:keys [grid players]} game
+    (let [grid (:grid game)
           cell (grid/cell-at grid coords)
-          player (cell-player game cell)
-          player-id (:player-id player)]
-      (if (and (some? player) (or force? (grid/fire? cell)) (not (util/hit? player)))
-        (let [player (assoc player :hit {:timestamp timestamp})]
+          fire? (grid/fire? cell)
+          player (cell-player game cell)]
+      (if (and (some? player) (or force? fire?) (not (util/hit? player)))
+        (let [player (cond-> (assoc-in player [:hit :timestamp] timestamp)
+                       fire? (assoc-in [:hit :player-id] (:player-id (grid/cell-fire cell)))
+                       force? (assoc-in [:hit :player-id] (:player-id player)))]
           (update-player game player))
         game)))
   ([game coords timestamp]
@@ -185,7 +196,8 @@
                           (grid/assoc-grid-cell new-coords :player-id player-id))
                   game (-> game
                            (update-player player)
-                           (assoc :grid grid)
+                           (assoc :grid grid
+                                  :stats (stats/add-move (:stats game) player-id))
                            (hit-player new-coords timestamp)
                            (update-item new-coords))]
               game)
@@ -242,11 +254,12 @@
 
 (defn- spread-fire
   "Spread fire along x or y axis"
-  [{grid :grid, :as game}
+  [game
    {x :x, y :y, :as coords}
    transform-coords
    radius
    detonate-bomb
+   player-id
    timestamp]
   ; {:pre [(specs/valid? ::specs/game game)
   ;        (specs/valid? ::specs/coords coords)
@@ -268,7 +281,8 @@
                         game
                         (assoc game :grid
                           (grid/assoc-grid-cell grid coords :fire
-                            {:timestamp timestamp})))
+                            {:player-id player-id
+                             :timestamp timestamp})))
                       (detonate-bomb coords timestamp)
                       (hit-block coords timestamp)
                       (hit-item coords timestamp)
@@ -285,7 +299,6 @@
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
   (let [{grid :grid, players :players, :as game} game
-        {x :x, y :y} coords
         bomb (grid/cell-bomb grid coords)]
     (if (and (some? bomb) (not (contains? bomb :detonated)))
       (let [bomb (assoc bomb :detonated {:timestamp timestamp})
@@ -295,7 +308,7 @@
             player-coords (:coords player)
             player (players/inc-bombs player)
             grid (grid/assoc-grid-cell grid player-coords :player-id player-id)
-            spread-fire #(spread-fire %1 coords %2 (:bomb-radius player) detonate-bomb timestamp)
+            spread-fire #(spread-fire %1 coords %2 (:bomb-radius player) detonate-bomb player-id timestamp)
             game (-> game
                      (update-player player)
                      (assoc :grid grid)
@@ -400,7 +413,7 @@
   ;        (specs/valid? ::specs/coords coords)
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
-  (let [{grid :grid, players :players} game
+  (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         player (cell-player game cell)]
     (if (util/player-expired? player timestamp)
@@ -423,6 +436,31 @@
                                :winner (first (first alive-players))})
       game)))
 
+(defn- update-stats-from-coords
+  [game coords timestamp]
+  (if-let [player (cell-player game (grid/cell-at (:grid game) coords))]
+    (let [hit (:hit player)
+          stats-collected (:stats-collected hit)]
+      (if (and (some? hit) (nil? stats-collected))
+        (let [corpse-id (:player-id player)
+              killer-id (:player-id hit)
+              stats (:stats game)
+              player (assoc-in player [:hit :stats-collected] timestamp)
+              game (assoc-in game [:players corpse-id] player)]
+          (if (= corpse-id killer-id)
+            (assoc game :stats (stats/add-suicide stats corpse-id))
+            (assoc game :stats (stats/add-kill stats killer-id corpse-id))))
+        game))
+      game))
+
+(defn- update-stats
+  [game timestamp]
+  (let [duration (- timestamp (get-in game [:stats :round :started-at]))
+        winner (get-in game [:gameover :winner])]
+    (cond-> game
+      true (assoc-in [:stats :round :duration] duration)
+      (some? winner) (update-in [:stats] stats/add-win winner))))
+
 (defn eval
   "Check if any bombs should detonate (and detonate in case). Remove expired bombs and fire."
   [game timestamp]
@@ -431,20 +469,23 @@
   ;  :post [(specs/valid? ::specs/game %)]}
   (if (or (not (:in-progress? game)) (contains? game :gameover))
     game
-    (let [{{:keys [width height], :as grid} :grid} game
+    (let [{{:keys [width height]} :grid} game
           game (loop [game game y 0]
-                  (if (= height y)
-                    game
-                    (recur
-                      (loop [game game x 0]
-                        (if (= width x)
-                          game
-                          (recur (-> game
-                                    (remove-expired-block {:x x, :y y} timestamp)
-                                    (update-bomb {:x x, :y y} timestamp)
-                                    (remove-expired-fire {:x x, :y y} timestamp)
-                                    (remove-expired-item {:x x, :y y} timestamp)
-                                    (remove-expired-player {:x x, :y y} timestamp))
-                                (inc x))))
-                        (inc y))))]
-          (update-gameover game timestamp))))
+                 (if (= height y)
+                   game
+                   (recur
+                    (loop [game game x 0]
+                      (if (= width x)
+                        game
+                        (recur (-> game
+                                   (remove-expired-block {:x x, :y y} timestamp)
+                                   (update-bomb {:x x, :y y} timestamp)
+                                   (remove-expired-fire {:x x, :y y} timestamp)
+                                   (remove-expired-item {:x x, :y y} timestamp)
+                                   (remove-expired-player {:x x, :y y} timestamp)
+                                   (update-stats-from-coords {:x x, :y y} timestamp))
+                               (inc x))))
+                    (inc y))))]
+      (-> game
+          (update-gameover timestamp)
+          (update-stats timestamp)))))

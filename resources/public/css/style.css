@@ -33,6 +33,13 @@ html, body {
   font-size: 14;
 }
 
+h4 {
+  display: flex;
+  justify-content: flex-end;
+  margin:  10px;
+  padding: 0;
+}
+
 input,
 select,
 textarea {
@@ -47,7 +54,8 @@ textarea {
   height: 100%;
 }
 
-.game {
+.block.hard {
+  background-color: lightgray;
   background: repeating-linear-gradient(
     45deg,
     #091113,
@@ -55,56 +63,6 @@ textarea {
     #192123 0,
     #192123 17px
   );
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 36px;
-}
-
-.gameover {
-  background-color: rgba(0, 0, 0, .8);
-  color: #ffffff;
-  display: flex;
-  font-family: Raleway, sans-serif;
-  font-size: 36px;
-  text-transform: uppercase;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.name {
-  margin: 8px;
-}
-
-.in-name {
-  border: none;
-  border-bottom: 1px solid gray;
-  font-family: Raleway, sans-serif;
-  font-size: 14;
-  line-height: 32px;
-  height: 32px;
-  padding: 0 4px;
-}
-
-.num-players {
-  margin: 8px;
-}
-
-.block.hard {
-  border-radius: 19px;
-  background-color: lightgray;
-  width: 38px;
-  height: 38px;
-  margin: 5px;
-  opacity: 0;
 }
 
 .block.soft::after {
@@ -133,13 +91,11 @@ textarea {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: repeating-linear-gradient(
-    45deg,
-    lightgray,
-    lightgray 8.5px,
-    whitesmoke 0,
-    whitesmoke 17px
-  );
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
 }
 
 .empty {
@@ -160,8 +116,52 @@ textarea {
   content: "🔥"
 }
 
+.game {
+  background: repeating-linear-gradient(
+    45deg,
+    lightgray,
+    lightgray 8.5px,
+    whitesmoke 0,
+    whitesmoke 17px
+  );
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 36px;
+}
+
+.gameover {
+  background-color: rgba(0, 0, 0, .8);
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  font-family: Raleway, sans-serif;
+  font-size: 36px;
+  text-transform: uppercase;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .hit {
   opacity: 0.4;
+}
+
+.in-name {
+  border: none;
+  border-bottom: 1px solid gray;
+  font-family: Raleway, sans-serif;
+  font-size: 14;
+  line-height: 32px;
+  height: 32px;
+  padding: 0 4px;
 }
 
 .item {
@@ -182,18 +182,36 @@ textarea {
   content: "🔥"
 }
 
-.no-select {
-  -webkit-touch-callout: none;
-    -webkit-user-select: none;
-     -khtml-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+.name {
+  margin: 8px;
 }
 
+.num-players {
+  margin: 8px;
+}
+
+.player-1 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(218, 112, 214, 0.3) ,
+    rgba(218, 112, 214, 0.3) 8.5px,
+    rgba(221, 160, 221, 0.3) 0,
+    rgba(221, 160, 221, 0.3) 17px
+  );
+}
 
 .player-1::after {
   content: "🐈"
+}
+
+.player-2 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(107, 142, 35, 0.3) ,
+    rgba(107, 142, 35, 0.3) 8.5px,
+    rgba(154, 205, 50, 0.3) 0,
+    rgba(154, 205, 50, 0.3) 17px
+  );
 }
 
 .player-2::after {
@@ -224,9 +242,52 @@ textarea {
   content: "🦖"
 }
 
+.player-stats {
+  background-color: whitesmoke;
+  display: flex;
+  margin: 10px;
+  padding: 4px;
+  list-style: none;
+}
+
+.player-stats li {
+  display: flex;
+  margin: 5px 5px;
+  padding: 0;
+}
+
 .row {
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: row;
+}
+
+.stats ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stats-attr span {
+  margin: 0 5px;
+}
+
+.stats-attr__name {
+  font-weight: 700;
+}
+
+.stats-attr__val {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 75px;
+}
+
+.stats-attr__val--num {
+  width: 30px;
+}
+
+.time {
+  font-family: monospace;
+  font-weight: 600;
 }

@@ -3,26 +3,30 @@
                                                   :rename {cell el-cell}]
             [bomberman-clj.client.components.num-players :refer [num-players]
                                                          :rename {num-players el-num-players}]
-            [bomberman-clj.client.state :as s]))
+            [bomberman-clj.client.components.stats
+             :refer [stats]
+             :rename {stats el-stats}]))
 
 (defn- el-gameover [state]
   [:div {:class "gameover"}
-    (if-let [winner-id (get-in state [:game :gameover :winner])]
-      (let [players (get-in state [:game :players])
-            name (:name (get players winner-id))]
-        (str name " wins!"))
-      "no winner")])
+   (if-let [winner-id (get-in state [:game :gameover :winner])]
+     (let [players (get-in state [:game :players])
+           name (:name (get players winner-id))]
+       (str name " wins!"))
+     "no winner")])
 
 (defn- el-game [state]
   (let [{:keys [players grid height width]} (:game state)]
-    [:div {:class "game"}
+    [:div {:class "col"}
+     [el-stats state]
+     [:div {:class "game"}
       (for [row (range height)]
         [:div {:class "row" :key (str "row-" row)}
-          (for [col (range width)]
-            (let [cell-idx (+ (* row width) col)
-                  cell (nth (:v grid) cell-idx)]
-              ^{:key (str "cell-" col row)}
-              [el-cell cell players]))])]))
+         (for [col (range width)]
+           (let [cell-idx (+ (* row width) col)
+                 cell (nth (:v grid) cell-idx)]
+             ^{:key (str "cell-" col row)}
+             [el-cell cell players]))])]]))
 
 (defn game [state]
   (let [gameover (get-in state [:game :gameover])]

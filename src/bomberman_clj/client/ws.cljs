@@ -1,12 +1,13 @@
 (ns bomberman-clj.client.ws
   (:require [cljs.core.async :as async
                              :include-macros true]
+            [clojure.string :as string]
             [haslett.client :as ws]
             [haslett.format :as fmt]
             [bomberman-clj.client.state :as s]))
 
 (def ws-port (if (re-matches #"[^:]+:\d+.*" js/window.location.host) ":8080" "")) 
-(def ws-protocol (clojure.string/replace js/window.location.protocol "http" "ws"))
+(def ws-protocol (string/replace js/window.location.protocol "http" "ws"))
 (def ws-url (str ws-protocol "//" js/window.location.hostname ws-port))
 
 (defn- forward-actions

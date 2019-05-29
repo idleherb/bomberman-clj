@@ -56,10 +56,6 @@
   [event]
   (doseq [ch (keys @ws-chans)] (ws-async/send! ch (pr-str event))))
 
-(defn- send-message!
-  [ws-ch message]
-  (ws-async/send! ws-ch (pr-str {:type :message, :payload message})))
-
 (defn- send-error!
   [ws-ch error]
   (ws-async/send! ws-ch (pr-str {:type :error, :payload error})))
@@ -103,8 +99,7 @@
 
 (defn- ws-on-message!
   [ch num-players ws-ch message]
-  (let [{:keys [type payload timestamp], :as event} (edn/read-string message)
-        player-id (get-chan-player-id ws-ch)]
+  (let [{type :type, :as event} (edn/read-string message)]
     (condp = type
       :join   (on-join!!  event ch ws-ch num-players)
       :action (on-action! event ch ws-ch)
@@ -119,10 +114,6 @@
                             :payload {:player-id player-id}
                             :timestamp (now)}))
     (println "I ws::ws-on-close! -" player-id "disconnected...")))
-
-(defn broadcast
-  [event]
-  (doseq [ch (keys @ws-chans)] (ws-async/send! ch (pr-str event))))
 
 (defn ws-callbacks
   [ch-game-in num-players]
