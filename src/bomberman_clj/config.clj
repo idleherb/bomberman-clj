@@ -10,6 +10,7 @@
 
 (def spawn-max-tries 100)
 (def chance-spawn-item 3/10)
+(def chance-spawn-rare-item 1/10)
 
 (def bomb-timeout-ms 3000)
 
