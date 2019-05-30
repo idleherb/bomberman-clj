@@ -83,6 +83,20 @@ textarea {
   content: "💣"
 }
 
+.bomb-remote-controlled {
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(255,0,0,.0),
+    rgba(255,0,0,.0) 8.5px,
+    rgba(255,69,0,.0) 0,
+    rgba(255,69,0,.0) 17px
+  ) !important;
+}
+
+.bomb-remote-controlled::after {
+  content: "🎁"
+}
+
 .cell {
   margin: 0;
   padding: 0;
@@ -180,6 +194,10 @@ textarea {
 
 .item-fire::after {
   content: "🔥"
+}
+
+.item-remote-control::after {
+  content: "🕹️"
 }
 
 .name {

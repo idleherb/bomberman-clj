@@ -14,6 +14,7 @@
         37 (actions/action {:action :move, :direction :left})
         39 (actions/action {:action :move, :direction :right})
         32 (actions/action {:action :plant-bomb})
+        13 (actions/action {:action :detonate-bombs})
         nil))))
 
 (defn app []

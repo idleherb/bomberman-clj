@@ -7,7 +7,11 @@
                             ["block"
                              (name (:type block))
                              (when (:hit block) "hit")])
-                          (when (and (:bomb cell-state) (not (:detonated (:bomb cell-state)))) "bomb")
+                          (when (and (:bomb cell-state)
+                                     (not (:detonated (:bomb cell-state))))
+                            (let [{:keys [player-id]} (:bomb cell-state)
+                                  remote-control? (get-in players [player-id :remote-control?])]
+                              (if remote-control? "bomb-remote-controlled" "bomb")))
                           (when (:fire cell-state) "fire")
                           (when-let [item (:item cell-state)]
                             ["item"

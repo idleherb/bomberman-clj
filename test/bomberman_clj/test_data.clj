@@ -42,6 +42,7 @@
 (defn make-cell-hard-block [] {:block {:type :hard}})
 (defn make-cell-soft-block [] {:block {:type :soft}})
 (defn make-cell-item-bomb [] {:item {:type :bomb}})
+(defn make-cell-item-rc [] {:item {:type :remote-control}})
 
 (defn- make-grid
   []

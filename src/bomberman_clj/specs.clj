@@ -36,13 +36,15 @@
 
 (s/def ::block (s/keys :req-un [::type] :opt-un [::hit]))
 
+(s/def ::remote-control? boolean?)
 (s/def ::player (s/keys :req-un [::bomb-count
                                  ::bomb-radius
                                  ::coords
                                  ::name
                                  ::player-id]
                         :opt-un [::hit
-                                 ::left]))
+                                 ::left
+                                 ::remote-control?]))
 
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
 (s/def ::fire (s/keys :req-un [::timestamp]))

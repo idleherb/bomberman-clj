@@ -37,10 +37,10 @@
 
 (defn- on-action
   [event game ch]
-  ; (println "D game-loop::on-action - event:" event)
   (let [{:keys [payload timestamp]} event
         {:keys [action player-id]} payload]
     (condp = action
+      :detonate-bombs (game/remote-detonate-bombs game player-id timestamp)
       :move (game/move game player-id (:direction payload) timestamp)
       :plant-bomb (game/plant-bomb game player-id timestamp)
       (do

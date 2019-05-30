@@ -48,7 +48,8 @@
 (defn- reset
   [game timestamp]
   (let [players (->> (active-players game)
-                     (map (fn [[id player]] [id (dissoc player :hit)])))]
+                     (map (fn [[id player]] [id (dissoc player :hit
+                                                               :remote-control?)])))]
     (-> game
         (assoc :players (into {} players)
                :grid nil
@@ -93,6 +94,7 @@
   (condp = (:type item)
     :bomb (assoc player :bomb-count (inc (:bomb-count player)))
     :fire (assoc player :bomb-radius (inc (:bomb-radius player)))
+    :remote-control (assoc player :remote-control? true)
     (do
       (println "W game::pickup-item - unknown item:" item)
       player)))
@@ -319,6 +321,28 @@
         game)
     game)))
 
+(defn remote-detonate-bombs
+  [game player-id timestamp]
+  (let [{:keys [in-progress? gameover players]} game
+        {:keys [remote-control?]} (player-id players)]
+    (if (or (not in-progress?) (some? gameover) (not remote-control?))
+      game
+      (let [{{:keys [width height]} :grid} game]
+        (loop [game game y 0]
+          (if (= height y)
+            game
+            (recur
+             (loop [game game x 0]
+               (if (= width x)
+                 game
+                 (recur (let [coords {:x x, :y y}
+                              bomb (grid/cell-bomb (:grid game) coords)]
+                          (if (and (some? bomb) (= (:player-id bomb) player-id))
+                            (detonate-bomb game {:x x, :y y} timestamp)
+                            game))
+                        (inc x))))
+             (inc y))))))))
+
 (defn- random-item
   []
   (if (< (rand) 1/2)
@@ -327,10 +351,11 @@
 
 (defn- spawn-random-item
   [game coords timestamp]
-  (if (< (rand) config/chance-spawn-item)
-    (assoc game :grid
-      (grid/assoc-grid-cell (:grid game) coords :item
-        (random-item)))
+  (if-let [item (condp > (rand)
+                  config/chance-spawn-rare-item {:type :remote-control}
+                  config/chance-spawn-item (random-item)
+                  nil)]
+    (assoc game :grid (grid/assoc-grid-cell (:grid game) coords :item item))
     game))
 
 (defn- remove-expired-block
@@ -355,8 +380,10 @@
   ;        (specs/valid? ::specs/coords coords)
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
-  (let [bomb (grid/cell-bomb (:grid game) coords)]
-    (if (util/bomb-timed-out? bomb timestamp)
+  (let [bomb (grid/cell-bomb (:grid game) coords)
+        {:keys [remote-control?]} (get-in game [:players (:player-id bomb)])]
+    (if (and (util/bomb-timed-out? bomb timestamp)
+             (not remote-control?))
       (detonate-bomb game coords timestamp)
       game)))
 
