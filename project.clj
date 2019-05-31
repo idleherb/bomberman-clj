@@ -7,7 +7,7 @@
                  [org.clojure/clojurescript "1.10.520"]
                  [org.clojure/core.async "0.4.490"]
                  [org.immutant/web "2.1.10"]
-                 [cheshire "5.8.1"]
+                 [cljs-bach "0.3.0"]
                  [clojure-lanterna "0.9.7"]
                  [compojure "1.6.1"]
                  [haslett "0.1.6"]
