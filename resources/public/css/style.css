@@ -302,10 +302,33 @@ textarea {
 }
 
 .stats-attr__val--num {
-  width: 30px;
+  width: 40px;
 }
 
 .time {
   font-family: monospace;
   font-weight: 600;
+}
+
+.volume {
+  cursor: pointer;
+  font-size: 36px;
+  position: absolute;
+  top: 48px;
+  right: 48px;
+  margin: 0;
+  padding: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.volume--muted::after {
+  content: "🔇"
+}
+
+.volume--unmuted::after {
+  content: "🔈"
 }

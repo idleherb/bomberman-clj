@@ -2,6 +2,7 @@
   (:require [bomberman-clj.client.actions :as actions]
             [bomberman-clj.client.components.game :refer [game]]
             [bomberman-clj.client.components.player-form :refer [player-form]]
+            [bomberman-clj.client.components.volume :refer [volume]]
             [bomberman-clj.client.state :as s]))
 
 (defn on-key-down [code]
@@ -23,6 +24,7 @@
     [:div {:class "app"
            :tabIndex 0
            :on-key-down #(on-key-down (.-keyCode %))}
+      [volume (get-in state [:app :mute?])]
       (if in-progress?
         [game state]
         [player-form state])]))

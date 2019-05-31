@@ -1,6 +1,14 @@
-(ns bomberman-clj.client.components.cell)
+(ns bomberman-clj.client.components.cell
+  (:require [bomberman-clj.client.audio :as audio]
+            [bomberman-clj.client.state :as s]))
 
-(defn cell [cell-state players]
+(defn cell [cell-state cell-idx players]
+  (let [bomb (:bomb cell-state)]
+    (when (and (some? (:detonated bomb))
+               (not (:audio-played? bomb)))
+      (do
+        (audio/explosion)
+        (swap! s/state assoc-in [:game :grid :v cell-idx :bomb :audio-played?] true))))
   (let [classes (flatten ["cell"
                           (when (nil? cell-state) "empty")
                           (when-let [block (:block cell-state)]

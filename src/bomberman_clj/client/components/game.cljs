@@ -26,7 +26,7 @@
            (let [cell-idx (+ (* row width) col)
                  cell (nth (:v grid) cell-idx)]
              ^{:key (str "cell-" col row)}
-             [el-cell cell players]))])]]))
+             [el-cell cell cell-idx players]))])]]))
 
 (defn game [state]
   (let [gameover (get-in state [:game :gameover])]
