@@ -5,7 +5,8 @@
 
 (defonce state (r/atom {:app {:actions-ch (async/chan)
                               :mute? true
-                              :precached? false}
+                              :precached? false
+                              :stale-style? true}
                         :game nil}))
 
 (defn- preprocess-cells

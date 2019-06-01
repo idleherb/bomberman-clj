@@ -212,7 +212,8 @@
   (loop [num-tries 1]
     (let [coords (rand-coords grid)
           [c1 c2] (rand-nth (all-save-coords grid coords))]
-      (if (or (hard-block? grid c1)
+      (if (or (hard-block? grid coords)
+              (hard-block? grid c1)
               (hard-block? grid c2)
               (player? grid c1)
               (player? grid c2))
