@@ -6,7 +6,8 @@
 
 (defn player-form [player-name
                    cur-num-players
-                   max-num-players]
+                   max-num-players
+                   num-spectators]
   [:div
     [:div {:class "name"}
       [:label {:for "in-name"} "NAME"
@@ -16,6 +17,6 @@
                :required true
                :on-change #(swap! s/state assoc-in [:app :player-name] (-> % .-target .-value))}]]]
     [:div
-      [el-num-players cur-num-players max-num-players]
+      [el-num-players cur-num-players max-num-players num-spectators]
       [:button {:on-click #(actions/join player-name)} "Join"]
       [:button {:on-click actions/leave} "Leave"]]])
