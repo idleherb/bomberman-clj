@@ -13,6 +13,7 @@
                  [haslett "0.1.6"]
                  [reagent "0.8.1"]
                  [ring/ring-core "1.7.1"]
+                 [stylefy "1.13.3"]
                  [com.cognitect/transit-clj "0.8.313"]]
   :managed-dependencies [[org.clojure/core.rrb-vector "0.0.13"]
                          [org.flatland/ordered "1.5.7"]]

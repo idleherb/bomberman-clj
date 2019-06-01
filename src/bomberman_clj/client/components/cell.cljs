@@ -1,6 +1,12 @@
 (ns bomberman-clj.client.components.cell
-  (:require [bomberman-clj.client.audio :as audio]
+  (:require [stylefy.core :as stylefy]
+            [bomberman-clj.client.audio :as audio]
             [bomberman-clj.client.state :as s]))
+
+(defn- soft-block-css
+  []
+  (let [emoji (get-in @s/state [:app :soft-block])]
+    {::stylefy/mode {:after {:content (str "'" emoji "'")}}}))
 
 (defn- ensure-explosion-audio! [bomb cell-idx]
   (when (and (some? (:detonated bomb))
@@ -29,4 +35,7 @@
                                (when hit "hit")])
                             (when player-id [player-id
                                              (when (:hit (get players player-id)) "hit")])])]
-      [:div {:class classes}])))
+      [:div (if (= :soft (:type block))
+              (stylefy/use-style (soft-block-css)
+                                 {:class (into [] (filter some? classes))})
+              {:class classes})])))

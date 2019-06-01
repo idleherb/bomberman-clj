@@ -65,10 +65,6 @@ textarea {
   );
 }
 
-.block.soft::after {
-  content: "🏚️"
-}
-
 .bomb {
   background: repeating-linear-gradient(
     45deg,
