@@ -1,42 +1,20 @@
 (ns bomberman-clj.client.components.game
-  (:require [bomberman-clj.client.components.cell :refer [cell]
-                                                  :rename {cell el-cell}]
+  (:require [bomberman-clj.client.components.gameover :refer [gameover]
+                                                      :rename {gameover el-gameover}]
+            [bomberman-clj.client.components.grid :refer [grid]
+                                                  :rename {grid el-grid}]
             [bomberman-clj.client.components.num-players :refer [num-players]
                                                          :rename {num-players el-num-players}]
-            [bomberman-clj.client.components.stats
-             :refer [stats]
-             :rename {stats el-stats}]))
+            [bomberman-clj.client.components.stats :refer [stats]
+                                                   :rename {stats el-stats}]))
 
-(defn- el-gameover [state]
-  [:div {:class "gameover"}
-   (if-let [winner-id (get-in state [:game :gameover :winner])]
-     (let [players (get-in state [:game :players])
-           name (:name (get players winner-id))]
-       (str name " wins!"))
-     "no winner")])
-
-(defn- el-game [state]
-  (let [{:keys [players grid height width]} (:game state)]
-    [:div {:class "col"}
-     [el-stats state]
-     [:div {:class "game"}
-      (for [row (range height)]
-        [:div {:class "row" :key (str "row-" row)}
-         (for [col (range width)]
-           (let [cell-idx (+ (* row width) col)
-                 cell (nth (:v grid) cell-idx)]
-             ^{:key (str "cell-" col row)}
-             [el-cell cell cell-idx players]))])]]))
-
-(defn game [state]
-  (let [gameover (get-in state [:game :gameover])]
-    [:div
-      (if gameover
-        [el-gameover state]
-        [el-game state])
-      (when-not gameover
-        [:div {:style {:font-size "20px"
-                        :margin "10px"
-                        :display "flex"
-                        :justify-content "center"}}
-          [el-num-players state]])]))
+(defn game [game-state]
+  (let [{:keys [gameover players]} game-state]
+    (if gameover
+      [el-gameover gameover players]
+      (let [{:keys [grid num-players stats]} game-state
+            cur-num-players (count players)]
+        [:div {:class "col"}
+          [el-stats stats players]
+          [el-grid grid players]
+          [el-num-players cur-num-players num-players]]))))

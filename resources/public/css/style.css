@@ -130,23 +130,6 @@ textarea {
   content: "🔥"
 }
 
-.game {
-  background: repeating-linear-gradient(
-    45deg,
-    lightgray,
-    lightgray 8.5px,
-    whitesmoke 0,
-    whitesmoke 17px
-  );
-  display: flex;
-  flex-direction: column;
-  margin: 0;
-  padding: 0;
-  position: relative;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 36px;
-}
-
 .gameover {
   background-color: rgba(0, 0, 0, .8);
   color: #ffffff;
@@ -162,6 +145,23 @@ textarea {
   left: 0;
   width: 100%;
   height: 100%;
+}
+
+.grid {
+  background: repeating-linear-gradient(
+    45deg,
+    lightgray,
+    lightgray 8.5px,
+    whitesmoke 0,
+    whitesmoke 17px
+  );
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 36px;
 }
 
 .hit {
