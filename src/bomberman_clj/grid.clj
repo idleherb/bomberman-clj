@@ -176,18 +176,6 @@
   (let [{:keys [width height]} grid]
     {:x (rand-int width), :y (rand-int height)}))
 
-(defn find-empty-cell
-  [grid]
-  ; {:pre [(specs/valid? ::specs/grid grid)]
-  ;  :post [(specs/valid? ::specs/coords %)]}
-  (loop [num-tries 1]
-    (let [coords (rand-coords grid)]
-      (if (cell-empty? grid coords)
-        coords
-        (if (= num-tries config/spawn-max-tries)
-          (println "W grid::find-empty-cell - failed to find empty cell")
-          (recur (inc num-tries)))))))
-
 (defn- all-save-coords
   [grid coords]
   (let [{:keys [x y]} coords

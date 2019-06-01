@@ -20,15 +20,6 @@
       (g/cell-at grid {:x 1, :y 1}) => wal
       (g/cell-empty? grid {:x 0, :y 2}) => true
       (g/cell-at grid {:x 1, :y 2}) => bmb))
-
-  (fact "an empty cell is being found"
-    (let [wal (d/make-cell-hard-block)
-          grid {:width 3
-                :height 3
-                :v [wal wal wal
-                    wal wal wal
-                    wal nil wal]}]
-      (g/find-empty-cell grid) => {:x 1, :y 2}))
   
   (fact "a player can be spawned in a full grid"
     (let [hbl (d/make-cell-hard-block)
