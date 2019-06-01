@@ -1,8 +1,7 @@
 (ns bomberman-clj.client.components.player-stats)
 
-(defn player-stats
-  [player-name stats]
-  (let [{:keys [wins deaths suicides kills moves]} stats]
+(defn player-stats [player-stats-state player-name]
+  (let [{:keys [wins deaths suicides kills moves]} player-stats-state]
     [:ul {:class "player-stats"}
      [:li {:class "stats-attr"}
       [:span {:class "stats-attr__val"} player-name]]

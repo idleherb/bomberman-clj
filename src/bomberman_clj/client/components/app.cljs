@@ -1,8 +1,11 @@
 (ns bomberman-clj.client.components.app
   (:require [bomberman-clj.client.actions :as actions]
-            [bomberman-clj.client.components.game :refer [game]]
-            [bomberman-clj.client.components.player-form :refer [player-form]]
-            [bomberman-clj.client.components.volume :refer [volume]]
+            [bomberman-clj.client.components.game :refer [game]
+                                                  :rename {game el-game}]
+            [bomberman-clj.client.components.player-form :refer [player-form]
+                                                         :rename {player-form el-player-form}]
+            [bomberman-clj.client.components.volume :refer [volume]
+                                                    :rename {volume el-volume}]
             [bomberman-clj.client.state :as s]))
 
 (defn on-key-down [code]
@@ -19,12 +22,16 @@
         nil))))
 
 (defn app []
-  (let [state @s/state
-        in-progress? (get-in state [:game :in-progress?])]
+  (let [{app-state :app, game :game} @s/state]
     [:div {:class "app"
            :tabIndex 0
            :on-key-down #(on-key-down (.-keyCode %))}
-      [volume (get-in state [:app :mute?])]
-      (if in-progress?
-        [game state]
-        [player-form state])]))
+      [el-volume (:mute? app-state)]
+      (if (:in-progress? game)
+        [el-game game]
+        (let [player-name (:player-name app-state)
+              cur-num-players (count (:players game))
+              max-num-players (:num-players game)]
+          [el-player-form player-name
+                          cur-num-players
+                          max-num-players]))]))
