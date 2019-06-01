@@ -176,14 +176,52 @@
   (let [{:keys [width height]} grid]
     {:x (rand-int width), :y (rand-int height)}))
 
-(defn find-empty-cell
-  [grid]
-  ; {:pre [(specs/valid? ::specs/grid grid)]
-  ;  :post [(specs/valid? ::specs/coords %)]}
+(defn- all-save-coords
+  [grid coords]
+  (let [{:keys [x y]} coords
+        pairs [[{:x x, :y (- y 1)} {:x x, :y (+ y 1)}]
+               [{:x x, :y (- y 1)} {:x x, :y (- y 2)}]
+               [{:x x, :y (+ y 1)} {:x x, :y (+ y 2)}]
+               
+               [{:x (- x 1), :y y} {:x (+ x 1), :y y}]
+               [{:x (- x 1), :y y} {:x (- x 2), :y y}]
+               [{:x (+ x 1), :y y} {:x (+ x 2), :y y}]
+               
+               [{:x x, :y (+ y 1)} {:x (+ x 1), :y y}]
+               [{:x (+ x 1), :y y} {:x x, :y (- y 1)}]
+               [{:x x, :y (- y 1)} {:x (- x 1), :y y}]
+               [{:x (- x 1), :y y} {:x x, :y (+ y 1)}]
+               
+               [{:x x, :y (+ y 1)} {:x (+ x 1), :y (+ y 1)}]
+               [{:x (+ x 1), :y y} {:x (+ x 1), :y (- y 1)}]
+               [{:x x, :y (- y 1)} {:x (- x 1), :y (- y 1)}]
+               [{:x (- x 1), :y y} {:x (- x 1), :y (+ y 1)}]]]
+    (into [] (filter #(and (in-grid? grid (first %))
+                           (in-grid? grid (second %))) pairs))))
+
+(defn- assoc-player
+  [grid coords player-id]
+  (assoc-in grid [:v (coords-idx grid coords)] {:player-id player-id}))
+
+(defn- assoc-nil
+  [grid coords]
+  (assoc-in grid [:v (coords-idx grid coords)] nil))
+
+(defn spawn-player
+  [grid player]
   (loop [num-tries 1]
-    (let [coords (rand-coords grid)]
-      (if (cell-empty? grid coords)
-        coords
+    (let [coords (rand-coords grid)
+          [c1 c2] (rand-nth (all-save-coords grid coords))]
+      (if (or (hard-block? grid c1)
+              (hard-block? grid c2)
+              (player? grid c1)
+              (player? grid c2))
         (if (= num-tries config/spawn-max-tries)
-          (println "W grid::find-empty-cell - failed to find empty cell")
-          (recur (inc num-tries)))))))
+          (println "E grid::spawn-player - failed to spawn player")
+          (recur (inc num-tries)))
+        (let [grid (-> grid
+                       (assoc-player coords (:player-id player))
+                       (assoc-nil c1)
+                       (assoc-nil c2))
+              player (assoc player :coords coords)]
+          [grid player])))))

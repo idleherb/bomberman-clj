@@ -74,12 +74,10 @@
           (assoc game :grid grid
                       :players players
                       :in-progress? true)
-          (let [coords (grid/find-empty-cell grid)
-                player-id (keyword (str "player-" i))
+          (let [player-id (keyword (str "player-" i))
                 player (-> (get players player-id)
-                           (players/init )
-                           (assoc :coords coords))
-                grid (grid/assoc-grid-cell grid coords :player-id player-id)
+                           (players/init))
+                [grid player] (grid/spawn-player grid player)
                 players (assoc players player-id player)]
             (recur grid players (inc i))))))))
 

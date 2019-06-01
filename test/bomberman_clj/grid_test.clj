@@ -4,7 +4,6 @@
             [bomberman-clj.test-data :as d]))
 
 (facts "about grids"
-
   (fact "cells can being identified by their :x and :y coordinates"
     (let [bmb (d/make-cell-bomb-p1)
           wal (d/make-cell-hard-block)
@@ -21,13 +20,23 @@
       (g/cell-at grid {:x 1, :y 1}) => wal
       (g/cell-empty? grid {:x 0, :y 2}) => true
       (g/cell-at grid {:x 1, :y 2}) => bmb))
-
-  (fact "an empty cell is being found"
-    (let [wal (d/make-cell-hard-block)
-          grid {:width 3
-                :height 3
-                :v [wal wal wal
-                    wal wal wal
-                    wal nil wal]}]
-      (g/find-empty-cell grid) => {:x 1, :y 2}))
+  
+  (fact "a player can be spawned in a full grid"
+    (let [hbl (d/make-cell-hard-block)
+          sbl (d/make-cell-soft-block)
+          plr (d/make-player :player-1)
+          [grid plr] (-> {:width 3
+                          :height 3
+                          :v [hbl sbl hbl
+                              sbl sbl sbl
+                              hbl sbl hbl]}
+                       (g/spawn-player plr))
+          v (:v grid)
+          num_blocks (count (filter #(:block %) v))
+          num_player (count (filter #(:player-id %) v))
+          num_empty (count (filter nil? v))]
+      (:coords plr) => some?
+      num_blocks => 6
+      num_empty => 2
+      num_player => 1))
 )
