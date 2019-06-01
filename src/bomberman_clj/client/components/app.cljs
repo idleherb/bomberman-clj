@@ -1,5 +1,6 @@
 (ns bomberman-clj.client.components.app
-  (:require [bomberman-clj.client.actions :as actions]
+  (:require [reagent.core :as r]
+            [bomberman-clj.client.actions :as a]
             [bomberman-clj.client.components.game :refer [game]
                                                   :rename {game el-game}]
             [bomberman-clj.client.components.player-form :refer [player-form]
@@ -13,25 +14,29 @@
         in-progress? (get-in state [:game :in-progress?])]
     (when in-progress?
       (condp = code
-        38 (actions/action {:action :move, :direction :up})
-        40 (actions/action {:action :move, :direction :down})
-        37 (actions/action {:action :move, :direction :left})
-        39 (actions/action {:action :move, :direction :right})
-        32 (actions/action {:action :plant-bomb})
-        13 (actions/action {:action :detonate-bombs})
+        38 (a/action {:action :move, :direction :up})
+        40 (a/action {:action :move, :direction :down})
+        37 (a/action {:action :move, :direction :left})
+        39 (a/action {:action :move, :direction :right})
+        32 (a/action {:action :plant-bomb})
+        13 (a/action {:action :detonate-bombs})
         nil))))
 
 (defn app []
-  (let [{app-state :app, game :game} @s/state]
-    [:div {:class "app"
-           :tabIndex 0
-           :on-key-down #(on-key-down (.-keyCode %))}
-      [el-volume (:mute? app-state)]
-      (if (:in-progress? game)
-        [el-game game]
-        (let [player-name (:player-name app-state)
-              cur-num-players (count (:players game))
-              max-num-players (:num-players game)]
-          [el-player-form player-name
-                          cur-num-players
-                          max-num-players]))]))
+  (r/create-class
+   {:component-did-update #(when (get-in @s/state [:game :in-progress?])
+                             (.focus (r/dom-node %1)))
+    :reagent-render (fn []
+                      (let [{app-state :app, game :game} @s/state]
+                        [:div {:class "app"
+                               :tabIndex 0
+                               :on-key-down #(on-key-down (.-keyCode %))}
+                         [el-volume (:mute? app-state)]
+                         (if (:in-progress? game)
+                           [el-game game]
+                           (let [player-name (:player-name app-state)
+                                 cur-num-players (count (:players game))
+                                 max-num-players (:num-players game)]
+                             [el-player-form player-name
+                              cur-num-players
+                              max-num-players]))]))}))
