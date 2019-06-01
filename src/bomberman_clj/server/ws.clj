@@ -54,7 +54,13 @@
 
 (defn broadcast
   [event]
-  (doseq [ch (keys @ws-chans)] (ws-async/send! ch (pr-str event))))
+  (let [type (:type event)
+        event (if (= type :refresh)
+          (assoc-in event [:payload :num-spectators]
+                          (- (count @ws-chans)
+                             (count (get-in event [:payload :players]))))
+                event)]
+    (doseq [ch (keys @ws-chans)] (ws-async/send! ch (pr-str event)))))
 
 (defn- send-error!
   [ws-ch error]

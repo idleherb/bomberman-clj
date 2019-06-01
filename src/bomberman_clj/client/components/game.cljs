@@ -12,9 +12,9 @@
   (let [{:keys [gameover players]} game-state]
     (if gameover
       [el-gameover gameover players]
-      (let [{:keys [grid num-players stats]} game-state
+      (let [{:keys [grid num-players num-spectators stats]} game-state
             cur-num-players (count players)]
         [:div {:class "col"}
           [el-stats stats players]
           [el-grid grid players]
-          [el-num-players cur-num-players num-players]]))))
+          [el-num-players cur-num-players num-players num-spectators]]))))

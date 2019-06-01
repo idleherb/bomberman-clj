@@ -36,7 +36,8 @@
                            [el-game game]
                            (let [player-name (:player-name app-state)
                                  cur-num-players (count (:players game))
-                                 max-num-players (:num-players game)]
+                                 {:keys [num-players num-spectators]} game]
                              [el-player-form player-name
-                              cur-num-players
-                              max-num-players]))]))}))
+                                             cur-num-players
+                                             num-players
+                                             num-spectators]))]))}))
