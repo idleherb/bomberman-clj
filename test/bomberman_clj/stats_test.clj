@@ -1,4 +1,4 @@
-(ns bomberman-clj.game-test
+(ns bomberman-clj.stats-test
   (:require [midje.sweet :refer [fact facts => =not=> tabular]]
             [bomberman-clj.game :as g]
             [bomberman-clj.config :as config]
@@ -223,5 +223,4 @@
                       :wins 0
                       :moves 0
                       :items {:bomb 0
-                              :fire 0}}))
-)
+                              :fire 0}})))
