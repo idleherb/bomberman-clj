@@ -80,4 +80,4 @@
                :on-click close-dialog} "Cancel"]
      [:button {:class "primary"
                :disabled (empty? name)
-               :on-click (fn [] (a/open name) (close-dialog))} "Create Game"]]]])
+               :on-click (fn [] (a/open name width height num-players) (close-dialog))} "Create Game"]]]])

@@ -23,13 +23,13 @@
     (async/>! actions-ch {:type :leave})))
 
 (defn open
-  [game-name]
+  [name width height num-players]
   (async/go
     (async/>! actions-ch {:type :open
-                          :payload {:name game-name
-                                    :width 17
-                                    :height 15
-                                    :num-players 2}})))
+                          :payload {:name name
+                                    :width width
+                                    :height height
+                                    :num-players num-players}})))
 
 (defn close
   [game-id]
