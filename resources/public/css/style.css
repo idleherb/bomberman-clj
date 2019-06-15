@@ -8,16 +8,43 @@ button {
   border-radius: 4px;
   cursor: pointer;
   font-family: Raleway, sans-serif;
-  font-size: 14;
+  font-size: 14px;
   font-weight: medium;
   height: 32px;
-  margin: 8px;
   padding: 0 16px;
-  text-transform: uppercase;
 }
 
 button:focus {
   outline: none;
+}
+
+button.primary {
+  color: white;
+  background-color: #673ab7;
+  border-color: #673ab7;
+}
+
+button.primary:disabled {
+  background-color: rgba(103, 58, 183, 0.3);
+  border-color: transparent;
+}
+
+button.secondary {
+  color: #673ab7;
+  background-color: transparent;
+  border-color: transparent;
+}
+
+label {
+  color: #666666;
+  display: flex;
+  flex: 0 1 auto;
+  align-items: center;
+  margin: 4px 0;
+}
+
+label input {
+  margin-left: 4px;
 }
 
 html, body {
@@ -46,12 +73,50 @@ textarea {
   outline: 0;
 }
 
+input {
+  border: none;
+  border-bottom: 1px solid gray;
+  font-family: Raleway, sans-serif;
+  font-size: 14;
+  line-height: 32px;
+  height: 32px;
+  padding: 0 4px;
+  width: 100%;
+}
+
 #app, .app {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
   height: 100%;
+}
+
+.attr span {
+  margin: 0 5px;
+}
+
+.attr__name {
+  font-weight: 700;
+}
+
+.attr__val {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 75px;
+}
+
+.attr__val.long {
+  width: 125px;
+}
+
+.attr__val.small {
+  width: 60px;
+}
+
+.attr__val.tiny {
+  width: 40px;
 }
 
 .block.hard {
@@ -93,6 +158,25 @@ textarea {
   content: "🎁"
 }
 
+.button--emoji {
+  /* border: none; */
+  cursor: pointer;
+  font-size: 32px;
+  margin: 4px 8px;
+  padding: 5px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+
 .cell {
   margin: 0;
   padding: 0;
@@ -106,6 +190,17 @@ textarea {
 .col {
   display: flex;
   flex-direction: column;
+}
+
+.emoji {
+  font-size: 32px;
+  margin: 4px 8px;
+  padding: 5px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .empty {
@@ -127,20 +222,30 @@ textarea {
 }
 
 .gameover {
-  background-color: rgba(0, 0, 0, .8);
   color: #ffffff;
-  display: flex;
-  flex-direction: column;
   font-family: Raleway, sans-serif;
   font-size: 36px;
   text-transform: uppercase;
-  justify-content: center;
+}
+
+.game-dialog {
+  background-color: white;
+  border-radius: 7px;
+  font-size: 14px;
+  padding: 16px;
+}
+
+.game-entry {
+  background-color: whitesmoke;
+  list-style: none;
+  margin: 4px 0;
+  padding: 4px 16px;
+  display: flex;
   align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+}
+
+.game-entry li {
+  display: flex;
 }
 
 .grid {
@@ -164,14 +269,8 @@ textarea {
   opacity: 0.4;
 }
 
-.in-name {
-  border: none;
-  border-bottom: 1px solid gray;
-  font-family: Raleway, sans-serif;
-  font-size: 14;
-  line-height: 32px;
-  height: 32px;
-  padding: 0 4px;
+.hourglass::after {
+  content: "⌛"
 }
 
 .item {
@@ -196,8 +295,21 @@ textarea {
   content: "🕹️"
 }
 
-.name {
-  margin: 8px;
+.lobby {
+  font-size: 14px;
+}
+
+.modal {
+  background-color: rgba(0, 0, 0, .8);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .num-players {
@@ -274,6 +386,11 @@ textarea {
   margin: 0;
   padding: 0;
   display: flex;
+  align-items: center;
+}
+
+.row.flex-end {
+  justify-content: flex-end;
 }
 
 .stats ol {
@@ -282,43 +399,15 @@ textarea {
   list-style: none;
 }
 
-.stats-attr span {
-  margin: 0 5px;
-}
-
-.stats-attr__name {
-  font-weight: 700;
-}
-
-.stats-attr__val {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 75px;
-}
-
-.stats-attr__val--num {
-  width: 40px;
-}
-
 .time {
   font-family: monospace;
   font-weight: 600;
 }
 
 .volume {
-  cursor: pointer;
-  font-size: 36px;
   position: absolute;
   top: 48px;
   right: 48px;
-  margin: 0;
-  padding: 0;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .volume--muted::after {

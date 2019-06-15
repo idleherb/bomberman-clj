@@ -174,7 +174,6 @@
   [game player-id direction timestamp]
   ; {:pre [(specs/valid? ::specs/game game)]
   ;  :post [(specs/valid? ::specs/game %)]}
-  ;  (println "D game::move" player-id direction)
   (let [{:keys [grid in-progress? players]} game]
     (if (not in-progress?)
       (do
@@ -212,7 +211,6 @@
   ; {:pre [(specs/valid? ::specs/game game)
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
-  ; (println "D game::plant-bomb" player-id timestamp)
   (let [{:keys [grid in-progress? players]} game
         {:keys [coords], :as player} (get players player-id)]
     (if (not in-progress?)
@@ -240,7 +238,7 @@
          (specs/valid? ::specs/player-id player-id)
          (specs/valid? ::specs/timestamp timestamp)]
    :post [(specs/valid? ::specs/game %)]}
-  (println "D game::leave" player-id timestamp)
+  (println "D game::leave -" player-id "left the game at" timestamp)
   (let [{:keys [in-progress? players]} game]
     (if in-progress?
       (let [{:keys [coords left], :as player} (get players player-id)

@@ -10,6 +10,7 @@
                  [cljs-bach "0.3.0"]
                  [clojure-lanterna "0.9.7"]
                  [compojure "1.6.1"]
+                 [digest "1.4.9"]
                  [haslett "0.1.6"]
                  [reagent "0.8.1"]
                  [ring/ring-core "1.7.1"]
@@ -27,23 +28,23 @@
                              [lein-midje "3.2.1"]]
                    :env {:dev? "true"}
                    :cljsbuild {:builds
-                     [{:id "dev"
-                       :source-paths ["src" "dev"]
-                       :figwheel {}
-                       :compiler {:main bomberman_clj.client.core
-                                  :asset-path "js/compiled/out"
-                                  :output-to "resources/public/js/compiled/app.js"
-                                  :output-dir "resources/public/js/compiled/out"
-                                  :source-map-timestamp true}}]}}
-              :uberjar {:aot :all
-                        :hooks [leiningen.cljsbuild]
-                        :cljsbuild {:builds
-                          [{:id "min"
-                            :source-paths ["src" "prod"]
-                            :compiler {:main bomberman_clj.client.core
-                                       :output-to "resources/public/js/compiled/app.js"
-                                       :optimizations :advanced
-                                       :pretty-print false}}]}}}
+                               [{:id "dev"
+                                 :source-paths ["src" "dev"]
+                                 :figwheel {}
+                                 :compiler {:main bomberman_clj.client.core
+                                            :asset-path "js/compiled/out"
+                                            :output-to "resources/public/js/compiled/app.js"
+                                            :output-dir "resources/public/js/compiled/out"
+                                            :source-map-timestamp true}}]}}
+             :uberjar {:aot :all
+                       :hooks [leiningen.cljsbuild]
+                       :cljsbuild {:builds
+                                   [{:id "min"
+                                     :source-paths ["src" "prod"]
+                                     :compiler {:main bomberman_clj.client.core
+                                                :output-to "resources/public/js/compiled/app.js"
+                                                :optimizations :advanced
+                                                :pretty-print false}}]}}}
   :uberjar-name "bomberman-clj-standalone.jar"
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
   :figwheel {:css-dirs ["resources/public/css"]}

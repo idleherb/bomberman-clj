@@ -13,7 +13,6 @@
 
 (defn- on-join!
   [event game ch]
-  (println "D game-loop::on-join! - client requests join...")
   (let [{:keys [payload timestamp]} event
         {:keys [num-players players]} game
         player payload
@@ -49,13 +48,11 @@
 
 (defn- on-leave!
   [event game ch]
-  ; (println "D game-loop::on-leave! - client requests leave...")
   (let [{:keys [payload timestamp]} event]
     (game/leave game (:player-id payload) timestamp)))
 
 (defn- on-refresh!
   [event game ch]
-  ; (println "D game-loop::on-refresh! - client requests update...")
   (let [timestamp (:timestamp event)]
     (if (:in-progress? game)
       (let [game (game/eval game timestamp)]
@@ -82,12 +79,10 @@
 
 (defn- on-dev-restart
   [event game ch]
-  ; (println "D game-loop::on-dev-restart - event:" event)
   (game/next-round game (:timestamp event)))
 
 (defn- abort-game!
   [ch]
-  ; (println "W game-loop::abort-game! - game aborted...")
   (async/go (async/>! ch {:broadcast true, :type :error, :payload "game aborted"})))
 
 (defn game-loop
@@ -100,7 +95,7 @@
                    :leave       (on-leave!      event game ch-out)
                    :refresh     (on-refresh!    event game ch-out)
                    :dev-restart (on-dev-restart event game ch-out)
-                   :dev-exit    nil
+                   :close       nil
                    game)]
         (when (some? game) (recur game)))
       (abort-game! ch-out))))

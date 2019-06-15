@@ -6,8 +6,17 @@
 (defonce state (r/atom {:app {:actions-ch (async/chan)
                               :mute? true
                               :precached? false
-                              :stale-style? true}
-                        :game nil}))
+                              :stale-style? true
+                              :game-dialog {:open? false
+                                            :name nil
+                                            :width 17
+                                            :height 15
+                                            :num-players 2}
+                              :player-dialog {:open? false
+                                              :game-id nil
+                                              :name nil}}
+                        :game nil
+                        :lobby []}))
 
 (defn- preprocess-cells
   [width height v prev-v]
@@ -33,8 +42,15 @@
         (assoc-in game
                   [:grid :v]
                   (preprocess-cells width height v prev-v))))))
-  
 
 (defn update-game!
   [game]
-  (swap! state update-in [:game] #(preprocess-game game %)))
+  (let [{prev-game :game} @state
+        game (preprocess-game game prev-game)]
+    (swap! state assoc :game game
+                       :lobby nil)))
+
+(defn update-lobby!
+  [lobby]
+  (swap! state assoc :lobby lobby
+                     :game nil))

@@ -3,8 +3,8 @@
             [bomberman-clj.client.actions :as a]
             [bomberman-clj.client.components.game :refer [game]
                                                   :rename {game el-game}]
-            [bomberman-clj.client.components.player-form :refer [player-form]
-                                                         :rename {player-form el-player-form}]
+            [bomberman-clj.client.components.lobby.core :refer [lobby]
+                                                        :rename {lobby el-lobby}]
             [bomberman-clj.client.components.volume :refer [volume]
                                                     :rename {volume el-volume}]
             [bomberman-clj.client.state :as s]
@@ -36,21 +36,19 @@
 
 (defn app []
   (r/create-class
-   {:component-did-update #(when (get-in @s/state [:game :in-progress?])
-                             (.focus (r/dom-node %1)))
-    :reagent-render (fn []
-                      (let [{app-state :app, game :game, :as state} @s/state]
-                        (update-style! state)
-                        [:div {:class "app"
-                               :tabIndex 0
-                               :on-key-down #(on-key-down (.-keyCode %))}
-                         [el-volume (:mute? app-state)]
-                         (if (:in-progress? game)
-                           [el-game game]
-                           (let [player-name (:player-name app-state)
-                                 cur-num-players (count (:players game))
-                                 {:keys [num-players num-spectators]} game]
-                             [el-player-form player-name
-                                             cur-num-players
-                                             num-players
-                                             num-spectators]))]))}))
+   {:component-did-update
+    #(when (get-in @s/state [:game :in-progress?])
+       (.focus (r/dom-node %1)))
+    :reagent-render
+    (fn []
+      (let [{app-state :app, :keys [game lobby], :as state} @s/state]
+        (update-style! state)
+        [:div {:class "app"
+               :tabIndex 0
+               :on-key-down #(on-key-down (.-keyCode %))}
+         [el-volume (:mute? app-state)]
+         (if (some? lobby)
+           [el-lobby lobby
+            (:game-dialog app-state)
+            (:player-dialog app-state)]
+           [el-game game])]))}))
