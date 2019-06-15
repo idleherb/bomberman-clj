@@ -37,7 +37,7 @@
       [:input {:name "in-width"
                :value width
                :type "number"
-               :min 3
+               :min 5
                :max 27
                :required true
                :on-change #(swap! s/state assoc-in [:app :game-dialog :width]
@@ -46,12 +46,12 @@
                                       .-value
                                       (js/parseInt)
                                       (sanitize-dimension width)
-                                      (sanitize-min-max 3 27)))}]]
+                                      (sanitize-min-max 5 27)))}]]
      [:label {:for "in-height"} "Height"
       [:input {:name "in-height"
                :value height
                :type "number"
-               :min 3
+               :min 5
                :max 27
                :required true
                :on-change #(swap! s/state assoc-in [:app :game-dialog :height]
@@ -60,7 +60,7 @@
                                       .-value
                                       (js/parseInt)
                                       (sanitize-dimension height)
-                                      (sanitize-min-max 3 27)))}]]
+                                      (sanitize-min-max 5 27)))}]]
      [:label {:for "in-num-players"} "Players"
       [:input {:class "in-num"
                :name "in-num-players"
