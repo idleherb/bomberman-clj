@@ -11,5 +11,5 @@
 
 (defn volume
   [mute?]
-  [:button {:class ["button--emoji volume" (if mute? "volume--muted" "volume--unmuted")]
+  [:button {:class ["emoji volume" (if mute? "volume--muted" "volume--unmuted")]
             :on-click swap-mute?!}])

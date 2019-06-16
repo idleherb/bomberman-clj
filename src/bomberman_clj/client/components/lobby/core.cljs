@@ -22,7 +22,7 @@
     [:div {:class "col lobby"}
      [:div {:class "row flex-end"} (when (empty? lobby-state)
              "No open games, start a new one here")
-      [:button {:class "button--emoji"
+      [:button {:class "emoji"
                 :on-click open-game-dialog} "➕"]]
      (when game-dialog-open?
        [el-game-dialog game-name width height num-players])

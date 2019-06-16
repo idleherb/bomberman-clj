@@ -26,10 +26,10 @@
     [:li {:class "attr"}
       [:span {:class "attr__name"} "Players"]
       [:span {:class "attr__val attr__val small"} (str cur-num-players "/" num-players)]]
-    [:li [:button {:class ["button--emoji"]
+    [:li [:button {:class ["emoji"]
                    :disabled (= cur-num-players num-players)
                    :on-click #(open-player-dialog game-id)}
      (if (< cur-num-players num-players) "🎮" "👁️")]]
     (when admin?
-      [:li [:button {:class ["button--emoji"]
+      [:li [:button {:class ["emoji"]
                      :on-click #(a/close game-id)} "🗑️"]])])

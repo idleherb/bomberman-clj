@@ -5,8 +5,6 @@
                                              :rename {gameover el-gameover}]
    [bomberman-clj.client.components.grid :refer [grid]
                                          :rename {grid el-grid}]
-   [bomberman-clj.client.components.num-players :refer [num-players]
-                                                :rename {num-players el-num-players}]
    [bomberman-clj.client.components.stats :refer [stats]
                                           :rename {stats el-stats}]))
 
@@ -14,7 +12,6 @@
   (let [{:keys [gameover
                 grid
                 num-players
-                num-spectators
                 players
                 in-progress?
                 stats]} game-state
@@ -31,6 +28,6 @@
       :else [:div {:class "col"}
              [el-stats stats players]
              [el-grid grid players]
-             [el-num-players cur-num-players num-players num-spectators]
-             [:button {:class "secondary"
-                       :on-click a/leave} "Leave game"]])))
+             [:div {:class "buttons"}
+              [:button {:class "secondary"
+                        :on-click a/leave} "Leave game"]]])))

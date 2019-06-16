@@ -18,6 +18,10 @@ button:focus {
   outline: none;
 }
 
+button.emoji {
+  border: none;
+}
+
 button.primary {
   color: white;
   background-color: #673ab7;
@@ -25,7 +29,7 @@ button.primary {
 }
 
 button.primary:disabled {
-  background-color: rgba(103, 58, 183, 0.3);
+  background-color: rgba(103, 58, 183, .3);
   border-color: transparent;
 }
 
@@ -156,19 +160,6 @@ input {
 
 .bomb-remote-controlled::after {
   content: "🎁"
-}
-
-.button--emoji {
-  /* border: none; */
-  cursor: pointer;
-  font-size: 32px;
-  margin: 4px 8px;
-  padding: 5px;
-  width: 48px;
-  height: 48px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 .buttons {
@@ -319,10 +310,10 @@ input {
 .player-1 {
   background: repeating-linear-gradient(
     45deg,
-    rgba(218, 112, 214, 0.3) ,
-    rgba(218, 112, 214, 0.3) 8.5px,
-    rgba(221, 160, 221, 0.3) 0,
-    rgba(221, 160, 221, 0.3) 17px
+    rgba(218, 112, 214, .3),
+    rgba(218, 112, 214, .3) 8.5px,
+    rgba(221, 160, 221, .3) 0,
+    rgba(221, 160, 221, .3) 17px
   );
 }
 
@@ -333,10 +324,10 @@ input {
 .player-2 {
   background: repeating-linear-gradient(
     45deg,
-    rgba(107, 142, 35, 0.3) ,
-    rgba(107, 142, 35, 0.3) 8.5px,
-    rgba(154, 205, 50, 0.3) 0,
-    rgba(154, 205, 50, 0.3) 17px
+    rgba(107, 142, 35, .3),
+    rgba(107, 142, 35, .3) 8.5px,
+    rgba(154, 205, 50, .3) 0,
+    rgba(154, 205, 50, .3) 17px
   );
 }
 
@@ -344,24 +335,84 @@ input {
   content: "🦔"
 }
 
+.player-3 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(124, 77, 255, .3),
+    rgb(124, 77, 255, .3) 8.5px,
+    rgb(180, 124, 255, .3) 0,
+    rgb(180, 124, 255, .3) 17px
+  );
+}
+
 .player-3::after {
   content: "🐇"
+}
+
+.player-4 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(249, 168, 37, .3),
+    rgb(249, 168, 37, .3) 8.5px,
+    rgb(255, 217, 90, .3) 0,
+    rgb(255, 217, 90, .3) 17px
+  );
 }
 
 .player-4::after {
   content: "🐿"
 }
 
+.player-5 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(3, 169, 244, .3),
+    rgb(3, 169, 244, .3) 8.5px,
+    rgb(103, 218, 255, .3) 0,
+    rgb(103, 218, 255, .3) 17px
+  );
+}
+
 .player-5::after {
   content: "🦏"
+}
+
+.player-6 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(75, 44, 32, .3),
+    rgb(75, 44, 32, .3) 8.5px,
+    rgb(121, 85, 72, .3),
+    rgb(121, 85, 72, .3) 17px
+  );
 }
 
 .player-6::after {
   content: "🦉"
 }
 
+.player-7 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(29, 233, 182, .3),
+    rgb(29, 233, 182, .3) 8.5px,
+    rgb(110, 255, 232, .3) 0,
+    rgb(110, 255, 232, .3) 17px
+  );
+}
+
 .player-7::after {
   content: "🐬"
+}
+
+.player-8 {
+  background: repeating-linear-gradient(
+    45deg,
+    rgb(153, 170, 0, .3),
+    rgb(153, 170, 0, .3) 8.5px,
+    rgb(205, 220, 57, .3) 0,
+    rgb(205, 220, 57, .3) 17px
+  );
 }
 
 .player-8::after {
