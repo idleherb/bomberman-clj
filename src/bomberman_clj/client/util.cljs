@@ -43,7 +43,7 @@
     true (update-in [:kills] + (:kills round-stats))
     true (update-in [:moves] + (:moves round-stats))
     (:won? round-stats) (update-in [:wins] inc)
-    (:dead round-stats) (update-in [:deaths] inc)
+    (:dead? round-stats) (update-in [:deaths] inc)
     (:suicide? round-stats) (update-in [:suicides] inc)))
 
 (defn accumulate-stats
