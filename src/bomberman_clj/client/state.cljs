@@ -8,13 +8,13 @@
                               :precached? false
                               :stale-style? true
                               :game-dialog {:open? false
-                                            :name nil
+                                            :name ""
                                             :width 17
                                             :height 15
                                             :num-players 2}
                               :player-dialog {:open? false
                                               :game-id nil
-                                              :name nil}}
+                                              :name ""}}
                         :game nil
                         :lobby []}))
 
