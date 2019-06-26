@@ -476,7 +476,7 @@
                        (g/move :player-2 :down ts-1)
                        (g/eval ts-1))
               v (get-in game [:grid :v])
-              bomb-1 (:bomb (nth v 3))
+              bomb-1 (:bomb (nth v 6))
               bomb-2 (:bomb (nth v 5))]
           (:kick bomb-1) => {:direction :down
                              :timestamp ts-1}
