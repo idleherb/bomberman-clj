@@ -323,6 +323,10 @@ input {
   content: "💣"
 }
 
+.item-bomb-kick::after {
+  content: "⚽"
+}
+
 .item-fire::after {
   content: "🔥"
 }

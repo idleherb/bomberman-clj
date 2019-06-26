@@ -49,6 +49,7 @@
   [game timestamp]
   (let [players (->> (active-players game)
                      (map (fn [[id player]] [id (dissoc player :hit
+                                                               :bomb-kick?
                                                                :remote-control?)])))]
     (-> game
         (assoc :players (into {} players)
@@ -92,6 +93,7 @@
   (condp = (:type item)
     :bomb (assoc player :bomb-count (inc (:bomb-count player)))
     :fire (assoc player :bomb-radius (inc (:bomb-radius player)))
+    :bomb-kick (assoc player :bomb-kick? true)
     :remote-control (assoc player :remote-control? true)
     (do
       (println "W game::pickup-item - unknown item:" item)
@@ -339,6 +341,12 @@
                         (inc x))))
              (inc y))))))))
 
+(defn- random-rare-item
+  []
+  (if (< (rand) 1/2)
+    {:type :bomb-kick}
+    {:type :remote-control}))
+
 (defn- random-item
   []
   (if (< (rand) 1/2)
@@ -348,7 +356,7 @@
 (defn- spawn-random-item
   [game coords timestamp]
   (if-let [item (condp > (rand)
-                  config/chance-spawn-rare-item {:type :remote-control}
+                  config/chance-spawn-rare-item (random-rare-item)
                   config/chance-spawn-item (random-item)
                   nil)]
     (assoc game :grid (grid/assoc-grid-cell (:grid game) coords :item item))

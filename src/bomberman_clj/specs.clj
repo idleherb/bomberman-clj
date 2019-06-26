@@ -36,6 +36,7 @@
 
 (s/def ::block (s/keys :req-un [::type] :opt-un [::hit]))
 
+(s/def ::bomb-kick? boolean?)
 (s/def ::remote-control? boolean?)
 (s/def ::player (s/keys :req-un [::bomb-count
                                  ::bomb-radius
@@ -44,6 +45,7 @@
                                  ::player-id]
                         :opt-un [::hit
                                  ::left
+                                 ::bomb-kick?
                                  ::remote-control?]))
 
 (s/def ::bomb (s/keys :req-un [::player-id ::timestamp]))
@@ -61,7 +63,6 @@
 (s/def ::height (s/and int? #(>= max-grid-height % 1)))
 (s/def ::grid (s/nilable (s/keys :req-un [::v ::width ::height])))
 
-(s/def ::bombs map?)  ; TODO: Remove
 (s/def :stats.player/kills int?)
 (s/def :stats.player.round/dead? boolean?)
 (s/def :stats.player.round/suicide? boolean?)

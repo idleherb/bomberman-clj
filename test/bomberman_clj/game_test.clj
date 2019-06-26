@@ -407,7 +407,7 @@
           players (:players game)]
       players => empty?))
 
-  (fact "collecting a remote control item sets a player's remote control flag"
+  (fact "collecting a remote control item sets a player's remote-control? flag"
     (println "T021")
     (let [ts (d/make-timestamp)
           rc-item-cell (d/make-cell-item-rc)
@@ -444,4 +444,20 @@
             bomb-2 (:bomb (nth v 7))]
         (:detonated bomb-1) => {:timestamp ts-2}
         (:detonated bomb-2) => {:timestamp ts-2})))
+
+  (fact "collecting a bomb kick item sets a player's bomb-kick? flag"
+        (println "T023")
+        (let [ts (d/make-timestamp)
+              bk-item-cell (d/make-cell-item-bk)
+              bk-item-cell-idx 3
+              game (-> (d/make-game ts)
+                       (assoc-in [:grid :v bk-item-cell-idx] bk-item-cell)
+                       (g/eval ts))
+              player-1 (get-in game [:players :player-1])]
+          (:bomb-kick? player-1) => nil?
+          (let [game (-> game
+                         (g/move :player-1 :down ts)
+                         (g/eval ts))
+                player-1 (get-in game [:players :player-1])]
+            (:bomb-kick? player-1) => true)))
 )
