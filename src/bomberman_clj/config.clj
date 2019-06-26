@@ -12,6 +12,7 @@
 (def chance-spawn-item 3/10)
 (def chance-spawn-rare-item 1/20)
 
+(def bomb-kick-speed-ms 50)
 (def bomb-timeout-ms 3000)
 
 (def expiration-ms 1000)

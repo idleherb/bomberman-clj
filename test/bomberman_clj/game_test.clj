@@ -460,4 +460,33 @@
                          (g/eval ts))
                 player-1 (get-in game [:players :player-1])]
             (:bomb-kick? player-1) => true)))
+
+  (fact "only players with bomb-kick can kick bombs"
+        (println "T024")
+        (let [ts-1 (d/make-timestamp)
+              ts-2 (+ ts-1 config/bomb-kick-speed-ms)
+              bomb-cell (d/make-cell-bomb-p1)
+              game (-> (d/make-game ts-1)
+                       (assoc-in [:players :player-1 :bomb-kick?] true)
+                       (assoc-in [:grid :v 2] nil)
+                       (assoc-in [:grid :v 3] bomb-cell)
+                       (assoc-in [:grid :v 5] bomb-cell)
+                       (g/move :player-1 :down ts-1)
+                       (g/move :player-2 :right ts-1)
+                       (g/move :player-2 :down ts-1)
+                       (g/eval ts-1))
+              v (get-in game [:grid :v])
+              bomb-1 (:bomb (nth v 3))
+              bomb-2 (:bomb (nth v 5))]
+          (:kick bomb-1) => {:direction :down
+                             :timestamp ts-1}
+          (:kick bomb-2) => nil?
+          (let [game (g/eval game ts-2)
+                v (get-in game [:grid :v])
+                bomb-1 (:bomb (nth v 6))
+                bomb-2 (:bomb (nth v 5))]
+            bomb-1 => some?
+            (:kick bomb-1) => nil?
+            bomb-2 => some?
+            (nth v 3) => nil?)))
 )

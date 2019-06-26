@@ -7,7 +7,7 @@
   [obj]
   (contains? obj :hit))
 
-(defn- expired?
+(defn expired?
   [old-ts new-ts expiration-ms]
   ; {:pre [(specs/valid? ::specs/timestamp old-ts)
   ;        (specs/valid? ::specs/timestamp new-ts)]}

@@ -186,15 +186,15 @@
               player (cell-player game cell)
               new-coords (util/navigate coords direction)]
           (if (and (not (contains? game :gameover))
-                (not (util/hit? player))
-                (grid/in-grid? grid new-coords)
-                (let [new-cell (grid/cell-at grid new-coords)]
-                  (or (grid/cell-empty? new-cell)
-                    (grid/item? new-cell))))
+                   (not (util/hit? player))
+                   (grid/in-grid? grid new-coords)
+                   (let [new-cell (grid/cell-at grid new-coords)]
+                     (or (grid/cell-empty? new-cell)
+                         (grid/item? new-cell))))
             (let [player (assoc player :coords new-coords)
                   grid (-> grid
-                          (grid/dissoc-grid-cell coords :player-id)
-                          (grid/assoc-grid-cell new-coords :player-id player-id))
+                           (grid/dissoc-grid-cell coords :player-id)
+                           (grid/assoc-grid-cell new-coords :player-id player-id))
                   game (-> game
                            (update-player player)
                            (assoc :grid grid
@@ -202,7 +202,15 @@
                            (hit-player new-coords timestamp)
                            (update-item new-coords))]
               game)
-            game))
+            (if (grid/in-grid? grid new-coords)
+              (let [new-cell (grid/cell-at grid new-coords)]
+                (if (and (:bomb-kick? player) (grid/bomb? new-cell))
+                  (let [bomb (grid/cell-bomb new-cell)
+                        kicked-bomb (assoc bomb :kick {:direction direction
+                                                       :timestamp (- timestamp config/bomb-kick-speed-ms)})]
+                    (update game :grid grid/assoc-grid-cell new-coords :bomb kicked-bomb))
+                  game))
+              game)))
         (do
           (println "D game::move" player-id "can't move anymore...")
           game)))))
@@ -378,6 +386,24 @@
         timestamp)
       game)))
 
+(defn- move-kicked-bomb
+  [game coords timestamp]
+  (let [grid (:grid game)
+        bomb (grid/cell-bomb grid coords)
+        kicked (:kick bomb)]
+    (if (and (some? kicked)
+             (util/expired? (:timestamp kicked) timestamp config/bomb-kick-speed-ms))
+      (let [new-coords (util/navigate coords (:direction kicked))]
+        (println coords new-coords timestamp)
+        (if (and (grid/in-grid? grid new-coords)
+                 (grid/cell-empty? grid new-coords))
+          (let [new-bomb (assoc-in bomb [:kick :timestamp] timestamp)
+                game (assoc game :grid (grid/dissoc-grid-cell grid coords :bomb))
+                game (assoc game :grid (grid/assoc-grid-cell (:grid game) new-coords :bomb new-bomb))]
+            game)
+          (assoc game :grid (grid/assoc-grid-cell grid coords :bomb (dissoc bomb :kick)))))
+      game)))
+
 (defn- detonate-timed-out-bomb
   [game coords timestamp]
   ; {:pre [(specs/valid? ::specs/game game)
@@ -411,6 +437,7 @@
   ;        (specs/valid? ::specs/timestamp timestamp)]
   ;  :post [(specs/valid? ::specs/game %)]}
   (-> game
+      (move-kicked-bomb coords timestamp)
       (detonate-timed-out-bomb coords timestamp)
       (remove-expired-bomb coords timestamp)))
 
