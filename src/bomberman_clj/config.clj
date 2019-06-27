@@ -10,6 +10,9 @@
 
 (def player-spawn-max-num-tries 100)
 
+(def item-types      [:bomb :fire])
+(def rare-item-types [:bomb-kick :remote-control])
+
 (def chance-spawn-item 3/10)
 (def chance-spawn-rare-item 1/20)
 

@@ -30,9 +30,7 @@
       (do
         (println "D d.gl.core::on-join! -" player-id "joined:" player)
         (if (= num-players (count (:players game)))
-          (do
-            (println "D d.gl.core::on-join! - all player slots filled, starting new round...")
-            (g/next-round game timestamp))
+          (g/next-round game timestamp)
           game))
       (do
         (put-error! ch "no free player slots")
@@ -51,9 +49,7 @@
       :detonate-bombs (g/remote-detonate-bombs game player-id timestamp)
       :move           (g/move game player-id (:direction payload) timestamp)
       :plant-bomb     (g/plant-bomb game player-id timestamp)
-      (do
-        (println "W d.gl.core::on-action - unknown player action:" action)
-        game))))
+      game)))
 
 (defn- put-game-and-return!
   [ch game timestamp]

@@ -46,8 +46,8 @@
                                  (map first)))]
         (doseq [ws-ch guest-chans]
           (let [lobby (into [] (map #(-> %
-                                      (assoc :admin? (= ws-ch (:admin-ws-ch %)))
-                                      (dissoc :admin-ws-ch))
+                                         (assoc :admin? (= ws-ch (:admin-ws-ch %)))
+                                         (dissoc :admin-ws-ch))
                                     (get-lobby)))
                 event {:type :refresh-lobby
                        :payload lobby

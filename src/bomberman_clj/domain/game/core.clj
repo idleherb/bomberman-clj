@@ -30,14 +30,14 @@
   (let [{:keys [num-players players]} game
         cur-num-players (count players)]
     (if (= num-players cur-num-players)
-      (do
-        (println "E d.g.core::join - no free player slot left for player" player)
-        game)
+      game
       (let [player-id (:player-id player)
-            player (assoc player :coords nil)
-            players (assoc players player-id player)
-            game (assoc game :players players
-                             :stats (st/init-player-stats (:stats game) player-id timestamp))]
+            player    (assoc player :coords nil)
+            players   (assoc players player-id player)
+            game      (assoc game :players players
+                                  :stats (st/init-player-stats (:stats game)
+                                                               player-id
+                                                               timestamp))]
         game))))
 
 (defn- active-players
@@ -48,9 +48,10 @@
 (defn- reset
   [game timestamp]
   (let [players (->> (active-players game)
-                     (map (fn [[id player]] [id (dissoc player :hit
-                                                               :bomb-kick?
-                                                               :remote-control?)])))]
+                     (map (fn [[id player]]
+                            [id (dissoc player :hit
+                                               :bomb-kick?
+                                               :remote-control?)])))]
     (-> game
         (assoc :players (into {} players)
                :grid nil
@@ -61,12 +62,10 @@
 
 (defn next-round
   [game timestamp]
-  (let [{:keys [num-players players width height], :as game} (reset game timestamp)]
+  (let [{:keys [num-players players], :as game} (reset game timestamp)]
     (if (< (count players) num-players)
-      (do
-        (println "W d.g.core::next-round - not enough players to start new round...")
-        (assoc game :in-progress? false))
-      (loop [grid (g/init width height)
+      (assoc game :in-progress? false)
+      (loop [grid (g/init (:width game) (:height game))
              players players
              i 1]
         (if (> i (count players))
@@ -93,16 +92,12 @@
     :fire (assoc player :bomb-radius (inc (:bomb-radius player)))
     :bomb-kick (assoc player :bomb-kick? true)
     :remote-control (assoc player :remote-control? true)
-    (do
-      (println "W d.g.core::pickup-item - unknown item:" item)
-      player)))
+    player))
 
 (defn- update-player
   [game player]
-  (let [players (:players game)
-        player-id (:player-id player)]
-    (assoc game :players
-      (assoc players player-id player))))
+  (let [player-id (:player-id player)]
+    (assoc-in game [:players player-id] player)))
 
 (defn- update-item
   [game coords]
@@ -113,7 +108,7 @@
     (if (and (some? player) (some? item))
       (-> game
           (update-player (pickup-item player item))
-          (assoc :grid (g/dissoc-grid-cell grid coords :item)))
+          (update :grid g/dissoc-grid-cell coords :item))
       game)))
 
 (defn- hit-block
@@ -122,8 +117,8 @@
         cell (g/cell-at grid coords)
         soft-block (g/cell-soft-block cell)]
     (if (and (some? soft-block)
-          (g/fire? cell)
-          (not (u/hit? soft-block)))
+             (g/fire? cell)
+             (not (u/hit? soft-block)))
       (assoc game :grid
         (g/assoc-grid-cell grid coords :block
           (assoc soft-block :hit {:timestamp timestamp})))
@@ -144,37 +139,38 @@
 
 (defn- hit-player
   ([game coords timestamp force?]
-    (let [grid (:grid game)
-          cell (g/cell-at grid coords)
-          fire? (g/fire? cell)
-          player (cell-player game cell)]
-      (if (and (some? player) (or force? fire?) (not (u/hit? player)))
-        (let [player (cond-> (assoc-in player [:hit :timestamp] timestamp)
-                       fire? (assoc-in [:hit :player-id] (:player-id (g/cell-fire cell)))
-                       force? (assoc-in [:hit :player-id] (:player-id player)))]
-          (update-player game player))
-        game)))
+   (let [grid (:grid game)
+         cell (g/cell-at grid coords)
+         fire? (g/fire? cell)
+         player (cell-player game cell)]
+     (if (and (some? player)
+              (or force? fire?)
+              (not (u/hit? player)))
+       (let [player (cond-> (assoc-in player [:hit :timestamp] timestamp)
+                      fire?  (assoc-in [:hit :player-id] (:player-id (g/cell-fire cell)))
+                      force? (assoc-in [:hit :player-id] (:player-id player)))]
+         (update-player game player))
+       game)))
   ([game coords timestamp]
-    (hit-player game coords timestamp false)))
+   (hit-player game coords timestamp false)))
 
 (defn move
   "Try to move a player in the given direction"
   [game player-id direction timestamp]
-  (let [{:keys [grid in-progress? players]} game]
-    (if (not in-progress?)
-      (do
-        (println "W d.g.core::move -" player-id "can't move, game not in progress")
-        game)
-      (if-let [coords (:coords (get players player-id))]  ; TODO: better semantic query (not in-progress or gameover)
-        (let [cell (g/cell-at grid coords)
+  (if (not (:in-progress? game))
+    game
+    (let [coords (get-in game [:players player-id :coords])]
+      (if (not coords)
+        game
+        (let [grid (:grid game)
+              cell (g/cell-at grid coords)
               player (cell-player game cell)
-              new-coords (g/navigate coords grid direction)]
-          (if (and (not= new-coords coords)
-                   (not (contains? game :gameover))
+              new-coords (g/navigate coords grid direction)
+              new-cell (g/cell-at grid new-coords)]
+          (if (and (not (contains? game :gameover))
                    (not (u/hit? player))
-                   (let [new-cell (g/cell-at grid new-coords)]
-                     (or (g/cell-empty? new-cell)
-                         (g/item? new-cell))))
+                   (or (g/cell-empty? new-cell)
+                       (g/item? new-cell)))
             (let [player (assoc player :coords new-coords)
                   grid (-> grid
                            (g/dissoc-grid-cell coords :player-id)
@@ -186,40 +182,33 @@
                            (hit-player new-coords timestamp)
                            (update-item new-coords))]
               game)
-            (let [new-cell (g/cell-at grid new-coords)]
-              (if (and (:bomb-kick? player) (g/bomb? new-cell))
-                (let [bomb (g/cell-bomb new-cell)
-                      kicked-bomb (assoc bomb :kick {:direction direction
-                                                     :timestamp (- timestamp c/bomb-kick-speed-ms)})]
-                  (update game :grid g/assoc-grid-cell new-coords :bomb kicked-bomb))
-                game))))
-        (do
-          (println "D d.g.core::move" player-id "can't move anymore...")
-          game)))))
+            (if (and (g/bomb? new-cell)
+                     (:bomb-kick? player))
+              (let [bomb (g/cell-bomb new-cell)
+                    kicked-bomb (assoc bomb :kick {:direction direction
+                                                   :timestamp (- timestamp c/bomb-kick-speed-ms)})]
+                (update game :grid g/assoc-grid-cell new-coords :bomb kicked-bomb))
+              game)))))))
 
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [game player-id timestamp]
   (let [{:keys [grid in-progress? players]} game
         {:keys [coords], :as player} (get players player-id)]
-    (if (not in-progress?)
-      (do
-        (println "W d.g.core::plant-bomb -" player-id "can't plant bombs, game not in progress")
-        game)
-      (if (and (not (contains? game :gameover)) (some? coords))
-        (if (and (not (u/hit? player))
-              (p/has-bombs? player)
-              (not (g/bomb? grid coords)))
-          (let [bomb {:player-id player-id, :timestamp timestamp}
-                grid (g/assoc-grid-cell grid coords :bomb bomb)
-                player (p/dec-bombs player)]
-            (-> game
-                (update-player player)
-                (assoc :grid grid)))
-          game)
-        (do
-          (println "D d.g.core::plant-bomb" player-id "can't plant bombs anymore...")
-          game)))))
+    (if (or (not in-progress?)
+            (:gameover game)
+            (not coords)
+            (u/hit? player)
+            (not (p/has-bombs? player))
+            (g/bomb? grid coords))
+      game
+      (let [bomb {:player-id player-id
+                  :timestamp timestamp}
+            grid (g/assoc-grid-cell grid coords :bomb bomb)
+            player (p/dec-bombs player)]
+        (-> game
+            (update-player player)
+            (assoc :grid grid))))))
 
 (defn leave
   [game player-id timestamp]
@@ -227,7 +216,7 @@
   (let [{:keys [in-progress? players]} game]
     (if in-progress?
       (let [{:keys [coords left], :as player} (get players player-id)
-            player (if (nil? left)
+            player (if-not left
                      (assoc player :left {:timestamp timestamp})
                      player)]
         (-> game
@@ -274,32 +263,33 @@
 (defn- detonate-bomb
   "Detonate a given bomb"
   [game coords timestamp]
-  (let [{grid :grid, players :players, :as game} game
+  (let [grid (:grid game)
         bomb (g/cell-bomb grid coords)]
-    (if (and (some? bomb) (not (contains? bomb :detonated)))
+    (if (or (not bomb) (:detonated bomb))
+      game
       (let [bomb (assoc bomb :detonated {:timestamp timestamp})
             grid (g/assoc-grid-cell grid coords :bomb bomb)
             player-id (:player-id bomb)
-            player (get players player-id)
+            player (get-in game [:players player-id])
             player-coords (:coords player)
             player (p/inc-bombs player)
             grid (g/assoc-grid-cell grid player-coords :player-id player-id)
-            spread-fire #(spread-fire %1 coords %2 (:bomb-radius player) detonate-bomb player-id timestamp)
-            game (-> game
-                     (update-player player)
-                     (assoc :grid grid)
-                     (spread-fire (fn [{x :x, y :y}] {:x (inc x), :y y}))
-                     (spread-fire (fn [{x :x, y :y}] {:x (dec x), :y y}))
-                     (spread-fire (fn [{x :x, y :y}] {:x x, :y (inc y)}))
-                     (spread-fire (fn [{x :x, y :y}] {:x x, :y (dec y)})))]
-        game)
-    game)))
+            spread-fire #(spread-fire %1 coords %2 (:bomb-radius player) detonate-bomb player-id timestamp)]
+        (-> game
+            (update-player player)
+            (assoc :grid grid)
+            (spread-fire (fn [{x :x, y :y}] {:x (inc x), :y y}))
+            (spread-fire (fn [{x :x, y :y}] {:x (dec x), :y y}))
+            (spread-fire (fn [{x :x, y :y}] {:x x,       :y (inc y)}))
+            (spread-fire (fn [{x :x, y :y}] {:x x,       :y (dec y)})))))))
 
 (defn remote-detonate-bombs
   [game player-id timestamp]
   (let [{:keys [in-progress? gameover players]} game
         {:keys [remote-control?]} (player-id players)]
-    (if (or (not in-progress?) (some? gameover) (not remote-control?))
+    (if (or (not in-progress?)
+            (some? gameover)
+            (not remote-control?))
       game
       (let [{{:keys [width height]} :grid} game]
         (loop [game game y 0]
@@ -317,25 +307,18 @@
                         (inc x))))
              (inc y))))))))
 
-(defn- random-rare-item
-  []
-  (if (< (rand) 1/2)
-    {:type :bomb-kick}
-    {:type :remote-control}))
-
 (defn- random-item
-  []
-  (if (< (rand) 1/2)
-    {:type :bomb}
-    {:type :fire}))
+  [items]
+  {:type (rand-nth items)})
 
 (defn- spawn-random-item
   [game coords timestamp]
   (if-let [item (condp > (rand)
-                  c/chance-spawn-rare-item (random-rare-item)
-                  c/chance-spawn-item (random-item)
+                  c/chance-spawn-rare-item (random-item c/rare-item-types)
+                  c/chance-spawn-item (random-item c/item-types)
                   nil)]
-    (assoc game :grid (g/assoc-grid-cell (:grid game) coords :item item))
+    (assoc game :grid
+      (g/assoc-grid-cell (:grid game) coords :item item))
     game))
 
 (defn- remove-expired-block
@@ -360,10 +343,14 @@
       (let [new-coords (g/navigate coords grid (:direction kicked))]
         (if (g/cell-empty? grid new-coords)
           (let [new-bomb (assoc-in bomb [:kick :timestamp] timestamp)
-                game (assoc game :grid (g/dissoc-grid-cell grid coords :bomb))
-                game (assoc game :grid (g/assoc-grid-cell (:grid game) new-coords :bomb new-bomb))]
+                game (assoc game :grid
+                        (g/dissoc-grid-cell grid coords :bomb))
+                game (assoc game :grid
+                        (g/assoc-grid-cell (:grid game) new-coords :bomb new-bomb))]
             game)
-          (assoc game :grid (g/assoc-grid-cell grid coords :bomb (dissoc bomb :kick)))))
+          (assoc game :grid
+            (g/assoc-grid-cell grid coords :bomb
+              (dissoc bomb :kick)))))
       game)))
 
 (defn- detonate-timed-out-bomb
@@ -396,7 +383,8 @@
   (let [grid (:grid game)
         fire (g/cell-fire grid coords)]
     (if (u/fire-expired? fire timestamp)
-      (assoc game :grid (g/dissoc-grid-cell grid coords :fire))
+      (assoc game :grid
+        (g/dissoc-grid-cell grid coords :fire))
       game)))
 
 (defn- remove-expired-item
@@ -404,7 +392,8 @@
   (let [grid (:grid game)
         item (g/cell-item grid coords)]
     (if (u/item-expired? item timestamp)
-      (assoc game :grid (g/dissoc-grid-cell grid coords :item))
+      (assoc game :grid
+        (g/dissoc-grid-cell grid coords :item))
       game)))
 
 (defn- remove-expired-player
@@ -434,7 +423,9 @@
   (if-let [player (cell-player game (g/cell-at (:grid game) coords))]
     (let [hit (:hit player)
           stats-collected (:stats-collected hit)]
-      (if (and (some? hit) (nil? stats-collected))
+      (if (or (not hit)
+              (some? stats-collected))
+        game
         (let [corpse-id (:player-id player)
               killer-id (:player-id hit)
               stats (:stats game)
@@ -442,8 +433,7 @@
               game (assoc-in game [:players corpse-id] player)]
           (if (= corpse-id killer-id)
             (assoc game :stats (st/add-suicide stats corpse-id))
-            (assoc game :stats (st/add-kill stats killer-id corpse-id))))
-        game))
+            (assoc game :stats (st/add-kill stats killer-id corpse-id))))))
       game))
 
 (defn- update-stats
@@ -457,7 +447,8 @@
 (defn eval
   "Check if any bombs should detonate (and detonate in case). Remove expired bombs and fire."
   [game timestamp]
-  (if (or (not (:in-progress? game)) (contains? game :gameover))
+  (if (or (not (:in-progress? game))
+          (contains? game :gameover))
     game
     (let [{{:keys [width height]} :grid} game
           game (loop [game game y 0]
@@ -468,11 +459,11 @@
                       (if (= width x)
                         game
                         (recur (-> game
-                                   (remove-expired-block {:x x, :y y} timestamp)
-                                   (update-bomb {:x x, :y y} timestamp)
-                                   (remove-expired-fire {:x x, :y y} timestamp)
-                                   (remove-expired-item {:x x, :y y} timestamp)
-                                   (remove-expired-player {:x x, :y y} timestamp)
+                                   (remove-expired-block     {:x x, :y y} timestamp)
+                                   (update-bomb              {:x x, :y y} timestamp)
+                                   (remove-expired-fire      {:x x, :y y} timestamp)
+                                   (remove-expired-item      {:x x, :y y} timestamp)
+                                   (remove-expired-player    {:x x, :y y} timestamp)
                                    (update-stats-from-coords {:x x, :y y} timestamp))
                                (inc x))))
                     (inc y))))]
