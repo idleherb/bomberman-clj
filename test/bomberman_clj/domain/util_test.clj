@@ -1,6 +1,6 @@
 (ns bomberman-clj.domain.util-test
   (:require [midje.sweet :refer [fact facts =>]]
-            [bomberman-clj.util :as u]))
+            [bomberman-clj.domain.util :as u]))
 
 (facts "about util"
   (facts "about navigating"
