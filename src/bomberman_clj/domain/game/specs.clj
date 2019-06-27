@@ -1,4 +1,4 @@
-(ns bomberman-clj.specs
+(ns bomberman-clj.domain.game.specs
   (:require [clojure.core.async.impl.protocols :as protocols]
             [clojure.spec.alpha :as s]))
 
@@ -7,10 +7,10 @@
     (when (not valid)
       (do
         (println)
-        (println "E specs::valid? - vvvvvvvvvvvvvvvvvvvvvvvv")
-        (println (str "E specs::valid? - obj:" obj))
+        (println "E d.g.specs::valid? - vvvvvvvvvvvvvvvvvvvvvvvv")
+        (println (str "E d.g.specs::valid? - obj:" obj))
         (println (s/explain-str spec obj))
-        (println "E specs::valid? - ^^^^^^^^^^^^^^^^^^^^^^^^")
+        (println "E d.g.specs::valid? - ^^^^^^^^^^^^^^^^^^^^^^^^")
         (println)))
     valid))
 
@@ -86,13 +86,13 @@
 (s/def :stats.round/player-7 stats-player-round-spec)
 (s/def :stats.round/player-8 stats-player-round-spec)
 (s/def :stats.round/players (s/keys :opt-un [:stats.round/player-1
-                                            :stats.round/player-2
-                                            :stats.round/player-3
-                                            :stats.round/player-4
-                                            :stats.round/player-5
-                                            :stats.round/player-6
-                                            :stats.round/player-7
-                                            :stats.round/player-8]))
+                                             :stats.round/player-2
+                                             :stats.round/player-3
+                                             :stats.round/player-4
+                                             :stats.round/player-5
+                                             :stats.round/player-6
+                                             :stats.round/player-7
+                                             :stats.round/player-8]))
 (def stats-nilable-ts-spec (s/nilable (s/and int? #(> % 0) #(= 13 (count (str %))))))
 (s/def :stats.round/started-at stats-nilable-ts-spec)
 (s/def :stats.round/duration int?)
@@ -123,13 +123,13 @@
 (s/def :stats.all/player-7 stats-player-all-spec)
 (s/def :stats.all/player-8 stats-player-all-spec)
 (s/def :stats.all/players (s/keys :opt-un [:stats.all/player-1
-                                          :stats.all/player-2
-                                          :stats.all/player-3
-                                          :stats.all/player-4
-                                          :stats.all/player-5
-                                          :stats.all/player-6
-                                          :stats.all/player-7
-                                          :stats.all/player-8]))
+                                           :stats.all/player-2
+                                           :stats.all/player-3
+                                           :stats.all/player-4
+                                           :stats.all/player-5
+                                           :stats.all/player-6
+                                           :stats.all/player-7
+                                           :stats.all/player-8]))
 
 (s/def :stats/all (s/keys :req-un [:stats.all/players]))
 (s/def ::stats (s/keys :req-un [:stats/round :stats/all]))

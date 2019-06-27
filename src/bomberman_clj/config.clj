@@ -8,7 +8,8 @@
 (def bomb-count 1)
 (def bomb-radius 2)
 
-(def spawn-max-tries 100)
+(def player-spawn-max-num-tries 100)
+
 (def chance-spawn-item 3/10)
 (def chance-spawn-rare-item 1/20)
 

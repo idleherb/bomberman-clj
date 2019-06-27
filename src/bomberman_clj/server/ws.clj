@@ -1,7 +1,7 @@
 (ns bomberman-clj.server.ws
   (:require [bomberman-clj.config :as config]
-            [bomberman-clj.frame-rate :as fps]
-            [bomberman-clj.game-loop :as gl]
+            [bomberman-clj.domain.game-loop.frame-rate :as fps]
+            [bomberman-clj.domain.game-loop.core :as gl]
             [clojure.core.async :as async]
             [clojure.edn :as edn]
             [digest]

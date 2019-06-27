@@ -1,11 +1,11 @@
-(ns bomberman-clj.game
+(ns bomberman-clj.domain.game.core
   (:refer-clojure :exclude [eval])
   (:require [bomberman-clj.config :as config]
-            [bomberman-clj.grid :as grid]
-            [bomberman-clj.players :as players]
-            [bomberman-clj.specs :as specs]
-            [bomberman-clj.stats :as stats]
-            [bomberman-clj.util :as util]))
+            [bomberman-clj.domain.game.grid :as grid]
+            [bomberman-clj.domain.game.players :as players]
+            [bomberman-clj.domain.game.specs :as specs]
+            [bomberman-clj.domain.game.stats :as stats]
+            [bomberman-clj.domain.util :as util]))
 
 (defn init 
   [num-players width height]
@@ -31,7 +31,7 @@
         cur-num-players (count players)]
     (if (= num-players cur-num-players)
       (do
-        (println "E game::join - no free player slot left for player" player)
+        (println "E d.g.core::join - no free player slot left for player" player)
         game)
       (let [player-id (:player-id player)
             player (assoc player :coords nil)
@@ -61,12 +61,10 @@
 
 (defn next-round
   [game timestamp]
-  {:pre [(specs/valid? ::specs/game game)]
-   :post [(specs/valid? ::specs/game %)]}
   (let [{:keys [num-players players width height], :as game} (reset game timestamp)]
     (if (< (count players) num-players)
       (do
-        (println "W game::next-round - not enough players to start new round...")
+        (println "W d.g.core::next-round - not enough players to start new round...")
         (assoc game :in-progress? false))
       (loop [grid (grid/init width height)
              players players
@@ -96,7 +94,7 @@
     :bomb-kick (assoc player :bomb-kick? true)
     :remote-control (assoc player :remote-control? true)
     (do
-      (println "W game::pickup-item - unknown item:" item)
+      (println "W d.g.core::pickup-item - unknown item:" item)
       player)))
 
 (defn- update-player
@@ -120,10 +118,6 @@
 
 (defn- hit-block
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         soft-block (grid/cell-soft-block cell)]
@@ -137,10 +131,6 @@
 
 (defn- hit-item
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         item (:item cell)]
@@ -154,10 +144,6 @@
 
 (defn- hit-player
   ([game coords timestamp force?]
-    ; {:pre [(specs/valid? ::specs/game game)
-    ;        (specs/valid? ::specs/coords coords)
-    ;        (specs/valid? ::specs/timestamp timestamp)]
-    ;  :post [(specs/valid? ::specs/game %)]}
     (let [grid (:grid game)
           cell (grid/cell-at grid coords)
           fire? (grid/fire? cell)
@@ -174,12 +160,10 @@
 (defn move
   "Try to move a player in the given direction"
   [game player-id direction timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [{:keys [grid in-progress? players]} game]
     (if (not in-progress?)
       (do
-        (println "W game::move -" player-id "can't move, game not in progress")
+        (println "W d.g.core::move -" player-id "can't move, game not in progress")
         game)
       (if-let [coords (:coords (get players player-id))]  ; TODO: better semantic query (not in-progress or game-over)
         (let [cell (grid/cell-at (:grid game) coords)
@@ -212,20 +196,17 @@
                   game))
               game)))
         (do
-          (println "D game::move" player-id "can't move anymore...")
+          (println "D d.g.core::move" player-id "can't move anymore...")
           game)))))
 
 (defn plant-bomb
   "Try to plant a bomb with the given player at their current coordinates"
   [game player-id timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [{:keys [grid in-progress? players]} game
         {:keys [coords], :as player} (get players player-id)]
     (if (not in-progress?)
       (do
-        (println "W game::plant-bomb -" player-id "can't plant bombs, game not in progress")
+        (println "W d.g.core::plant-bomb -" player-id "can't plant bombs, game not in progress")
         game)
       (if (and (not (contains? game :gameover)) (some? coords))
         (if (and (not (util/hit? player))
@@ -239,16 +220,12 @@
                 (assoc :grid grid)))
           game)
         (do
-          (println "D game::plant-bomb" player-id "can't plant bombs anymore...")
+          (println "D d.g.core::plant-bomb" player-id "can't plant bombs anymore...")
           game)))))
 
 (defn leave
   [game player-id timestamp]
-  {:pre [(specs/valid? ::specs/game game)
-         (specs/valid? ::specs/player-id player-id)
-         (specs/valid? ::specs/timestamp timestamp)]
-   :post [(specs/valid? ::specs/game %)]}
-  (println "D game::leave -" player-id "left the game at" timestamp)
+  (println "D d.g.core::leave -" player-id "left the game at" timestamp)
   (let [{:keys [in-progress? players]} game]
     (if in-progress?
       (let [{:keys [coords left], :as player} (get players player-id)
@@ -269,10 +246,6 @@
    detonate-bomb
    player-id
    timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (loop [{{:keys [width height] :as grid} :grid, :as game} game
          {cur-x :x, cur-y :y, :as coords} coords
          stop? false]
@@ -303,9 +276,6 @@
 (defn- detonate-bomb
   "Detonate a given bomb"
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [{grid :grid, players :players, :as game} game
         bomb (grid/cell-bomb grid coords)]
     (if (and (some? bomb) (not (contains? bomb :detonated)))
@@ -372,10 +342,6 @@
 
 (defn- remove-expired-block
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         block (grid/cell-block grid coords)]
     (if (util/block-expired? block timestamp)
@@ -406,10 +372,6 @@
 
 (defn- detonate-timed-out-bomb
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [bomb (grid/cell-bomb (:grid game) coords)
         {:keys [remote-control?]} (get-in game [:players (:player-id bomb)])]
     (if (and (util/bomb-timed-out? bomb timestamp)
@@ -419,10 +381,6 @@
 
 (defn- remove-expired-bomb
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         bomb (grid/cell-bomb grid coords)]
     (if (util/bomb-expired? bomb timestamp)
@@ -432,10 +390,6 @@
 
 (defn- update-bomb
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (-> game
       (move-kicked-bomb coords timestamp)
       (detonate-timed-out-bomb coords timestamp)
@@ -443,10 +397,6 @@
 
 (defn- remove-expired-fire
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         fire (grid/cell-fire grid coords)]
     (if (util/fire-expired? fire timestamp)
@@ -455,10 +405,6 @@
 
 (defn- remove-expired-item
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         item (grid/cell-item grid coords)]
     (if (util/item-expired? item timestamp)
@@ -467,10 +413,6 @@
 
 (defn- remove-expired-player
   [game coords timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/coords coords)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [grid (:grid game)
         cell (grid/cell-at grid coords)
         player (cell-player game cell)]
@@ -484,9 +426,6 @@
 
 (defn- update-gameover
   [game timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (let [alive-players (filter (comp some? :coords second) (:players game))]
     (condp = (count alive-players)
       0 (assoc game :gameover {:timestamp timestamp})
@@ -522,9 +461,6 @@
 (defn eval
   "Check if any bombs should detonate (and detonate in case). Remove expired bombs and fire."
   [game timestamp]
-  ; {:pre [(specs/valid? ::specs/game game)
-  ;        (specs/valid? ::specs/timestamp timestamp)]
-  ;  :post [(specs/valid? ::specs/game %)]}
   (if (or (not (:in-progress? game)) (contains? game :gameover))
     game
     (let [{{:keys [width height]} :grid} game

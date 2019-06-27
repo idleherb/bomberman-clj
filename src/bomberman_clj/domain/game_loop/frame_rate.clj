@@ -1,14 +1,10 @@
-(ns bomberman-clj.frame-rate
+(ns bomberman-clj.domain.game-loop.frame-rate
   (:refer-clojure :exclude [set])
-  (:require [clojure.core.async :as async]
-            ; [bomberman-clj.specs :as specs]
-  ))
+  (:require [clojure.core.async :as async]))
 
 (defn set
   "Sends a refresh event to the given channel, `fps` times per second"
   [ch-out fps]
-  ; {:pre [(specs/valid? ::specs/chan ch-out)]
-  ;  :post [(specs/valid? ::specs/chan %)]}
   (async/go-loop []
     (async/<! (async/timeout (/ 1000 fps)))
     (async/>! ch-out  {:type :refresh, :timestamp (System/currentTimeMillis)})
@@ -16,5 +12,4 @@
 
 (defn unset
   [ch-fps]
-  ; {:pre [(specs/valid? ::specs/chan ch-fps)]}
   (async/close! ch-fps))

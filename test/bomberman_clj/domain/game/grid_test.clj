@@ -1,7 +1,7 @@
-(ns bomberman-clj.grid-test
+(ns bomberman-clj.domain.game.grid-test
   (:require [midje.sweet :refer [fact facts =>]]
-            [bomberman-clj.grid :as g]
-            [bomberman-clj.test-data :as d]))
+            [bomberman-clj.domain.game.grid :as g]
+            [bomberman-clj.domain.game.test-data :as d]))
 
 (facts "about grids"
   (fact "cells can being identified by their :x and :y coordinates"

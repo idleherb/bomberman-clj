@@ -1,4 +1,4 @@
-(ns bomberman-clj.test-data)
+(ns bomberman-clj.domain.game.test-data)
 
 (def config-bomb-count 1)
 (def config-bomb-radius 2)

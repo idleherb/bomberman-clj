@@ -1,8 +1,8 @@
-(ns bomberman-clj.game-test
+(ns bomberman-clj.domain.game.core-test
   (:require [midje.sweet :refer [fact facts => =not=> tabular]]
-            [bomberman-clj.game :as g]
-            [bomberman-clj.config :as config]
-            [bomberman-clj.test-data :as d]))
+            [bomberman-clj.domain.game.core :as g]
+            [bomberman-clj.domain.game.test-data :as d]
+            [bomberman-clj.config :as config]))
 
 (facts "about games"
   (fact "a game is initialized from given width, height, without any players and grid"
