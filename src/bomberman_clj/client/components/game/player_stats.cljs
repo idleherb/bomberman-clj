@@ -1,4 +1,4 @@
-(ns bomberman-clj.client.components.player-stats)
+(ns bomberman-clj.client.components.game.player-stats)
 
 (defn player-stats [player-stats-state player-name]
   (let [{:keys [wins deaths suicides kills moves]} player-stats-state]

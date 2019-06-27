@@ -1,6 +1,6 @@
-(ns bomberman-clj.client.components.grid
-  (:require [bomberman-clj.client.components.cell :refer [cell]
-                                                  :rename {cell el-cell}]))
+(ns bomberman-clj.client.components.game.grid
+  (:require [bomberman-clj.client.components.game.cell :refer [cell]
+                                                       :rename {cell el-cell}]))
 
 (defn grid [grid-state players]
   (let [{:keys [v height width]} grid-state]

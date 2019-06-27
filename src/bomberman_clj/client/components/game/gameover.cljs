@@ -1,4 +1,4 @@
-(ns bomberman-clj.client.components.gameover)
+(ns bomberman-clj.client.components.game.gameover)
 
 (defn gameover [gameover-state players]
   [:div {:class "gameover modal"}

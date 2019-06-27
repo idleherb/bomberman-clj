@@ -1,8 +1,8 @@
 (ns bomberman-clj.client.components.app
   (:require [reagent.core :as r]
             [bomberman-clj.client.actions :as a]
-            [bomberman-clj.client.components.game :refer [game]
-                                                  :rename {game el-game}]
+            [bomberman-clj.client.components.game.core :refer [game]
+                                                       :rename {game el-game}]
             [bomberman-clj.client.components.lobby.core :refer [lobby]
                                                         :rename {lobby el-lobby}]
             [bomberman-clj.client.components.volume :refer [volume]

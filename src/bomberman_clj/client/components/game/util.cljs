@@ -1,4 +1,4 @@
-(ns bomberman-clj.client.util
+(ns bomberman-clj.client.components.game.util
   (:require [goog.string :as gstring]
             [goog.string.format]))
 

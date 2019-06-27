@@ -1,4 +1,4 @@
-(ns bomberman-clj.client.components.cell
+(ns bomberman-clj.client.components.game.cell
   (:require [stylefy.core :as stylefy]
             [bomberman-clj.client.audio :as audio]
             [bomberman-clj.client.state :as s]))

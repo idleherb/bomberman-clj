@@ -1,12 +1,12 @@
-(ns bomberman-clj.client.components.game
+(ns bomberman-clj.client.components.game.core
   (:require
    [bomberman-clj.client.actions :as a]
-   [bomberman-clj.client.components.gameover :refer [gameover]
-                                             :rename {gameover el-gameover}]
-   [bomberman-clj.client.components.grid :refer [grid]
-                                         :rename {grid el-grid}]
-   [bomberman-clj.client.components.stats :refer [stats]
-                                          :rename {stats el-stats}]))
+   [bomberman-clj.client.components.game.gameover :refer [gameover]
+                                                  :rename {gameover el-gameover}]
+   [bomberman-clj.client.components.game.grid :refer [grid]
+                                              :rename {grid el-grid}]
+   [bomberman-clj.client.components.game.stats :refer [stats]
+                                               :rename {stats el-stats}]))
 
 (defn game [game-state]
   (let [{:keys [gameover
