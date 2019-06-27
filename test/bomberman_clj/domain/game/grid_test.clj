@@ -39,4 +39,29 @@
       num_blocks => 6
       num_empty => 2
       num_player => 1))
+  
+  (facts "about navigating"
+    (let [grid {:v [nil nil nil
+                    nil nil nil
+                    nil nil nil]
+                :width 3
+                :height 3}]
+      (fact "works as expected when using valid directions within grid"
+        (let [{:keys [x y]} (-> {:x 1, :y 1}
+                                (g/navigate grid :down)
+                                (g/navigate grid :left)
+                                (g/navigate grid :up)
+                                (g/navigate grid :up)
+                                (g/navigate grid :right))]
+          x => 1
+          y => 0))
+
+      (fact "returns input coords when using an invalid direction"
+        (g/navigate {:x 0, :y 0} grid :south) => {:x 0, :y 0})
+
+      (fact "returns input coords when navigating outside the grid"
+        (g/navigate {:x 0, :y 0} grid :up)    => {:x 0, :y 0}
+        (g/navigate {:x 2, :y 0} grid :right) => {:x 2, :y 0}
+        (g/navigate {:x 0, :y 2} grid :down)  => {:x 0, :y 2}
+        (g/navigate {:x 0, :y 0} grid :left)  => {:x 0, :y 0})))
 )

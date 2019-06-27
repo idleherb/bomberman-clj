@@ -1,6 +1,5 @@
 (ns bomberman-clj.domain.game.grid
-  (:require [bomberman-clj.config :as config]
-  ))
+  (:require [bomberman-clj.config :as c]))
 
 (defn- idx-coords
   [width height idx]
@@ -133,10 +132,23 @@
         cell (if (empty? cell) nil cell)]
     (assoc-grid-cell grid coords cell)))
 
-(defn in-grid?
+(defn- in-grid?
   "Check if coordinates are within the given grid"
   [grid coords]
   (some? (coords-idx grid coords)))
+
+(defn navigate
+  [coords grid direction]
+  (let [{:keys [x y]} coords
+        new-coords (case direction
+                     :up    {:x x,       :y (dec y)}
+                     :right {:x (inc x), :y y}
+                     :down  {:x x,       :y (inc y)}
+                     :left  {:x (dec x), :y y}
+                     coords)]
+    (if (in-grid? grid new-coords)
+      new-coords
+      coords)))
 
 (defn cell-empty?
   "Check if a given cell is empty"
@@ -165,15 +177,15 @@
                [{:x (- x 1), :y y} {:x (- x 2), :y y}]
                [{:x (+ x 1), :y y} {:x (+ x 2), :y y}]
                
-               [{:x x, :y (+ y 1)} {:x (+ x 1), :y y}]
-               [{:x (+ x 1), :y y} {:x x, :y (- y 1)}]
-               [{:x x, :y (- y 1)} {:x (- x 1), :y y}]
-               [{:x (- x 1), :y y} {:x x, :y (+ y 1)}]
+               [{:x x,       :y (+ y 1)} {:x (+ x 1), :y y}]
+               [{:x (+ x 1), :y y}       {:x x,       :y (- y 1)}]
+               [{:x x,       :y (- y 1)} {:x (- x 1), :y y}]
+               [{:x (- x 1), :y y}       {:x x,       :y (+ y 1)}]
                
-               [{:x x, :y (+ y 1)} {:x (+ x 1), :y (+ y 1)}]
-               [{:x (+ x 1), :y y} {:x (+ x 1), :y (- y 1)}]
-               [{:x x, :y (- y 1)} {:x (- x 1), :y (- y 1)}]
-               [{:x (- x 1), :y y} {:x (- x 1), :y (+ y 1)}]]]
+               [{:x x,       :y (+ y 1)} {:x (+ x 1), :y (+ y 1)}]
+               [{:x (+ x 1), :y y}       {:x (+ x 1), :y (- y 1)}]
+               [{:x x,       :y (- y 1)} {:x (- x 1), :y (- y 1)}]
+               [{:x (- x 1), :y y}       {:x (- x 1), :y (+ y 1)}]]]
     (into [] (filter #(and (in-grid? grid (first %))
                            (in-grid? grid (second %))) pairs))))
 
@@ -195,7 +207,7 @@
               (hard-block? grid c2)
               (player? grid c1)
               (player? grid c2))
-        (if (= num-tries config/player-spawn-max-num-tries)
+        (if (= num-tries c/player-spawn-max-num-tries)
           (println "E d.g.grid::spawn-player - couldn't find a spot to spawn player")
           (recur (inc num-tries)))
         (let [grid (-> grid

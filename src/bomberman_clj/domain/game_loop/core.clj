@@ -1,7 +1,6 @@
 (ns bomberman-clj.domain.game-loop.core
-  (:require [clojure.core.async :as async]
-            [bomberman-clj.domain.game.core :as game]
-            [bomberman-clj.domain.util :as util]))
+  (:require [clojure.core.async :as a]
+            [bomberman-clj.domain.game.core :as g]))
 
 (defn- key-set
   [map]
@@ -11,12 +10,17 @@
   [sub-map super-map]
   (into #{} (remove (key-set sub-map) (key-set super-map))))
 
+(defn- put-error!
+  [ch msg]
+  (a/go (a/>! ch {:type    :error
+                  :payload msg})))
+
 (defn- on-join!
   [event game ch]
   (let [{:keys [payload timestamp]} event
         {:keys [num-players players]} game
         player payload
-        game (game/join game player timestamp)
+        game (g/join game player timestamp)
         new-players (key-diff players (:players game))
         player-id (condp = (count new-players)
           0 nil
@@ -28,67 +32,50 @@
         (if (= num-players (count (:players game)))
           (do
             (println "D d.gl.core::on-join! - all player slots filled, starting new round...")
-            (game/next-round game timestamp))
+            (g/next-round game timestamp))
           game))
       (do
-        (async/go (async/>! ch {:broadcast false
-                                :type      :error
-                                :payload   "no free player slots"}))
-        game))))
-
-(defn- on-action
-  [event game ch]
-  (let [{:keys [payload timestamp]} event
-        {:keys [action player-id]} payload]
-    (condp = action
-      :detonate-bombs (game/remote-detonate-bombs game player-id timestamp)
-      :move (game/move game player-id (:direction payload) timestamp)
-      :plant-bomb (game/plant-bomb game player-id timestamp)
-      (do
-        (println "W d.gl.core::on-action - unknown player action:" action)
+        (put-error! ch "no free player slots")
         game))))
 
 (defn- on-leave!
   [event game ch]
   (let [{:keys [payload timestamp]} event]
-    (game/leave game (:player-id payload) timestamp)))
+    (g/leave game (:player-id payload) timestamp)))
+
+(defn- on-action
+  [event game ch]
+  (let [{:keys [payload timestamp]} event
+        {:keys [action player-id]}  payload]
+    (condp = action
+      :detonate-bombs (g/remote-detonate-bombs game player-id timestamp)
+      :move           (g/move game player-id (:direction payload) timestamp)
+      :plant-bomb     (g/plant-bomb game player-id timestamp)
+      (do
+        (println "W d.gl.core::on-action - unknown player action:" action)
+        game))))
+
+(defn- put-game-and-return!
+  [ch game timestamp]
+  (a/go (a/>! ch {:type      :refresh
+                  :payload   game
+                  :timestamp timestamp}))
+  game)
 
 (defn- on-refresh!
   [event game ch]
-  (let [timestamp (:timestamp event)]
+  (let [ts (:timestamp event)]
     (if (:in-progress? game)
-      (let [game (game/eval game timestamp)]
-        (if (and (game/game-over? game) (util/gameover-expired? (:gameover game) timestamp))
-          (let [game (game/next-round game (:timestamp event))]
-            (do
-              (async/go (async/>! ch {:broadcast true
-                                      :type      :refresh
-                                      :payload   game
-                                      :timestamp timestamp}))
-              game))
-          (do
-            (async/go (async/>! ch {:broadcast true
-                                    :type      :refresh
-                                    :payload   game
-                                    :timestamp timestamp}))
-            game)))
-      (do
-        (async/go (async/>! ch {:broadcast true
-                                :type      :refresh
-                                :payload   game
-                                :timestamp timestamp}))
-        game))))
-
-(defn- abort-game!
-  [ch]
-  (async/go (async/>! ch {:broadcast true
-                          :type      :error
-                          :payload   "game aborted"})))
+      (let [eval-game (g/eval game ts)]
+        (if (g/gameover-expired? eval-game ts)
+          (put-game-and-return! ch (g/next-round eval-game ts) ts)
+          (put-game-and-return! ch eval-game ts)))
+      (put-game-and-return! ch game ts))))
 
 (defn game-loop
   [ch-in ch-out num-players width height]
-  (async/go-loop [game (game/init num-players width height)]
-    (if-let [event (async/<! ch-in)]
+  (a/go-loop [game (g/init num-players width height)]
+    (if-let [event (a/<! ch-in)]
       (let [game (condp = (:type event)
                    :join    (on-join!    event game ch-out)
                    :leave   (on-leave!   event game ch-out)
@@ -99,4 +86,4 @@
         (if (some? game)
           (recur game)
           (println "D d.gl.core::game-loop - close")))
-      (abort-game! ch-out))))
+      (put-error! ch-out "game aborted"))))

@@ -1,5 +1,5 @@
 (ns bomberman-clj.domain.game.specs
-  (:require [clojure.core.async.impl.protocols :as protocols]
+  (:require [clojure.core.async.impl.protocols :as p]
             [clojure.spec.alpha :as s]))
 
 (defn valid? [spec obj]
@@ -25,7 +25,7 @@
 (s/def ::action keyword?)
 (s/def ::player-id (s/and keyword? #(re-matches #"player-\d+" (name %))))
 
-(s/def ::chan #(satisfies? protocols/Channel %))
+(s/def ::chan #(satisfies? p/Channel %))
 (s/def ::event (s/keys :req-un [::type ::timestamp] ::opt-un [::action ::payload ::player-id]))
 
 (s/def ::bomb-count (s/and int? #(>= % 0 )))

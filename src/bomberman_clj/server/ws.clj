@@ -1,11 +1,11 @@
 (ns bomberman-clj.server.ws
-  (:require [bomberman-clj.config :as config]
-            [bomberman-clj.domain.game-loop.frame-rate :as fps]
-            [bomberman-clj.domain.game-loop.core :as gl]
-            [clojure.core.async :as async]
+  (:require [clojure.core.async :as a]
             [clojure.edn :as edn]
             [digest]
-            [immutant.web.async :as ws-async]))
+            [immutant.web.async :as wsa]
+            [bomberman-clj.config :as c]
+            [bomberman-clj.domain.game-loop.core :as gl]
+            [bomberman-clj.domain.game-loop.frame-rate :as fps]))
 
 (def games (atom {})) ; game-id -> {:ch-in :num-players ...}
 (def players (atom {})) ; ch -> {:player-id ...
@@ -22,7 +22,7 @@
   (let [player-chans (->> @players
                           (filter #(= game-id (:game-id (second %))))
                           (map first))]
-    (doseq [ch player-chans] (ws-async/send! ch (pr-str event)))))
+    (doseq [ch player-chans] (wsa/send! ch (pr-str event)))))
 
 (defn- get-lobby
   []
@@ -38,8 +38,8 @@
 
 (defn loop-broadcast-lobby
   [fps]
-  (async/go-loop []
-    (async/<! (async/timeout (/ 1000 fps)))
+  (a/go-loop []
+    (a/<! (a/timeout (/ 1000 fps)))
     (when-let [guest-chans (not-empty
                             (->> @players
                                  (filter #(:lobby? (second %)))
@@ -52,12 +52,12 @@
                 event {:type :refresh-lobby
                        :payload lobby
                        :timestamp (now)}]
-            (ws-async/send! ws-ch (pr-str event)))))
+            (wsa/send! ws-ch (pr-str event)))))
     (recur)))
 
 (defn- send-error!
   [ws-ch error]
-  (ws-async/send! ws-ch (pr-str {:type :error, :payload error})))
+  (wsa/send! ws-ch (pr-str {:type :error, :payload error})))
 
 (defn- ws-on-connect!
   [ws-ch]
@@ -82,7 +82,7 @@
 
 (defn- destroy-game!
   [game-id ch-in]
-  (async/>!! ch-in {:type :close
+  (a/>!! ch-in {:type :close
                     :timestamp (now)})
   (swap! games dissoc game-id)
   (doseq [[ws-ch player] @players]
@@ -94,7 +94,7 @@
     (when (= role :player)
       (if-let [{ch-in :ch-in} (get-game game-id)]
         (do
-          (async/>!! ch-in {:type :leave
+          (a/>!! ch-in {:type :leave
                             :payload {:player-id player-id}
                             :timestamp (now)})
           (dosync
@@ -130,8 +130,8 @@
 
 (defn- game-update-listener!
   [game-id ch-out]
-  (async/go-loop []
-    (if-let [event (async/<! ch-out)]
+  (a/go-loop []
+    (if-let [event (a/<! ch-out)]
       (do
         (broadcast-game game-id event)
         (recur))
@@ -143,19 +143,19 @@
 
 (defn- open-game!
   [ws-ch game-id name num-players width height]
-  (let [ch-in (async/chan)
-        ch-out (async/chan)
+  (let [ch-in (a/chan)
+        ch-out (a/chan)
         ch-game (gl/game-loop ch-in ch-out num-players width height)
-        ch-fps (fps/set ch-in config/fps)]
-    (async/go
-      (if-let [event (async/<! ch-game)]
+        ch-fps (fps/set ch-in c/fps)]
+    (a/go
+      (if-let [event (a/<! ch-game)]
         (if (= (:type event) :exit)
           (do
             (println "D server.ws::open-game! - client requested game exit...")
             (fps/unset ch-fps)
-            (async/close! ch-game)
-            (async/close! ch-out)
-            (async/close! ch-in)
+            (a/close! ch-game)
+            (a/close! ch-out)
+            (a/close! ch-in)
             (println "D server.ws::open-game! - exit."))
           (println "E server.ws::open-game! - invalid event:" event))
         (println "W server.ws::open-game! - aborted.")))
@@ -204,7 +204,7 @@
                                (map #(:player-id (second %)))))]
         (if-let [player-id (get-free-player-id player-ids num-players)]
           (do
-            (async/>!! ch-in {:type :join
+            (a/>!! ch-in {:type :join
                               :payload {:player-id player-id
                                         :name player-name}
                               :timestamp (now)})
@@ -223,7 +223,7 @@
   (let [{:keys [game-id player-id]} (get-player ws-ch)]
     (when player-id
       (let [{:keys [ch-in]} (get-game game-id)]
-        (async/go (async/>! ch-in {:type :action
+        (a/go (a/>! ch-in {:type :action
                                    :payload (assoc (:payload event) :player-id player-id)
                                    :timestamp (now)}))))))
 

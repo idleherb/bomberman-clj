@@ -1,8 +1,8 @@
 (ns bomberman-clj.domain.game.stats
-  (:require [bomberman-clj.domain.game.specs :as specs]))
+  (:require [bomberman-clj.domain.game.specs :as s]))
 
-(def round-player-stats {:won?     false
-                         :dead?    false
+(def round-player-stats {:won? false
+                         :dead? false
                          :suicide? false
                          :moves 0
                          :kills 0
@@ -58,10 +58,10 @@
 
 (defn init-player-stats
   [stats player-id timestamp]
-  {:pre [(specs/valid? ::specs/stats     stats)
-         (specs/valid? ::specs/player-id player-id)
-         (specs/valid? ::specs/timestamp timestamp)]
-   :post [(specs/valid? ::specs/stats %)]}
+  {:pre [(s/valid? ::s/stats     stats)
+         (s/valid? ::s/player-id player-id)
+         (s/valid? ::s/timestamp timestamp)]
+   :post [(s/valid? ::s/stats %)]}
   (let [all-player-stats {:joined-at timestamp
                           :playing-time 0
                           :kills 0
